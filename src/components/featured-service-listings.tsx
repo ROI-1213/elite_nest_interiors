@@ -33,7 +33,8 @@ const CATEGORIES = [
       { title: "Complete Apartment Interior", description: "End-to-end handover for a 3BHK residence.", tag: "Turnkey", image: imgTurnkey },
       { title: "Villa Turnkey Execution", description: "From civil to styling, delivered as one.", tag: "Villa", image: imgResidential },
       { title: "Living + Dining Setup", description: "Integrated living and dining execution.", tag: "Living", image: blrLivingDining },
-      { title: "Kitchen + Wardrobe Finish", description: "Modular storage with premium hardware.", tag: "Modular", image: blrWardrobe },
+      { title: "Kitchen + Modular Storage", description: "Modular storage with premium hardware.", tag: "Modular", image: blrWardrobe },
+      { title: "Penthouse Fitout Execution", description: "Luxury turnkey interior execution.", tag: "Penthouse", image: blrBedroom },
     ],
   },
   {
@@ -41,10 +42,11 @@ const CATEGORIES = [
     label: "Residential",
     to: "/services/residential-interior-design",
     cards: [
-      { title: "Bengaluru Luxury Living Room", description: "Warm, elegant living space with premium finishes.", tag: "Living", image: imgResidential },
+      { title: "Bengaluru Luxury Living", description: "Warm, elegant living space with premium finishes.", tag: "Living", image: imgResidential },
       { title: "Modern Apartment Bedroom", description: "Calm bedroom with soft textures and smart storage.", tag: "Bedroom", image: blrBedroom },
       { title: "Premium Modular Kitchen", description: "Practical kitchen layout with refined materials.", tag: "Kitchen", image: blrKitchen },
       { title: "Villa Dining Space", description: "Elegant dining area for family gatherings.", tag: "Dining", image: blrDining },
+      { title: "Foyer & Entryway Design", description: "Welcoming entryway crafted for warmth.", tag: "Foyer", image: blrReception },
     ],
   },
   {
@@ -56,6 +58,7 @@ const CATEGORIES = [
       { title: "Premium Reception Space", description: "Warm-toned welcome zone for premium brands.", tag: "Reception", image: blrReception },
       { title: "Modern Showroom Design", description: "Clean lines, curated lighting, brand-first.", tag: "Showroom", image: blrShowroom },
       { title: "Café Interior Concept", description: "Cozy Bengaluru café with warm wood accents.", tag: "Café", image: blrCafe },
+      { title: "Executive Boardroom Studio", description: "High-end corporate meeting environment.", tag: "Executive", image: imgCommercial },
     ],
   },
   {
@@ -67,6 +70,7 @@ const CATEGORIES = [
       { title: "Kitchen Renovation", description: "Reworked kitchen with modern modularity.", tag: "Kitchen", image: blrKitchen },
       { title: "Bathroom Upgrade", description: "Spa-like premium bathroom rebuild.", tag: "Bathroom", image: blrBathroom },
       { title: "Living Room Refresh", description: "Reimagined living zone with new furniture.", tag: "Living", image: blrLivingDining },
+      { title: "Villa Facade Restoration", description: "Exterior & civil structural facelift.", tag: "Restore", image: imgConstructions },
     ],
   },
   {
@@ -74,10 +78,11 @@ const CATEGORIES = [
     label: "Constructions",
     to: "/services/construction-services",
     cards: [
-      { title: "Bengaluru Villa Construction", description: "Ground-up premium villa construction.", tag: "Villa", image: imgConstructions },
+      { title: "Bengaluru Villa Build", description: "Ground-up premium villa construction.", tag: "Villa", image: imgConstructions },
       { title: "Independent House Build", description: "Custom independent home execution.", tag: "House", image: imgConstructions },
       { title: "Residential Structure Work", description: "RCC and structural residential builds.", tag: "Structure", image: imgStructural },
-      { title: "Premium Site Execution", description: "Quality-first site execution and finish.", tag: "Site", image: imgSupervision },
+      { title: "Site Execution & Finish", description: "Quality-first site execution and finish.", tag: "Site", image: imgSupervision },
+      { title: "RCC Core Construction", description: "Heavy structural core execution.", tag: "RCC", image: blrRccFrame },
     ],
   },
   {
@@ -89,6 +94,7 @@ const CATEGORIES = [
       { title: "Elevation Planning", description: "Refined elevation studies and options.", tag: "Elevation", image: imgArchitectural },
       { title: "Working Drawings", description: "Contractor-ready working drawing sets.", tag: "Drawings", image: imgStructural },
       { title: "Material Specification", description: "Curated material and finish schedules.", tag: "Materials", image: blrKitchen },
+      { title: "3D Layout Blueprint", description: "Comprehensive architectural blueprints.", tag: "Blueprint", image: imgArchitectural },
     ],
   },
   {
@@ -98,8 +104,9 @@ const CATEGORIES = [
     cards: [
       { title: "RCC Frame Planning", description: "RCC framing designed for durability.", tag: "RCC", image: blrRccFrame },
       { title: "Column Beam Layout", description: "Optimized column-beam grids.", tag: "Layout", image: blrColumnBeam },
-      { title: "Foundation Coordination", description: "Foundation design coordination.", tag: "Foundation", image: imgConstructions },
-      { title: "Structural Drawing Review", description: "Peer review of structural drawings.", tag: "Review", image: imgArchitectural },
+      { title: "Foundation Detailing", description: "Foundation design coordination.", tag: "Foundation", image: imgConstructions },
+      { title: "Structural Review", description: "Peer review of structural drawings.", tag: "Review", image: imgArchitectural },
+      { title: "Structural Calculation", description: "Load calculations & safety checks.", tag: "Analysis", image: imgStructural },
     ],
   },
   {
@@ -109,8 +116,9 @@ const CATEGORIES = [
     cards: [
       { title: "Site Quality Inspection", description: "On-site quality checks at every stage.", tag: "QA", image: imgSupervision },
       { title: "Drawing Review On Site", description: "Live drawing review with contractors.", tag: "Review", image: imgArchitectural },
-      { title: "Contractor Coordination", description: "Coordination between site teams.", tag: "Coordination", image: imgConstructions },
-      { title: "Final Site Review", description: "Pre-handover audits and walkthroughs.", tag: "Audit", image: imgSupervision },
+      { title: "Contractor Supervision", description: "Coordination between site teams.", tag: "Site", image: imgConstructions },
+      { title: "Pre-Handover Audit", description: "Pre-handover audits and walkthroughs.", tag: "Audit", image: imgSupervision },
+      { title: "Material Testing Check", description: "Rigorous material strength testing.", tag: "Testing", image: blrColumnBeam },
     ],
   },
   {
@@ -121,7 +129,8 @@ const CATEGORIES = [
       { title: "3D Home Walkthrough", description: "Cinematic 3D home walkthrough render.", tag: "3D", image: imgWalkthroughs },
       { title: "Interior Render Preview", description: "Photorealistic interior preview.", tag: "Render", image: blrLivingDining },
       { title: "Commercial Walkthrough", description: "Immersive commercial space preview.", tag: "Commercial", image: blrReception },
-      { title: "Cinematic Space Preview", description: "Story-driven interior visualisation.", tag: "Preview", image: blrCeiling },
+      { title: "Cinematic Space Tour", description: "Story-driven interior visualisation.", tag: "Preview", image: blrCeiling },
+      { title: "VR Apartment Experience", description: "360-degree virtual tour experience.", tag: "VR", image: blrBedroom },
     ],
   },
 ];
@@ -171,11 +180,14 @@ export function FeaturedServiceListings() {
     }
   };
 
+  const topCards = category.cards.slice(0, 2);
+  const bottomCards = category.cards.slice(2, 5);
+
   return (
     <section
       style={{
         background: "linear-gradient(180deg,#FFFAF2 0%,#F6EFE4 100%)",
-        padding: "90px 0",
+        padding: "60px 0 80px 0",
       }}
     >
       <div className="container-prose">
@@ -185,16 +197,16 @@ export function FeaturedServiceListings() {
           <span style={{ fontSize: 11, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.32em", color: GOLD }}>
             Featured Service Listings
           </span>
-          <h2 className="mt-3 font-serif" style={{ fontSize: "clamp(2.25rem,5.2vw,4.5rem)", color: "#2B211B", lineHeight: 1.05, letterSpacing: "-0.01em" }}>
+          <h2 className="mt-3 font-serif" style={{ fontSize: "clamp(2rem,4.5vw,4rem)", color: "#2B211B", lineHeight: 1.08, letterSpacing: "-0.01em" }}>
             Featured <span style={{ color: GOLD }}>Listings</span>
           </h2>
-          <p style={{ marginTop: 12, fontSize: 14.5, lineHeight: 1.7, color: "#6F6258", maxWidth: 480 }}>
+          <p style={{ marginTop: 10, fontSize: 14.5, lineHeight: 1.7, color: "#6F6258", maxWidth: 480 }}>
             Explore our curated work across interiors, construction, supervision, and design execution.
           </p>
         </div>
 
         {/* ── Filter Buttons with Manual Scroll Controls ───────────────────── */}
-        <div style={{ position: "relative", marginTop: 32 }}>
+        <div style={{ position: "relative", marginTop: 28 }}>
           {/* Scroll Left Button */}
           <button
             type="button"
@@ -307,103 +319,100 @@ export function FeaturedServiceListings() {
           </div>
         </div>
 
-        {/* ── Cards ──────────────────────────────────────────────────────── */}
-        <div
-          key={activeKey}
-          className="featured-listings-grid"
-          style={{
-            marginTop: 24,
-            display: "grid",
-            gap: 16,
-          }}
-        >
-          {category.cards.map((card, idx) => (
-            <div
-              key={idx}
-              style={{
-                position: "relative",
-                overflow: "hidden",
-                borderRadius: 16,
-                border: "1px solid rgba(196,154,90,0.18)",
-                backgroundColor: "#1a140e",
-                // first card spans 2 rows on desktop
-                ...(idx === 0 ? { gridRow: "span 2" } : {}),
-                // second card spans 2 cols on desktop
-                ...(idx === 1 ? { gridColumn: "span 2" } : {}),
-              }}
-            >
-              <img
-                src={card.image}
-                alt={card.title}
-                loading={idx === 0 ? "eager" : "lazy"}
-                style={{
-                  position: "absolute",
-                  inset: 0,
-                  width: "100%",
-                  height: "100%",
-                  objectFit: "cover",
-                }}
-              />
-              {/* Dark gradient overlay — pointer-events none so it NEVER blocks clicks */}
+        {/* ── Cards Grid: 2 Cards Above + 3 Cards Below ──────────────────────── */}
+        <div key={activeKey} className="mt-6 flex flex-col gap-3.5 sm:gap-4">
+          
+          {/* Row 1: 2 Cards Above */}
+          <div className="grid grid-cols-2 gap-2.5 sm:gap-4">
+            {topCards.map((card, idx) => (
               <div
-                style={{
-                  position: "absolute",
-                  inset: 0,
-                  background: "linear-gradient(to top, rgba(0,0,0,0.82) 0%, rgba(0,0,0,0.3) 55%, transparent 100%)",
-                  pointerEvents: "none",
-                }}
-              />
-              {/* Text content */}
-              <div style={{ position: "absolute", left: 20, right: 20, bottom: 18, zIndex: 2 }}>
-                {card.tag && (
-                  <span style={{
-                    display: "inline-block",
-                    borderRadius: 9999,
-                    padding: "3px 10px",
-                    fontSize: 10,
-                    fontWeight: 600,
-                    textTransform: "uppercase",
-                    letterSpacing: "0.2em",
-                    background: "rgba(197,139,69,0.18)",
-                    color: GOLD_LIGHT,
-                    border: `1px solid rgba(197,139,69,0.4)`,
-                  }}>
-                    {card.tag}
-                  </span>
-                )}
-                <h3 style={{
-                  marginTop: 8,
-                  fontFamily: "var(--font-serif, Georgia, serif)",
-                  fontSize: "clamp(16px,1.8vw,22px)",
-                  lineHeight: 1.2,
-                  color: "#fff",
-                }}>
-                  {card.title}
-                </h3>
-                <div style={{ marginTop: 6, height: 2, width: 36, borderRadius: 9999, background: "#C49A5A" }} />
-                <p style={{ marginTop: 6, fontSize: 12.5, lineHeight: 1.6, color: "rgba(255,255,255,0.78)" }}>
-                  {card.description}
-                </p>
-                <Link
-                  to={category.to}
+                key={idx}
+                className="group relative overflow-hidden rounded-xl sm:rounded-2xl border border-[rgba(196,154,90,0.25)] bg-[#1a140e] transition-transform duration-300 hover:-translate-y-1"
+                style={{ height: "clamp(180px, 32vw, 290px)" }}
+              >
+                <img
+                  src={card.image}
+                  alt={card.title}
+                  loading={idx === 0 ? "eager" : "lazy"}
+                  className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
+                />
+                {/* Gradient overlay */}
+                <div
+                  className="pointer-events-none absolute inset-0"
                   style={{
-                    marginTop: 10,
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: 5,
-                    fontSize: 11,
-                    fontWeight: 700,
-                    textTransform: "uppercase",
-                    letterSpacing: "0.22em",
-                    color: GOLD_LIGHT,
-                    textDecoration: "none",
+                    background: "linear-gradient(to top, rgba(15,10,6,0.92) 0%, rgba(15,10,6,0.35) 60%, transparent 100%)",
                   }}
-                >
-                  View Details <ArrowUpRight size={12} />
-                </Link>
+                />
+                {/* Content */}
+                <div className="absolute inset-x-3 bottom-3 z-10 sm:inset-x-5 sm:bottom-4">
+                  {card.tag && (
+                    <span
+                      className="inline-block rounded-full px-2 py-0.5 text-[9px] sm:text-[10px] font-semibold uppercase tracking-wider text-[#E9C98A] border border-[#C58B45]/40 bg-[#C58B45]/20 mb-1 sm:mb-1.5"
+                    >
+                      {card.tag}
+                    </span>
+                  )}
+                  <h3 className="font-serif text-xs sm:text-base md:text-xl font-medium leading-tight text-white line-clamp-1 sm:line-clamp-2">
+                    {card.title}
+                  </h3>
+                  <p className="mt-1 hidden sm:block text-[11px] sm:text-xs text-white/75 line-clamp-1 md:line-clamp-2">
+                    {card.description}
+                  </p>
+                  <Link
+                    to={category.to}
+                    className="mt-1.5 sm:mt-2 inline-flex items-center gap-1 text-[9px] sm:text-[11px] font-bold uppercase tracking-wider text-[#E9C98A] hover:underline"
+                  >
+                    View <ArrowUpRight className="h-3 w-3" />
+                  </Link>
+                </div>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
+
+          {/* Row 2: 3 Cards Below */}
+          <div className="grid grid-cols-3 gap-2 sm:gap-4">
+            {bottomCards.map((card, idx) => (
+              <div
+                key={idx}
+                className="group relative overflow-hidden rounded-lg sm:rounded-2xl border border-[rgba(196,154,90,0.25)] bg-[#1a140e] transition-transform duration-300 hover:-translate-y-1"
+                style={{ height: "clamp(150px, 26vw, 240px)" }}
+              >
+                <img
+                  src={card.image}
+                  alt={card.title}
+                  loading="lazy"
+                  className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
+                />
+                {/* Gradient overlay */}
+                <div
+                  className="pointer-events-none absolute inset-0"
+                  style={{
+                    background: "linear-gradient(to top, rgba(15,10,6,0.92) 0%, rgba(15,10,6,0.3) 65%, transparent 100%)",
+                  }}
+                />
+                {/* Content */}
+                <div className="absolute inset-x-2 bottom-2.5 z-10 sm:inset-x-4 sm:bottom-4">
+                  {card.tag && (
+                    <span
+                      className="inline-block rounded-full px-1.5 py-0.5 text-[8px] sm:text-[9.5px] font-semibold uppercase tracking-wider text-[#E9C98A] border border-[#C58B45]/40 bg-[#C58B45]/20 mb-1"
+                    >
+                      {card.tag}
+                    </span>
+                  )}
+                  <h3 className="font-serif text-[11px] sm:text-sm md:text-lg font-medium leading-tight text-white line-clamp-1 sm:line-clamp-2">
+                    {card.title}
+                  </h3>
+                  <Link
+                    to={category.to}
+                    className="mt-1 inline-flex items-center gap-0.5 text-[8.5px] sm:text-[10px] font-bold uppercase tracking-wider text-[#E9C98A] hover:underline"
+                  >
+                    View <ArrowUpRight className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
+                  </Link>
+                </div>
+              </div>
+            ))}
+          </div>
+
         </div>
 
       </div>

@@ -388,8 +388,14 @@
 .reveal-ready [data-reveal]:not(.is-visible) {
   opacity: 0;
   transform: translateY(28px);
+  /* CSS-only safety: force-show after 4s even if IntersectionObserver never fires */
+  animation: reveal-safety-show 0.001s linear 4s forwards;
 }
-[data-reveal].is-visible { opacity: 1; transform: translateY(0); }
+/* Safety keyframe — sets opacity/transform back to visible after the delay */
+@keyframes reveal-safety-show {
+  to { opacity: 1; transform: translateY(0); }
+}
+[data-reveal].is-visible { opacity: 1; transform: translateY(0); animation: none; }
 [data-reveal-delay="1"].is-visible { transition-delay: 0.08s; }
 [data-reveal-delay="2"].is-visible { transition-delay: 0.16s; }
 [data-reveal-delay="3"].is-visible { transition-delay: 0.24s; }

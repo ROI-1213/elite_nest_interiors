@@ -125,7 +125,8 @@ export type GalleryItem = {
 export const galleryQuery = (opts: { onlyActive?: boolean } = {}) =>
   queryOptions({
     queryKey: ["gallery_items", opts.onlyActive ?? true],
-    staleTime: 5 * 60_000,
+    staleTime: 15 * 60_000,
+    retry: 1,
     queryFn: async (): Promise<GalleryItem[]> => {
       try {
         let q = supabase.from("gallery_items").select("*").order("display_order");
@@ -150,13 +151,15 @@ export const settingsQuery = queryOptions({
       return (data ?? { id: 1, business_name: "Elite Nest Interior" }) as SiteSettings;
     } catch (err) { return fallbackOnMissingContent(err, { id: 1, business_name: "Elite Nest Interiors" } as SiteSettings); }
   },
-  staleTime: 5 * 60_000,
+  staleTime: 15 * 60_000,
+  retry: 1,
 });
 
 export const categoriesQuery = (opts: { onlyActive?: boolean } = {}) =>
   queryOptions({
     queryKey: ["service_categories", opts.onlyActive ?? true],
-    staleTime: 5 * 60_000,
+    staleTime: 15 * 60_000,
+    retry: 1,
     queryFn: async (): Promise<Category[]> => {
       try {
         let q = supabase.from("service_categories").select("*").order("display_order");
@@ -171,7 +174,8 @@ export const categoriesQuery = (opts: { onlyActive?: boolean } = {}) =>
 export const servicesQuery = (opts: { onlyActive?: boolean } = {}) =>
   queryOptions({
     queryKey: ["services", opts.onlyActive ?? true],
-    staleTime: 5 * 60_000,
+    staleTime: 15 * 60_000,
+    retry: 1,
     queryFn: async (): Promise<Service[]> => {
       try {
         let q = supabase.from("services").select("*").order("display_order");
@@ -190,7 +194,8 @@ export const servicesQuery = (opts: { onlyActive?: boolean } = {}) =>
 export const serviceBySlugQuery = (slug: string) =>
   queryOptions({
     queryKey: ["service", slug],
-    staleTime: 5 * 60_000,
+    staleTime: 15 * 60_000,
+    retry: 1,
     queryFn: async (): Promise<Service | null> => {
       try {
         const { data, error } = await supabase
@@ -213,7 +218,8 @@ export const serviceBySlugQuery = (slug: string) =>
 export const testimonialsQuery = (opts: { onlyActive?: boolean } = {}) =>
   queryOptions({
     queryKey: ["testimonials", opts.onlyActive ?? true],
-    staleTime: 5 * 60_000,
+    staleTime: 15 * 60_000,
+    retry: 1,
     queryFn: async (): Promise<Testimonial[]> => {
       try {
         let q = supabase.from("testimonials").select("*").order("display_order");
@@ -228,7 +234,8 @@ export const testimonialsQuery = (opts: { onlyActive?: boolean } = {}) =>
 export const videoTestimonialsQuery = (opts: { onlyActive?: boolean } = {}) =>
   queryOptions({
     queryKey: ["video_testimonials", opts.onlyActive ?? true],
-    staleTime: 5 * 60_000,
+    staleTime: 15 * 60_000,
+    retry: 1,
     queryFn: async (): Promise<VideoTestimonial[]> => {
       try {
         let q = supabase.from("video_testimonials").select("*").order("display_order");

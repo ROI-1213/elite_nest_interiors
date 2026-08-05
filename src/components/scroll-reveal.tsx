@@ -11,10 +11,21 @@ export function Reveal({ children, delay = 0, as: Tag = "div", ...rest }: Props)
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
+
+    // If IntersectionObserver is not available (old browser / SSR edge case), show immediately
     if (typeof IntersectionObserver === "undefined") {
       el.classList.add("is-visible");
       return;
     }
+
+    // If element is already in the viewport (above the fold), show it immediately
+    // without waiting for the observer callback — prevents flash of invisible content
+    const rect = el.getBoundingClientRect();
+    if (rect.top < window.innerHeight && rect.bottom > 0) {
+      el.classList.add("is-visible");
+      return;
+    }
+
     const io = new IntersectionObserver(
       (entries) => {
         for (const e of entries) {
@@ -24,7 +35,8 @@ export function Reveal({ children, delay = 0, as: Tag = "div", ...rest }: Props)
           }
         }
       },
-      { threshold: 0.12, rootMargin: "0px 0px -40px 0px" },
+      // Larger rootMargin so elements just below the fold get triggered earlier
+      { threshold: 0.05, rootMargin: "0px 0px 60px 0px" },
     );
     io.observe(el);
     return () => io.disconnect();

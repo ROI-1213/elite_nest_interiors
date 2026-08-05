@@ -1,3 +1,5 @@
+import { useRef, useState, useEffect, useCallback } from "react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { SERVICE_ORDER, SERVICE_SLUGS, SERVICE_IMAGES } from "@/lib/services.config";
 
 type ServiceCard = {
@@ -12,20 +14,108 @@ const CATEGORIES: ServiceCard[] = SERVICE_ORDER.map((name) => ({
   image: SERVICE_IMAGES[name],
 }));
 
+// Triple the cards so infinite loop never shows a gap
+const LOOP = [...CATEGORIES, ...CATEGORIES, ...CATEGORIES];
+
+const CARD_W = 190; // card width
+const GAP = 20;     // gap-5
+const STEP = CARD_W + GAP;
+const SINGLE_SET = CATEGORIES.length * STEP; // width of one full set
 
 export function EndToEndServices() {
-  const loop = [...CATEGORIES, ...CATEGORIES];
+  const trackRef = useRef<HTMLDivElement>(null);
+  const animRef = useRef<number | null>(null);
+  const pausedRef = useRef(false);
+  const [canPrev, setCanPrev] = useState(true);
+  const [canNext, setCanNext] = useState(true);
+
+  // ── Auto-scroll ──────────────────────────────────────────────────
+  const startAutoScroll = useCallback(() => {
+    const el = trackRef.current;
+    if (!el) return;
+
+    // Cancel any previous loop before starting a new one (prevents duplicate loops on re-render)
+    if (animRef.current) {
+      cancelAnimationFrame(animRef.current);
+      animRef.current = null;
+    }
+
+    const tick = () => {
+      if (!pausedRef.current && el) {
+        el.scrollLeft -= 0.8; // scroll to the RIGHT (cards move right)
+
+        // Seamless loop: when we go below the 1st set, jump forward to 2nd set
+        if (el.scrollLeft <= SINGLE_SET) {
+          el.scrollLeft += SINGLE_SET;
+        }
+        // Safety: never go above 2nd set
+        if (el.scrollLeft >= SINGLE_SET * 2) {
+          el.scrollLeft -= SINGLE_SET;
+        }
+      }
+      animRef.current = requestAnimationFrame(tick);
+    };
+
+    animRef.current = requestAnimationFrame(tick);
+  }, []);
+
+  useEffect(() => {
+    const el = trackRef.current;
+    if (!el) return;
+
+    // Start in the middle set so we can scroll both ways infinitely
+    el.scrollLeft = SINGLE_SET;
+
+    startAutoScroll();
+
+    // Pause animation when tab is not visible (saves CPU, prevents drift)
+    const handleVisibility = () => {
+      if (document.hidden) {
+        pausedRef.current = true;
+      } else {
+        pausedRef.current = false;
+      }
+    };
+    document.addEventListener("visibilitychange", handleVisibility);
+
+    return () => {
+      if (animRef.current) cancelAnimationFrame(animRef.current);
+      animRef.current = null;
+      document.removeEventListener("visibilitychange", handleVisibility);
+    };
+  }, [startAutoScroll]);
+
+  // ── Pause on hover / touch ───────────────────────────────────────
+  const pause = () => { pausedRef.current = true; };
+  const resume = () => { pausedRef.current = false; };
+
+  // ── Arrow buttons ────────────────────────────────────────────────
+  const scroll = (dir: "prev" | "next") => {
+    const el = trackRef.current;
+    if (!el) return;
+
+    pausedRef.current = true;
+    el.scrollBy({ left: dir === "next" ? STEP * 2 : -STEP * 2, behavior: "smooth" });
+
+    // Resume auto-scroll after manual scroll settles
+    setTimeout(() => {
+      // Re-clamp to middle set after manual scroll
+      if (el.scrollLeft >= SINGLE_SET * 2) el.scrollLeft -= SINGLE_SET;
+      if (el.scrollLeft < SINGLE_SET) el.scrollLeft += SINGLE_SET;
+      pausedRef.current = false;
+    }, 600);
+  };
 
   return (
     <section
       className="relative overflow-hidden"
       style={{
-        background:
-          "linear-gradient(180deg, #FBF6EC 0%, #F6EEDD 55%, #FBF6EC 100%)",
+        background: "linear-gradient(180deg, #FBF6EC 0%, #F6EEDD 55%, #FBF6EC 100%)",
         paddingTop: 40,
         paddingBottom: 56,
       }}
     >
+      {/* Heading */}
       <div className="container-prose">
         <div className="text-center">
           <span
@@ -44,28 +134,39 @@ export function EndToEndServices() {
         </div>
       </div>
 
-      {/* Marquee */}
-      <div className="services-wrapper relative mt-8 md:mt-10">
+      {/* Carousel */}
+      <div
+        className="relative mt-8 md:mt-10"
+        onMouseEnter={pause}
+        onMouseLeave={resume}
+        onTouchStart={pause}
+        onTouchEnd={resume}
+      >
         {/* Edge fades */}
         <div
-          className="pointer-events-none absolute inset-y-0 left-0 z-10 w-16 md:w-28"
+          className="pointer-events-none absolute inset-y-0 left-0 z-10 w-16 md:w-24"
           style={{ background: "linear-gradient(90deg, #FBF6EC 0%, rgba(251,246,236,0) 100%)" }}
         />
         <div
-          className="pointer-events-none absolute inset-y-0 right-0 z-10 w-16 md:w-28"
+          className="pointer-events-none absolute inset-y-0 right-0 z-10 w-16 md:w-24"
           style={{ background: "linear-gradient(270deg, #FBF6EC 0%, rgba(251,246,236,0) 100%)" }}
         />
 
-        <div className="services-track flex w-max gap-5">
-          {loop.map((c, i) => (
+        {/* Scrollable track — hide scrollbar */}
+        <div
+          ref={trackRef}
+          className="flex gap-5 overflow-x-auto px-8 md:px-16 carousel-container"
+          style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+        >
+          {LOOP.map((c, i) => (
             <a
               key={`${c.slug}-${i}`}
               href={`/services/${c.slug}`}
               aria-label={c.title}
-              className="services-card group relative flex shrink-0 flex-col overflow-hidden rounded-[18px] border bg-[#FFFAF2] shadow-[0_12px_28px_-16px_rgba(120,90,40,0.35)] transition duration-500 hover:-translate-y-1 hover:shadow-[0_18px_34px_-16px_rgba(120,90,40,0.45)]"
+              className="group relative flex shrink-0 flex-col overflow-hidden rounded-[18px] border bg-[#FFFAF2] shadow-[0_12px_28px_-16px_rgba(120,90,40,0.35)] transition duration-500 hover:-translate-y-1 hover:shadow-[0_18px_34px_-16px_rgba(120,90,40,0.45)] service-card"
               style={{
                 borderColor: "rgba(184,135,69,0.25)",
-                width: 190,
+                width: "var(--card-width)",
                 height: 190,
               }}
             >
@@ -78,12 +179,10 @@ export function EndToEndServices() {
                   onError={(e) => {
                     const t = e.currentTarget;
                     t.onerror = null;
-                    // Fallback: hide the broken image and show a gradient placeholder
                     t.style.opacity = "0";
                   }}
                   className="h-full w-full object-cover transition duration-[1200ms] ease-out group-hover:scale-[1.08]"
                 />
-                {/* Gradient placeholder shown behind image (visible if image fails) */}
                 <div className="absolute inset-0 -z-10 bg-gradient-to-br from-[#EDE3D5] to-[#D6C6AE]" />
               </div>
               <div className="flex flex-1 items-center justify-center px-2.5 py-3 text-center">
@@ -97,25 +196,38 @@ export function EndToEndServices() {
             </a>
           ))}
         </div>
+
+        {/* Prev Arrow */}
+        <button
+          onClick={() => scroll("prev")}
+          aria-label="Previous services"
+          className="absolute left-2 top-1/2 z-20 -translate-y-1/2 flex h-10 w-10 items-center justify-center rounded-full border shadow-lg transition duration-300 hover:scale-110"
+          style={{
+            background: "linear-gradient(135deg,#C49A5A,#B8894D)",
+            borderColor: "rgba(184,137,77,0.3)",
+            color: "#fff",
+          }}
+        >
+          <ChevronLeft className="h-5 w-5" />
+        </button>
+
+        {/* Next Arrow */}
+        <button
+          onClick={() => scroll("next")}
+          aria-label="Next services"
+          className="absolute right-2 top-1/2 z-20 -translate-y-1/2 flex h-10 w-10 items-center justify-center rounded-full border shadow-lg transition duration-300 hover:scale-110"
+          style={{
+            background: "linear-gradient(135deg,#C49A5A,#B8894D)",
+            borderColor: "rgba(184,137,77,0.3)",
+            color: "#fff",
+          }}
+        >
+          <ChevronRight className="h-5 w-5" />
+        </button>
       </div>
 
       <style>{`
-        @keyframes marqueeServices {
-          from { transform: translateX(0); }
-          to { transform: translateX(-50%); }
-        }
-        .services-track {
-          animation: marqueeServices 45s linear infinite;
-        }
-        .services-wrapper:hover .services-track {
-          animation-play-state: paused;
-        }
-        @media (max-width: 768px) {
-          .services-track { animation-duration: 35s; }
-        }
-        @media (prefers-reduced-motion: reduce) {
-          .services-track { animation: none; }
-        }
+        div::-webkit-scrollbar { display: none; }
       `}</style>
     </section>
   );

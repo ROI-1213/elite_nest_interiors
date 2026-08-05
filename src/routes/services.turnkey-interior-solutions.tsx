@@ -1,3 +1,4 @@
+import { useRef, useEffect } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 
@@ -63,6 +64,107 @@ const timeline = [
   "Quality Check",
   "Handover",
 ];
+
+function TurnkeyMobileTimelineSlider({ timeline }: { timeline: readonly string[] }) {
+  const trackRef = useRef<HTMLDivElement>(null);
+  const animRef = useRef<number | null>(null);
+  const pausedRef = useRef(false);
+
+  const loopItems = [...timeline, ...timeline, ...timeline];
+  const CARD_W = 175;
+  const GAP = 14;
+  const STEP = CARD_W + GAP;
+  const SINGLE_SET = timeline.length * STEP;
+
+  useEffect(() => {
+    const el = trackRef.current;
+    if (!el) return;
+
+    // Cancel any previous loop to prevent duplicates on re-mount
+    if (animRef.current) {
+      cancelAnimationFrame(animRef.current);
+      animRef.current = null;
+    }
+
+    el.scrollLeft = SINGLE_SET;
+
+    const tick = () => {
+      if (!pausedRef.current && el) {
+        el.scrollLeft += 0.8;
+
+        if (el.scrollLeft >= SINGLE_SET * 2) {
+          el.scrollLeft -= SINGLE_SET;
+        }
+        if (el.scrollLeft < SINGLE_SET) {
+          el.scrollLeft += SINGLE_SET;
+        }
+      }
+      animRef.current = requestAnimationFrame(tick);
+    };
+
+    animRef.current = requestAnimationFrame(tick);
+
+    // Pause when tab is hidden
+    const handleVisibility = () => {
+      pausedRef.current = document.hidden;
+    };
+    document.addEventListener("visibilitychange", handleVisibility);
+
+    return () => {
+      if (animRef.current) cancelAnimationFrame(animRef.current);
+      animRef.current = null;
+      document.removeEventListener("visibilitychange", handleVisibility);
+    };
+  }, [SINGLE_SET]);
+
+  return (
+    <div
+      className="relative mt-8 md:hidden overflow-hidden"
+      onMouseEnter={() => { pausedRef.current = true; }}
+      onMouseLeave={() => { pausedRef.current = false; }}
+      onTouchStart={() => { pausedRef.current = true; }}
+      onTouchEnd={() => { pausedRef.current = false; }}
+    >
+      <div
+        className="pointer-events-none absolute inset-y-0 left-0 z-10 w-8"
+        style={{ background: "linear-gradient(90deg, #171717 0%, rgba(23,23,23,0) 100%)" }}
+      />
+      <div
+        className="pointer-events-none absolute inset-y-0 right-0 z-10 w-8"
+        style={{ background: "linear-gradient(270deg, #171717 0%, rgba(23,23,23,0) 100%)" }}
+      />
+
+      <div
+        ref={trackRef}
+        className="flex gap-[14px] overflow-x-auto pb-4 pt-2"
+        style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+      >
+        {loopItems.map((s, i) => {
+          const stepNum = (i % timeline.length) + 1;
+          return (
+            <div
+              key={`${s}-${i}`}
+              className="flex shrink-0 flex-col justify-between rounded-2xl border border-[#B8894D]/35 bg-[#221F1B] p-5 shadow-lg"
+              style={{ width: CARD_W, height: 135 }}
+            >
+              <div className="flex items-center justify-between">
+                <span className="grid h-10 w-10 place-items-center rounded-full border border-[#B8894D]/50 bg-[#171717] font-serif text-sm font-semibold text-[#B8894D]">
+                  {String(stepNum).padStart(2, "0")}
+                </span>
+                <span className="text-[10px] font-semibold uppercase tracking-widest text-[#B8894D]/70">
+                  Step {stepNum}
+                </span>
+              </div>
+              <p className="font-serif text-base leading-snug text-ivory font-medium">
+                {s}
+              </p>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
 
 const advantages = [
   { Icon: UserCheck, title: "Single Point Contact", body: "One project manager handling every detail." },
@@ -212,7 +314,7 @@ function TurnkeyPage() {
       </section>
 
       {/* TURNKEY PROCESS TIMELINE */}
-      <section className="bg-charcoal py-20 text-ivory md:py-28">
+      <section className="bg-charcoal py-20 text-ivory md:py-28 overflow-hidden">
         <div className="container-prose">
           <Reveal>
             <p className="eyebrow text-accent">Turnkey process</p>
@@ -221,8 +323,13 @@ function TurnkeyPage() {
               A structured, transparent path from first call to key handover.
             </p>
           </Reveal>
-          <div className="relative mt-14">
-            <div className="pointer-events-none absolute left-0 right-0 top-6 hidden h-px bg-gradient-to-r from-transparent via-accent/50 to-transparent md:block" />
+
+          {/* Mobile View Only: Continuous Auto-sliding Carousel */}
+          <TurnkeyMobileTimelineSlider timeline={timeline} />
+
+          {/* Desktop View Only: Standard Grid Timeline */}
+          <div className="relative mt-14 hidden md:block">
+            <div className="pointer-events-none absolute left-0 right-0 top-6 h-px bg-gradient-to-r from-transparent via-accent/50 to-transparent" />
             <ol className="grid gap-6 md:grid-cols-3 lg:grid-cols-9">
               {timeline.map((s, i) => (
                 <Reveal key={s} delay={(i % 3) as 0 | 1 | 2}>

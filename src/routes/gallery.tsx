@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
-import { ArrowRight, Eye, MapPin, Play, X } from "lucide-react";
+import { useMemo, useState, useCallback, useEffect, useRef } from "react";
+import { ArrowRight, Eye, MapPin, Play, X, ChevronLeft, ChevronRight } from "lucide-react";
 import { SiteLayout } from "@/components/site-layout";
 import { Reveal } from "@/components/scroll-reveal";
 import {
@@ -163,6 +163,19 @@ function GalleryPage() {
   const [filter, setFilter] = useState<Filter>("All");
   const [imageModal, setImageModal] = useState<Item | null>(null);
   const [videoModal, setVideoModal] = useState<string | null>(null);
+  const filterScrollRef = useRef<HTMLDivElement>(null);
+  const filterButtonRefs = useRef<Map<string, HTMLButtonElement>>(new Map());
+
+  const scrollFilters = useCallback((dir: "left" | "right") => {
+    const el = filterScrollRef.current;
+    if (!el) return;
+    el.scrollBy({ left: dir === "left" ? -140 : 140, behavior: "smooth" });
+  }, []);
+
+  useEffect(() => {
+    const btn = filterButtonRefs.current.get(filter);
+    if (btn) btn.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
+  }, [filter]);
 
   const items: Item[] = useMemo(() => {
     const seen = new Set<string>(CURATED.map((i) => i.url));
@@ -225,20 +238,45 @@ function GalleryPage() {
 
       {/* FILTERS */}
       <section className="sticky top-16 z-30 border-y border-border bg-bone/95 backdrop-blur">
-        <div className="container-prose flex gap-2 overflow-x-auto py-4">
-          {FILTERS.map((f) => (
-            <button
-              key={f}
-              onClick={() => setFilter(f)}
-              className={`shrink-0 whitespace-nowrap rounded-full border px-4 py-2 text-xs font-semibold uppercase tracking-[0.15em] transition ${
-                filter === f
-                  ? "border-accent bg-accent text-white"
-                  : "border-border bg-card text-foreground/70 hover:border-accent hover:text-accent"
-              }`}
-            >
-              {f}
-            </button>
-          ))}
+        <div className="relative container-prose">
+          {/* Left arrow - mobile only */}
+          <button
+            onClick={() => scrollFilters("left")}
+            className="md:hidden absolute left-0 top-1/2 -translate-y-1/2 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-bone/90 shadow-md text-foreground/70 hover:text-accent transition"
+            aria-label="Scroll filters left"
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </button>
+
+          {/* Scrollable pills */}
+          <div
+            ref={filterScrollRef}
+            className="flex gap-2 overflow-x-auto py-4 scroll-smooth [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:px-0 px-10"
+          >
+            {FILTERS.map((f) => (
+              <button
+                key={f}
+                ref={(el) => { if (el) filterButtonRefs.current.set(f, el); else filterButtonRefs.current.delete(f); }}
+                onClick={() => setFilter(f)}
+                className={`shrink-0 whitespace-nowrap rounded-full border px-4 py-2 text-xs font-semibold uppercase tracking-[0.15em] transition ${
+                  filter === f
+                    ? "border-accent bg-accent text-white"
+                    : "border-border bg-card text-foreground/70 hover:border-accent hover:text-accent"
+                }`}
+              >
+                {f}
+              </button>
+            ))}
+          </div>
+
+          {/* Right arrow - mobile only */}
+          <button
+            onClick={() => scrollFilters("right")}
+            className="md:hidden absolute right-0 top-1/2 -translate-y-1/2 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-bone/90 shadow-md text-foreground/70 hover:text-accent transition"
+            aria-label="Scroll filters right"
+          >
+            <ChevronRight className="h-4 w-4" />
+          </button>
         </div>
       </section>
 

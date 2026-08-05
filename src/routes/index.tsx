@@ -134,7 +134,7 @@ function HomePage() {
           />
         </div>
 
-        <div className="container-prose relative flex min-h-[inherit] items-center pt-[160px] pb-10 md:pt-[180px] md:pb-12">
+        <div className="container-prose relative flex min-h-[inherit] items-start pt-[100px] pb-10 md:pt-[110px] md:pb-12">
           <div className="max-w-xl lg:max-w-2xl">
             <Reveal delay={1}>
               <div className="inline-flex items-center gap-3">

@@ -133,7 +133,19 @@ function RootComponent() {
 
   useEffect(() => {
     document.documentElement.classList.add("reveal-ready");
-    return () => document.documentElement.classList.remove("reveal-ready");
+
+    // JS safety net: after 3.5 s, force-show any [data-reveal] elements that
+    // IntersectionObserver missed (low-end mobile, slow Cloudflare cold starts).
+    const safetyTimer = setTimeout(() => {
+      document.querySelectorAll("[data-reveal]:not(.is-visible)").forEach((el) => {
+        el.classList.add("is-visible");
+      });
+    }, 3500);
+
+    return () => {
+      clearTimeout(safetyTimer);
+      document.documentElement.classList.remove("reveal-ready");
+    };
   }, []);
 
   return (

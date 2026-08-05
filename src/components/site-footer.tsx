@@ -69,32 +69,35 @@ export function SiteFooter() {
           </div>
         </div>
 
-        <div className="md:col-span-2">
-          <p className="label-uppercase text-[#FFE2B0]">Explore</p>
-          <ul className="mt-5 space-y-2.5 text-sm">
-            {QUICK_LINKS.map((l) => (
-              <li key={l.to}>
-                <Link to={l.to} className="inline-block text-[#FFF8EE]/86 transition hover:translate-x-1 hover:text-white">{l.label}</Link>
-              </li>
-            ))}
-          </ul>
-        </div>
+        {/* Explore & Services — Side by side on mobile, distinct columns on desktop */}
+        <div className="grid grid-cols-2 gap-6 md:col-span-5 md:grid-cols-5 md:gap-8">
+          <div className="md:col-span-2">
+            <p className="label-uppercase text-[#FFE2B0]">Explore</p>
+            <ul className="mt-5 space-y-2.5 text-sm">
+              {QUICK_LINKS.map((l) => (
+                <li key={l.to}>
+                  <Link to={l.to} className="inline-block text-[#FFF8EE]/86 transition hover:translate-x-1 hover:text-white">{l.label}</Link>
+                </li>
+              ))}
+            </ul>
+          </div>
 
-        <div className="md:col-span-3">
-          <p className="label-uppercase text-[#FFE2B0]">Services</p>
-          <ul className="mt-5 space-y-2.5 text-sm">
-            {SERVICE_LINKS.map((l) => (
-              <li key={l.slug}>
-                <Link
-                  to="/services/$slug"
-                  params={{ slug: l.slug }}
-                  className="inline-block text-[#FFF8EE]/86 transition hover:translate-x-1 hover:text-white"
-                >
-                  {l.label}
-                </Link>
-              </li>
-            ))}
-          </ul>
+          <div className="md:col-span-3">
+            <p className="label-uppercase text-[#FFE2B0]">Services</p>
+            <ul className="mt-5 space-y-2.5 text-sm">
+              {SERVICE_LINKS.map((l) => (
+                <li key={l.slug}>
+                  <Link
+                    to="/services/$slug"
+                    params={{ slug: l.slug }}
+                    className="inline-block text-[#FFF8EE]/86 transition hover:translate-x-1 hover:text-white"
+                  >
+                    {l.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
         </div>
 
         <div className="md:col-span-3">

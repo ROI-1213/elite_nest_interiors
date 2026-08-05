@@ -155,7 +155,7 @@ export function SiteHeader({ transparent = false }: { transparent?: boolean }) {
                 <img
                   src={logo}
                   alt={settings?.business_name ?? "Elite Nest Interiors"}
-                  className="h-full w-auto max-h-[78%] md:max-h-[84%] object-contain object-center scale-[2.0] md:scale-[2.4] origin-center transition-transform duration-300 hover:scale-[2.5]"
+                  className="h-full w-auto max-h-[78%] md:max-h-[84%] object-contain object-center scale-[3.0] md:scale-[2.4] origin-center transition-transform duration-300 hover:scale-[3.2]"
                   style={{ mixBlendMode: "multiply" }}
                 />
               </Link>
@@ -394,18 +394,7 @@ export function SiteHeader({ transparent = false }: { transparent?: boolean }) {
               Book a Free Consultation
             </Link>
             
-            <div className="flex items-center justify-center gap-4 mt-4">
-              {socials.map(({ href, label, Icon }) => (
-                <a
-                  key={label}
-                  href={href}
-                  aria-label={label}
-                  className="grid h-10 w-10 place-items-center rounded-full border border-[#E5D4BD] text-[#B98232] hover:bg-[#B98232] hover:text-white transition-colors"
-                >
-                  <Icon className="h-4 w-4" />
-                </a>
-              ))}
-            </div>
+
           </div>
         </div>
       </div>
