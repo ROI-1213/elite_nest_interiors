@@ -41,15 +41,16 @@ export function SiteFooter() {
 
       <div className="container-prose grid gap-12 py-20 md:grid-cols-12">
         <div className="md:col-span-4">
-          {/* Logo: PNG has large transparent padding top/bottom. Show only the logo content band. */}
-          <Link to="/" className="block overflow-hidden" style={{ height: "110px" }}>
-            <img
-              src={logo}
-              alt={s?.business_name ?? "Elite Nest Interiors"}
-              className="w-64 md:w-80 h-auto object-contain object-left transition-transform duration-300 hover:scale-105"
-              style={{ mixBlendMode: "screen", marginTop: "-80px" }}
-            />
-          </Link>
+          <div className="overflow-hidden" style={{ height: "110px" }}>
+            <Link to="/">
+              <img
+                src={logo}
+                alt={s?.business_name ?? "Elite Nest Interiors"}
+                className="w-72 md:w-80 h-auto"
+                style={{ marginTop: "-75px" }}
+              />
+            </Link>
+          </div>
           <p className="mt-3 max-w-sm text-sm leading-relaxed text-[#FFF8EE]/78">
             {s?.footer_about ??
               "End-to-end construction, architecture and interior solutions — crafted for those who notice the details. Trusted by homeowners and businesses across India."}
