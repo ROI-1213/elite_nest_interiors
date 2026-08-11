@@ -259,7 +259,8 @@ export const settingsQuery = queryOptions({
       return DEFAULT_SITE_SETTINGS;
     }
   },
-  staleTime: 15 * 60_000,
+  staleTime: 30 * 1000, // 30 seconds to reduce caching delay
+  refetchOnWindowFocus: true,
   retry: 1,
 });
 
