@@ -7,10 +7,12 @@
     "dev": "vite dev",
     "build": "vite build",
     "build:dev": "vite build --mode development",
+    "start": "node .output/server/index.mjs",
     "preview": "vite preview",
     "lint": "eslint .",
     "format": "prettier --write .",
-    "sync": "node scripts/sync-site-content.js"
+    "sync": "node scripts/sync-site-content.js",
+    "db:init": "node scripts/init-db.js"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
