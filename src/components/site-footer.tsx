@@ -41,13 +41,13 @@ export function SiteFooter() {
 
       <div className="container-prose grid gap-12 py-20 md:grid-cols-12">
         <div className="md:col-span-4">
-          <div className="overflow-hidden" style={{ height: "110px" }}>
+          <div className="overflow-hidden" style={{ height: "140px" }}>
             <Link to="/">
               <img
                 src={logo}
                 alt={s?.business_name ?? "Elite Nest Interiors"}
                 className="w-72 md:w-80 h-auto"
-                style={{ marginTop: "-75px" }}
+                style={{ marginTop: "-145px" }}
               />
             </Link>
           </div>
