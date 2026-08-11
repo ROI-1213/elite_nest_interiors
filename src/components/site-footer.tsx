@@ -45,7 +45,7 @@ export function SiteFooter() {
             <img
               src={logo}
               alt={s?.business_name ?? "Elite Nest Interiors"}
-              className="h-36 md:h-44 w-auto object-contain object-left transition-transform duration-300 hover:scale-105"
+              className="h-56 md:h-72 w-auto object-contain object-left transition-transform duration-300 hover:scale-105"
               style={{ mixBlendMode: "screen" }}
             />
           </Link>
