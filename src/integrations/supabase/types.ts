@@ -207,7 +207,10 @@ export type Database = {
       site_settings: {
         Row: {
           about_content: string | null
+          about_hero_subtitle: string | null
+          about_hero_title: string | null
           about_image_url: string | null
+          about_positioning: string | null
           about_title: string | null
           address: string | null
           business_hours: string | null
@@ -215,11 +218,14 @@ export type Database = {
           cta_subtitle: string | null
           cta_title: string | null
           email: string | null
+          elitenest_points: string | null
+          elitenest_title: string | null
           facebook_url: string | null
           footer_about: string | null
           footer_copyright: string | null
           google_map_url: string | null
           hero_cta_label: string | null
+          hero_eyebrow: string | null
           hero_image_url: string | null
           hero_subtitle: string | null
           hero_title: string | null
@@ -227,19 +233,26 @@ export type Database = {
           instagram_url: string | null
           linkedin_url: string | null
           mission_content: string | null
+          mission_title: string | null
           phone: string | null
           pinterest_url: string | null
           tagline: string | null
+          traditional_firm_points: string | null
+          traditional_firm_title: string | null
           twitter_url: string | null
           updated_at: string
           vision_content: string | null
           vision_title: string | null
           whatsapp: string | null
+          why_us_title: string | null
           youtube_url: string | null
         }
         Insert: {
           about_content?: string | null
+          about_hero_subtitle?: string | null
+          about_hero_title?: string | null
           about_image_url?: string | null
+          about_positioning?: string | null
           about_title?: string | null
           address?: string | null
           business_hours?: string | null
@@ -247,11 +260,14 @@ export type Database = {
           cta_subtitle?: string | null
           cta_title?: string | null
           email?: string | null
+          elitenest_points?: string | null
+          elitenest_title?: string | null
           facebook_url?: string | null
           footer_about?: string | null
           footer_copyright?: string | null
           google_map_url?: string | null
           hero_cta_label?: string | null
+          hero_eyebrow?: string | null
           hero_image_url?: string | null
           hero_subtitle?: string | null
           hero_title?: string | null
@@ -259,19 +275,26 @@ export type Database = {
           instagram_url?: string | null
           linkedin_url?: string | null
           mission_content?: string | null
+          mission_title?: string | null
           phone?: string | null
           pinterest_url?: string | null
           tagline?: string | null
+          traditional_firm_points?: string | null
+          traditional_firm_title?: string | null
           twitter_url?: string | null
           updated_at?: string
           vision_content?: string | null
           vision_title?: string | null
           whatsapp?: string | null
+          why_us_title?: string | null
           youtube_url?: string | null
         }
         Update: {
           about_content?: string | null
+          about_hero_subtitle?: string | null
+          about_hero_title?: string | null
           about_image_url?: string | null
+          about_positioning?: string | null
           about_title?: string | null
           address?: string | null
           business_hours?: string | null
@@ -279,11 +302,14 @@ export type Database = {
           cta_subtitle?: string | null
           cta_title?: string | null
           email?: string | null
+          elitenest_points?: string | null
+          elitenest_title?: string | null
           facebook_url?: string | null
           footer_about?: string | null
           footer_copyright?: string | null
           google_map_url?: string | null
           hero_cta_label?: string | null
+          hero_eyebrow?: string | null
           hero_image_url?: string | null
           hero_subtitle?: string | null
           hero_title?: string | null
@@ -291,14 +317,18 @@ export type Database = {
           instagram_url?: string | null
           linkedin_url?: string | null
           mission_content?: string | null
+          mission_title?: string | null
           phone?: string | null
           pinterest_url?: string | null
           tagline?: string | null
+          traditional_firm_points?: string | null
+          traditional_firm_title?: string | null
           twitter_url?: string | null
           updated_at?: string
           vision_content?: string | null
           vision_title?: string | null
           whatsapp?: string | null
+          why_us_title?: string | null
           youtube_url?: string | null
         }
         Relationships: []

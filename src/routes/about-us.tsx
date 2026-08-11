@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
+import { Fragment } from "react";
 import {
   ArrowRight,
   Building2,
@@ -52,7 +53,9 @@ export const Route = createFileRoute("/about-us")({
       },
     ],
   }),
-  loader: ({ context }) => { context.queryClient.prefetchQuery(settingsQuery); },
+  loader: async ({ context }) => {
+    await context.queryClient.prefetchQuery(settingsQuery);
+  },
   component: AboutPage,
 });
 
@@ -126,6 +129,17 @@ const trustPoints = [
 function AboutPage() {
   const { data: s = {} as any } = useQuery(settingsQuery);
   const heroBg = s.about_image_url ?? heroImg;
+  const aboutHeroTitle: string[] = (s.about_hero_title ?? "Design That Performs\nBeyond Appearance.")
+    .split("\n")
+    .map((l: string) => l.trim())
+    .filter(Boolean);
+  const aboutHeroSubtitle: string =
+    s.about_hero_subtitle ??
+    "We create spaces that are functional, durable, aesthetically refined, and intelligently planned — thoughtfully built from concept to completion, at Indian prices.";
+  const aboutPositioning: string[] = (s.about_positioning ?? "World-Class Interiors.\nThoughtfully Built.")
+    .split("\n")
+    .map((l: string) => l.trim())
+    .filter(Boolean);
 
   return (
     <SiteLayout>
@@ -144,14 +158,17 @@ function AboutPage() {
             </Reveal>
             <Reveal delay={1}>
               <h1 className="mt-8 max-w-3xl font-serif text-5xl leading-[1.05] text-balance md:text-7xl">
-                Design That Performs<br />Beyond Appearance.
+                {aboutHeroTitle.map((l, i) => (
+                  <Fragment key={i}>
+                    {i > 0 && <br />}
+                    {l}
+                  </Fragment>
+                ))}
               </h1>
             </Reveal>
             <Reveal delay={2}>
               <p className="mt-8 max-w-xl text-ivory/75 md:text-lg">
-                We create spaces that are functional, durable, aesthetically refined, and
-                intelligently planned — thoughtfully built from concept to completion, at
-                Indian prices.
+                {aboutHeroSubtitle}
               </p>
             </Reveal>
             <Reveal delay={3}>
@@ -168,7 +185,12 @@ function AboutPage() {
               <div className="border-l border-ivory/20 pl-6">
                 <p className="text-[11px] uppercase tracking-[0.28em] text-ivory/50">Positioning</p>
                 <p className="mt-4 font-serif text-2xl leading-snug text-ivory/90">
-                  World-Class Interiors.<br />Thoughtfully Built.
+                  {aboutPositioning.map((l, i) => (
+                    <Fragment key={i}>
+                      {i > 0 && <br />}
+                      {l}
+                    </Fragment>
+                  ))}
                 </p>
               </div>
             </Reveal>

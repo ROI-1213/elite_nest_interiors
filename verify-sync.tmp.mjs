@@ -1,0 +1,12 @@
+import pg from 'pg';
+const c = new pg.Client({ connectionString: process.env.DATABASE_URL || 'postgresql://elite47:z74zT9hvpAYamMsKjkbG5Guhm@168.119.64.101:5432/elite47', ssl: false });
+await c.connect();
+const g = await c.query("SELECT COUNT(*)::int AS total, COUNT(*) FILTER (WHERE image_url LIKE 'asset://%') AS asset, COUNT(*) FILTER (WHERE image_url NOT LIKE 'asset://%') AS nonasset FROM public.gallery_items");
+console.log('gallery:', JSON.stringify(g.rows[0]));
+const dup = await c.query("SELECT title, COUNT(*) AS n FROM public.gallery_items GROUP BY title HAVING COUNT(*) > 1");
+console.log('duplicate titles:', dup.rowCount);
+const t = await c.query('SELECT COUNT(*)::int AS c FROM public.testimonials');
+console.log('testimonials:', JSON.stringify(t.rows[0]));
+const s = await c.query("SELECT hero_eyebrow, hero_title, why_us_title, about_hero_title, about_positioning FROM public.site_settings WHERE id = 1");
+console.log('settings:', JSON.stringify(s.rows[0]));
+await c.end();

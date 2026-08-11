@@ -132,8 +132,18 @@ export function SiteFooter() {
       </div>
 
       <div className="border-t border-[#FFF8EE]/22" style={{ background: "rgba(0,0,0,0.08)" }}>
-        <div className="container-prose flex flex-col items-center justify-between gap-3 py-6 text-xs text-[#FFF8EE]/75 md:flex-row">
+        <div className="container-prose relative flex flex-col items-center justify-between gap-3 py-6 text-xs text-[#FFF8EE]/75 md:flex-row">
           <p>{s?.footer_copyright ?? `© ${new Date().getFullYear()} Elite Nest Interiors. All rights reserved.`}</p>
+          <p className="md:absolute md:left-1/2 md:-translate-x-1/2 text-center">
+            <a
+              href="https://wa.me/919945379333"
+              target="_blank"
+              rel="noreferrer noopener"
+              className="underline hover:text-white transition-colors"
+            >
+              Developed by ROI Infotech
+            </a>
+          </p>
           <p>Crafted with care · Premium turnkey design build studio</p>
         </div>
       </div>

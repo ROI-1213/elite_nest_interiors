@@ -10,23 +10,9 @@ import {
   settingsQuery,
   videoTestimonialsQuery,
 } from "@/lib/queries";
-import imgConstruction from "@/assets/gallery-construction-1.jpg";
-import imgResidential from "@/assets/gallery-residential-1.jpg";
+import { CURATED_GALLERY, resolveGalleryImageUrl } from "@/lib/gallery.config";
 import imgCommercial from "@/assets/gallery-commercial-1.jpg";
-import imgRenovation from "@/assets/gallery-renovation-1.jpg";
-import imgTurnkey from "@/assets/gallery-turnkey-1.jpg";
-import imgBedroom from "@/assets/gallery-bedroom-1.jpg";
-import imgKitchen from "@/assets/gallery-kitchen-1.jpg";
-import imgPooja from "@/assets/gallery-pooja-1.jpg";
-import imgDining from "@/assets/gallery-dining-1.jpg";
-import imgFacade from "@/assets/gallery-facade-1.jpg";
-
 import imgBlrLiving from "@/assets/gallery-blr-living.png";
-import imgBlrBedroom from "@/assets/gallery-blr-bedroom.png";
-import imgBlrKitchen from "@/assets/gallery-blr-kitchen.png";
-import imgBlrPooja from "@/assets/gallery-blr-pooja.png";
-import imgBlrDining from "@/assets/gallery-blr-dining.png";
-import imgBlrFacade from "@/assets/gallery-blr-facade.png";
 
 const heroImg = imgBlrLiving;
 
@@ -46,12 +32,14 @@ export const Route = createFileRoute("/gallery")({
       },
     ],
   }),
-  loader: ({ context }) => {
+  loader: async ({ context }) => {
     try {
-      context?.queryClient?.prefetchQuery(galleryQuery());
-      context?.queryClient?.prefetchQuery(servicesQuery());
-      context?.queryClient?.prefetchQuery(videoTestimonialsQuery());
-      context?.queryClient?.prefetchQuery(settingsQuery);
+      await Promise.all([
+        context?.queryClient?.prefetchQuery(galleryQuery()),
+        context?.queryClient?.prefetchQuery(servicesQuery()),
+        context?.queryClient?.prefetchQuery(videoTestimonialsQuery()),
+        context?.queryClient?.prefetchQuery(settingsQuery),
+      ]);
     } catch (_) {}
   },
 
@@ -112,46 +100,14 @@ type Item = {
   location: string | null;
 };
 
-// Dedicated Bengaluru / South Indian premium interior & construction gallery imagery.
-// Each image is used exactly once without repetition across sections.
-const CURATED: Item[] = [
-  // Construction
-  { id: "c1", url: imgConstruction, title: "Villa Under Construction, Whitefield", category: "Construction", description: "Premium independent villa framing works in progress.", location: "Whitefield, Bengaluru" },
-  { id: "c2", url: imgBlrFacade, title: "Modern Facade, Hebbal", category: "Construction", description: "Contemporary Bengaluru villa exterior with teak slatted screens.", location: "Hebbal" },
-
-  // Residential Interiors
-  { id: "r1", url: imgBlrLiving, title: "Warm Family Living Room, Jayanagar", category: "Residential Interiors", description: "Teak paneling, plush seating, and warm golden lighting.", location: "Jayanagar" },
-  { id: "r2", url: imgResidential, title: "Contemporary Residence, Basavanagudi", category: "Residential Interiors", description: "Refined materials, warm tones, and modern Indian elegance.", location: "Basavanagudi" },
-
-  // Commercial Interiors
-  { id: "co1", url: imgCommercial, title: "Premium Office Reception, MG Road", category: "Commercial Interiors", description: "Warm teak paneling and marble lounge.", location: "MG Road" },
-
-  // Renovation
-  { id: "rn1", url: imgRenovation, title: "Renovated South Indian Home", category: "Renovation", description: "Restored heritage feel with modern comfort.", location: "Malleshwaram" },
-
-  // Turnkey Projects
-  { id: "t1", url: imgTurnkey, title: "Completed Villa Handover, Devanahalli", category: "Turnkey Projects", description: "Turnkey luxury villa with grand foyer.", location: "Devanahalli" },
-  { id: "t2", url: imgFacade, title: "Modern Villa Exterior, Yelahanka", category: "Turnkey Projects", description: "End-to-end contemporary villa build.", location: "Yelahanka" },
-
-  // Bedrooms
-  { id: "b1", url: imgBlrBedroom, title: "Master Bedroom Suite, JP Nagar", category: "Bedrooms", description: "Custom teak wardrobe with cove ceiling lighting.", location: "JP Nagar" },
-  { id: "b2", url: imgBedroom, title: "Luxury Guest Bedroom, Koramangala", category: "Bedrooms", description: "Warm wooden accents with ambient bedside lighting.", location: "Koramangala" },
-
-  // Living Rooms
-  { id: "l1", url: imgBlrLiving, title: "Luxury Living Lounge, Indiranagar", category: "Living Rooms", description: "Teak wood paneling with soft ambient illumination.", location: "Indiranagar" },
-
-  // Kitchens
-  { id: "k1", url: imgBlrKitchen, title: "Bengaluru Modular Kitchen, Kaggadasapura", category: "Kitchens", description: "Dark granite countertops with warm oak cabinetry.", location: "Kaggadasapura" },
-  { id: "k2", url: imgKitchen, title: "Modern Parallel Kitchen, HSR Layout", category: "Kitchens", description: "Indian-friendly layout with durable quartz surfaces.", location: "HSR Layout" },
-
-  // Dining
-  { id: "d1", url: imgBlrDining, title: "Villa Dining Area, Kanakapura Road", category: "Dining", description: "Solid teak 6-seater dining table with brass chandelier.", location: "Kanakapura Road" },
-  { id: "d2", url: imgDining, title: "Apartment Dining Zone, Sarjapur", category: "Dining", description: "Warm wood dining setup under warm ambient light.", location: "Sarjapur Road" },
-
-  // Pooja / Foyer
-  { id: "p1", url: imgBlrPooja, title: "Traditional-Modern Pooja Room, Girinagar", category: "Pooja / Foyer", description: "Carved teak mandir with brass diyas and marble floor.", location: "Girinagar" },
-  { id: "p2", url: imgPooja, title: "Grand Foyer Entrance, Sadashivanagar", category: "Pooja / Foyer", description: "Teak wood entryway with warm golden accents.", location: "Sadashivanagar" },
-];
+const CURATED_ITEMS: Item[] = CURATED_GALLERY.map((c) => ({
+  id: c.id,
+  url: c.url,
+  title: c.title,
+  category: c.category as Category,
+  description: c.description,
+  location: c.location,
+}));
 
 
 function GalleryPage() {
@@ -178,18 +134,15 @@ function GalleryPage() {
   }, [filter]);
 
   const items: Item[] = useMemo(() => {
-    const seen = new Set<string>(CURATED.map((i) => i.url));
-    const fromGallery: Item[] = gallery
-      .filter((g) => !seen.has(g.image_url) && (seen.add(g.image_url), true))
-      .map((g) => ({
-        id: g.id,
-        url: g.image_url,
-        title: g.title,
-        category: mapCategory(g.category),
-        description: g.description,
-        location: null,
-      }));
-    return [...CURATED, ...fromGallery];
+    if (gallery.length === 0) return CURATED_ITEMS;
+    return gallery.map((g) => ({
+      id: g.id,
+      url: resolveGalleryImageUrl(g),
+      title: g.title,
+      category: mapCategory(g.category),
+      description: g.description,
+      location: null,
+    }));
   }, [gallery]);
 
 

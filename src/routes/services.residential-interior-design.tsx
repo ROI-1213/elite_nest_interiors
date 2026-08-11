@@ -24,9 +24,13 @@ import blrCeiling from "@/assets/blr-ceiling.jpg";
 import blrDining from "@/assets/blr-dining.jpg";
 
 export const Route = createFileRoute("/services/residential-interior-design")({
-  loader: ({ context }) => {
-    context.queryClient.prefetchQuery(settingsQuery);
-    context.queryClient.prefetchQuery(galleryQuery());
+  loader: async ({ context }) => {
+    try {
+      await Promise.all([
+        context.queryClient.prefetchQuery(settingsQuery),
+        context.queryClient.prefetchQuery(galleryQuery()),
+      ]);
+    } catch (_) {}
   },
   head: () => ({
     meta: [

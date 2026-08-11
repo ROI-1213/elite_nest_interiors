@@ -20,9 +20,9 @@ import walkthroughRender2 from "@/assets/walkthrough-render2.jpg";
 import walkthroughCinematic from "@/assets/walkthrough-cinematic.jpg";
 
 export const Route = createFileRoute("/services/3d-walkthrough-gallery")({
-  loader: ({ context }) => {
+  loader: async ({ context }) => {
     try {
-      context?.queryClient?.prefetchQuery(settingsQuery);
+      await context?.queryClient?.prefetchQuery(settingsQuery);
     } catch (_) {}
   },
   head: () => ({

@@ -19,8 +19,10 @@ import structuralRcc from "@/assets/structural-rcc.jpg";
 import structuralDesk from "@/assets/structural-desk.jpg";
 
 export const Route = createFileRoute("/services/structural-design")({
-  loader: ({ context }) => {
-    context.queryClient.prefetchQuery(settingsQuery);
+  loader: async ({ context }) => {
+    try {
+      await context?.queryClient?.prefetchQuery(settingsQuery);
+    } catch (_) {}
   },
   head: () => ({
     meta: [

@@ -20,9 +20,9 @@ import blrCafe from "@/assets/blr-cafe.jpg";
 import commercialClinic from "@/assets/commercial-clinic.jpg";
 
 export const Route = createFileRoute("/services/commercial-interior-design")({
-  loader: ({ context }) => {
+  loader: async ({ context }) => {
     try {
-      context?.queryClient?.prefetchQuery(settingsQuery);
+      await context?.queryClient?.prefetchQuery(settingsQuery);
     } catch (_) {}
   },
   head: () => ({

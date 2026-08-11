@@ -7,6 +7,7 @@ import { ArrowRight, Sparkles } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { redirectEnquiryToWhatsApp } from "@/lib/whatsapp-redirect";
 import { Reveal } from "@/components/scroll-reveal";
+import { submitEnquiryServerFn } from "@/lib/server-functions";
 
 const schema = z.object({
   name: z.string().trim().min(2, "Please enter your name").max(120),
@@ -27,7 +28,13 @@ const SERVICE_TYPES = [
   "Design + Execution",
 ];
 
-export function ConsultationEnquiry() {
+export function ConsultationEnquiry({
+  heading = "Looking For Expert Guidance To Design Your Dream Space?",
+  subtitle = "Share your requirements and our interior design team will help you plan a beautiful, functional, and personalized space.",
+}: {
+  heading?: string;
+  subtitle?: string;
+}) {
   const [submitting, setSubmitting] = useState(false);
   const {
     register,
@@ -49,6 +56,21 @@ export function ConsultationEnquiry() {
     ]
       .filter(Boolean)
       .join("\n");
+
+    try {
+      await submitEnquiryServerFn({
+        data: {
+          name: data.name.trim(),
+          phone: data.phone.trim(),
+          email: data.email.trim(),
+          message: composedMessage,
+          service_title: data.serviceType,
+          source: "homepage-consultation",
+        }
+      });
+    } catch (err) {
+      console.warn("Backend database insert failed:", err);
+    }
 
     try {
       await supabase.from("enquiries").insert({
@@ -79,6 +101,14 @@ export function ConsultationEnquiry() {
   const inputCls =
     "w-full rounded-xl border border-white/30 bg-white/10 px-4 py-3 text-sm text-white placeholder:text-white/60 outline-none transition focus:border-[#F3D9A6] focus:bg-white/15 focus:ring-2 focus:ring-[#F3D9A6]/30";
 
+  const headingWords = heading.trim().split(/\s+/);
+  const headingAccent =
+    headingWords.length > 2 ? headingWords.slice(-2).join(" ") : heading;
+  const headingPre =
+    headingWords.length > 2
+      ? headingWords.slice(0, -2).join(" ") + " "
+      : "";
+
   return (
     <section className="container-prose py-16 md:py-24">
       <Reveal>
@@ -106,12 +136,11 @@ export function ConsultationEnquiry() {
                 <Sparkles className="h-3.5 w-3.5" /> Free Consultation
               </span>
               <h2 className="mt-5 font-serif text-3xl leading-tight text-white md:text-4xl lg:text-[42px]">
-                Looking For Expert Guidance To Design Your{" "}
-                <span style={{ color: "#F3D9A6" }}>Dream Space?</span>
+                {headingPre}
+                <span style={{ color: "#F3D9A6" }}>{headingAccent}</span>
               </h2>
               <p className="mt-5 max-w-md text-sm leading-relaxed text-white/85 md:text-[15px]">
-                Share your requirements and our interior design team will help you plan a
-                beautiful, functional, and personalized space.
+                {subtitle}
               </p>
             </div>
 

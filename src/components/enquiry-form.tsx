@@ -5,6 +5,7 @@ import { z } from "zod";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { redirectEnquiryToWhatsApp } from "@/lib/whatsapp-redirect";
+import { submitEnquiryServerFn } from "@/lib/server-functions";
 
 const schema = z.object({
   name: z.string().trim().min(2, "Please enter your name").max(120),
@@ -36,6 +37,22 @@ export function EnquiryForm({
 
   const onSubmit = async (data: FormData) => {
     setSubmitting(true);
+    try {
+      await submitEnquiryServerFn({
+        data: {
+          name: data.name.trim(),
+          phone: data.phone.trim(),
+          email: data.email?.trim() || null,
+          message: data.message?.trim() || null,
+          service_id: serviceId ?? null,
+          service_title: serviceTitle ?? null,
+          source,
+        }
+      });
+    } catch (err) {
+      console.warn("Backend database insert failed:", err);
+    }
+
     try {
       await supabase.from("enquiries").insert({
         name: data.name.trim(),

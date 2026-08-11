@@ -32,9 +32,11 @@ export const Route = createFileRoute("/services/$slug")({
       throw redirect({ to: `/services/${SLUG_REDIRECTS[params.slug]}` as any, statusCode: 301 });
     }
     try {
-      context?.queryClient?.prefetchQuery(serviceBySlugQuery(params.slug));
-      context?.queryClient?.prefetchQuery(servicesQuery());
-      context?.queryClient?.prefetchQuery(settingsQuery);
+      await Promise.all([
+        context?.queryClient?.prefetchQuery(serviceBySlugQuery(params.slug)),
+        context?.queryClient?.prefetchQuery(servicesQuery()),
+        context?.queryClient?.prefetchQuery(settingsQuery),
+      ]);
     } catch (_) {}
   },
   head: ({ loaderData }) => ({

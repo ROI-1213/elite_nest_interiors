@@ -47,7 +47,17 @@ function createNoopClient(): ReturnType<typeof createClient<Database>> {
     then: (resolve: (value: any) => void) => Promise.resolve(emptyResult).then(resolve),
   };
   const noopFrom = () => noopQuery;
-  return { from: noopFrom, auth: { getSession: () => Promise.resolve({ data: { session: null }, error: null }) } } as any;
+  return {
+    from: noopFrom,
+    auth: {
+      getSession: () => Promise.resolve({ data: { session: null }, error: null }),
+      getUser: () => Promise.resolve({ data: { user: null }, error: { message: 'No Supabase credentials configured' } }),
+      signInWithPassword: () => Promise.resolve({ data: { session: null, user: null }, error: { message: 'No Supabase credentials configured' } }),
+      signOut: () => Promise.resolve({ error: null }),
+      onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => {} } } }),
+    },
+    storage: { from: () => ({ upload: () => Promise.resolve(emptyResult), getPublicUrl: () => ({ data: { publicUrl: '' } }) }) },
+  } as any;
 }
 
 function createSupabaseClient() {

@@ -18,9 +18,9 @@ import blrColumnBeam from "@/assets/blr-column-beam.jpg";
 import finishedImg from "@/assets/gallery-blr-facade.png";
 
 export const Route = createFileRoute("/services/construction-services")({
-  loader: ({ context }) => {
+  loader: async ({ context }) => {
     try {
-      context?.queryClient?.prefetchQuery(settingsQuery);
+      await context?.queryClient?.prefetchQuery(settingsQuery);
     } catch (_) {}
   },
   head: () => ({

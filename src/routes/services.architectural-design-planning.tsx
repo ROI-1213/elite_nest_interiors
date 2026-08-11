@@ -19,8 +19,10 @@ import previewSection from "@/assets/arch-section.jpg";
 import previewMaterial from "@/assets/arch-material.jpg";
 
 export const Route = createFileRoute("/services/architectural-design-planning")({
-  loader: ({ context }) => {
-    context.queryClient.prefetchQuery(settingsQuery);
+  loader: async ({ context }) => {
+    try {
+      await context?.queryClient?.prefetchQuery(settingsQuery);
+    } catch (_) {}
   },
   head: () => ({
     meta: [

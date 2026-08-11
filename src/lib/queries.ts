@@ -1,11 +1,23 @@
 import { queryOptions } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { SERVICE_ORDER, SERVICE_SLUGS, SERVICE_DESCRIPTIONS, SERVICE_IMAGES } from "@/lib/services.config";
+import {
+  getCategoriesServerFn,
+  getServicesServerFn,
+  getServiceBySlugServerFn,
+  getGalleryItemsServerFn,
+  getTestimonialsServerFn,
+  getVideoTestimonialsServerFn,
+  getSiteSettingsServerFn,
+  getEnquiriesServerFn,
+} from "@/lib/server-functions";
+import { SITE_SETTINGS_DEFAULTS, PLACEHOLDER_TESTIMONIALS } from "@/lib/site-content";
+import { CURATED_GALLERY } from "@/lib/gallery.config";
 
 type SupabaseReadError = { code?: string; message?: string; details?: string };
 
 function isRecoverableContentReadError(error: SupabaseReadError | null | unknown): boolean {
   if (!error) return false;
-  // Network-level failures (Supabase project paused / no internet)
   if (error instanceof TypeError) return true;
   const e = error as SupabaseReadError;
   const text = `${e.code ?? ""} ${e.message ?? ""} ${e.details ?? ""}`.toLowerCase();
@@ -25,7 +37,7 @@ function isRecoverableContentReadError(error: SupabaseReadError | null | unknown
 }
 
 function fallbackOnMissingContent<T>(error: SupabaseReadError | null | unknown, fallback: T): T {
-  console.warn("[content] Using fallback data — Supabase unavailable or content not ready:", (error as Error)?.message ?? error);
+  console.warn("[content] Using fallback data:", (error as Error)?.message ?? error);
   return fallback;
 }
 
@@ -69,7 +81,6 @@ export type Testimonial = {
   is_active: boolean;
 };
 
-
 export type VideoTestimonial = {
   id: string;
   title: string;
@@ -78,6 +89,21 @@ export type VideoTestimonial = {
   thumbnail_url: string | null;
   display_order: number;
   is_active: boolean;
+};
+
+export type Enquiry = {
+  id: string;
+  name: string;
+  phone: string;
+  email: string | null;
+  message: string | null;
+  service_id: string | null;
+  service_title: string | null;
+  source: string | null;
+  status: "new" | "contacted" | "in_progress" | "won" | "lost";
+  admin_notes: string | null;
+  created_at: string;
+  updated_at: string;
 };
 
 export type SiteSettings = {
@@ -99,17 +125,27 @@ export type SiteSettings = {
   about_title: string | null;
   about_content: string | null;
   about_image_url: string | null;
+  about_hero_title?: string | null;
+  about_hero_subtitle?: string | null;
+  about_positioning?: string | null;
   vision_title: string | null;
   vision_content: string | null;
+  mission_title?: string | null;
   mission_content: string | null;
   footer_about: string | null;
   footer_copyright: string | null;
+  hero_eyebrow?: string | null;
   hero_title: string | null;
   hero_subtitle: string | null;
   hero_image_url: string | null;
   hero_cta_label: string | null;
   cta_title: string | null;
   cta_subtitle: string | null;
+  why_us_title?: string | null;
+  traditional_firm_title?: string | null;
+  elitenest_title?: string | null;
+  traditional_firm_points?: string | null;
+  elitenest_points?: string | null;
 };
 
 export type GalleryItem = {
@@ -122,34 +158,106 @@ export type GalleryItem = {
   is_active: boolean;
 };
 
-export const galleryQuery = (opts: { onlyActive?: boolean } = {}) =>
-  queryOptions({
-    queryKey: ["gallery_items", opts.onlyActive ?? true],
-    staleTime: 15 * 60_000,
-    retry: 1,
-    queryFn: async (): Promise<GalleryItem[]> => {
-      try {
-        let q = supabase.from("gallery_items").select("*").order("display_order");
-        if (opts.onlyActive ?? true) q = q.eq("is_active", true);
-        const { data, error } = await q;
-        if (error) return fallbackOnMissingContent(error, []);
-        return (data ?? []) as GalleryItem[];
-      } catch (err) { return fallbackOnMissingContent(err, []); }
-    },
-  });
+const DEFAULT_SERVICES: Service[] = SERVICE_ORDER.map((name, idx) => ({
+  id: `svc-${idx + 1}`,
+  category_id: null,
+  title: name,
+  slug: SERVICE_SLUGS[name],
+  short_description: SERVICE_DESCRIPTIONS[name],
+  description: `${SERVICE_DESCRIPTIONS[name]} Comprehensive planning, custom design execution, premium material selection, and single-point project accountability for homes and businesses across Bengaluru.`,
+  image_url: SERVICE_IMAGES[name],
+  gallery: [SERVICE_IMAGES[name]],
+  features: [
+    "Single point of contact & single-contract accountability",
+    "3D visualization & detailed material specs",
+    "On-time execution with milestone tracking",
+    "Transparent pricing with no hidden costs",
+  ],
+  price_from: 150000,
+  seo_title: `${name} | Elite Nest Interiors Bengaluru`,
+  seo_description: SERVICE_DESCRIPTIONS[name],
+  display_order: idx + 1,
+  is_active: true,
+}));
+
+const DEFAULT_CATEGORIES: Category[] = [
+  { id: "cat-1", name: "Bedroom", slug: "bedroom", description: "Calm and elegant bedroom interiors designed for comfort.", image_url: null, display_order: 1, is_active: true },
+  { id: "cat-2", name: "Kitchen", slug: "kitchen", description: "Smart modular kitchens with premium hardware and storage.", image_url: null, display_order: 2, is_active: true },
+  { id: "cat-3", name: "Living", slug: "living", description: "Sophisticated living spaces crafted for warmth and luxury.", image_url: null, display_order: 3, is_active: true },
+  { id: "cat-4", name: "Dining", slug: "dining", description: "Refined dining spaces designed for family gatherings.", image_url: null, display_order: 4, is_active: true },
+  { id: "cat-5", name: "Wardrobe", slug: "wardrobe", description: "Custom modular storage solutions tailored to your space.", image_url: null, display_order: 5, is_active: true },
+  { id: "cat-6", name: "Foyer", slug: "foyer", description: "Welcoming entrance foyers that create an elegant first impression.", image_url: null, display_order: 6, is_active: true },
+];
+
+export const DEFAULT_SITE_SETTINGS: SiteSettings = {
+  id: 1,
+  business_name: SITE_SETTINGS_DEFAULTS.business_name ?? "Elite Nest Interiors",
+  tagline: SITE_SETTINGS_DEFAULTS.tagline ?? "Crafting Timeless & Luxurious Interior Spaces",
+  phone: SITE_SETTINGS_DEFAULTS.phone ?? "+91 93640 48269",
+  whatsapp: SITE_SETTINGS_DEFAULTS.whatsapp ?? "+91 93640 48269",
+  email: SITE_SETTINGS_DEFAULTS.email ?? "contact@elitenestinteriors.com",
+  address: SITE_SETTINGS_DEFAULTS.address ?? "No. 42, 100 Feet Road, Indiranagar, Bengaluru, Karnataka 560038",
+  google_map_url: SITE_SETTINGS_DEFAULTS.google_map_url ?? "https://www.google.com/maps",
+  business_hours: SITE_SETTINGS_DEFAULTS.business_hours ?? "Mon–Sat · 10am – 7pm",
+  facebook_url: null,
+  instagram_url: SITE_SETTINGS_DEFAULTS.instagram_url ?? null,
+  youtube_url: SITE_SETTINGS_DEFAULTS.youtube_url ?? null,
+  linkedin_url: SITE_SETTINGS_DEFAULTS.linkedin_url ?? null,
+  twitter_url: null,
+  pinterest_url: null,
+  hero_eyebrow: SITE_SETTINGS_DEFAULTS.hero_eyebrow ?? "Crafting Spaces",
+  hero_title: SITE_SETTINGS_DEFAULTS.hero_title ?? "Where Design Meets\nTimeless Living",
+  hero_subtitle: SITE_SETTINGS_DEFAULTS.hero_subtitle ?? "Beautiful interiors. Thoughtful design. Perfectly executed.",
+  hero_image_url: null,
+  hero_cta_label: SITE_SETTINGS_DEFAULTS.hero_cta_label ?? "Explore Our Work",
+  cta_title: SITE_SETTINGS_DEFAULTS.cta_title ?? "Looking For Expert Guidance To Design Your Dream Space?",
+  cta_subtitle: SITE_SETTINGS_DEFAULTS.cta_subtitle ?? "Share your requirements and our interior design team will help you plan a beautiful, functional, and personalized space.",
+  why_us_title: SITE_SETTINGS_DEFAULTS.why_us_title ?? "Why choose the elitenest",
+  traditional_firm_title: SITE_SETTINGS_DEFAULTS.traditional_firm_title ?? "Traditional firm",
+  traditional_firm_points: SITE_SETTINGS_DEFAULTS.traditional_firm_points ?? "",
+  elitenest_title: SITE_SETTINGS_DEFAULTS.elitenest_title ?? "Elite Nest",
+  elitenest_points: SITE_SETTINGS_DEFAULTS.elitenest_points ?? "",
+  about_title: SITE_SETTINGS_DEFAULTS.about_title ?? "About Elite Nest Interiors",
+  about_content: SITE_SETTINGS_DEFAULTS.about_content ?? "Elite Nest Interiors is a premier interior architecture studio specializing in high-end residential and commercial projects.",
+  about_image_url: null,
+  about_hero_title: SITE_SETTINGS_DEFAULTS.about_hero_title ?? "Design That Performs\nBeyond Appearance.",
+  about_hero_subtitle: SITE_SETTINGS_DEFAULTS.about_hero_subtitle ?? "We create spaces that are functional, durable, aesthetically refined, and intelligently planned.",
+  about_positioning: SITE_SETTINGS_DEFAULTS.about_positioning ?? "World-Class Interiors.\nThoughtfully Built.",
+  vision_title: SITE_SETTINGS_DEFAULTS.vision_title ?? "Our Vision",
+  vision_content: SITE_SETTINGS_DEFAULTS.vision_content ?? "To redefine luxury living through innovative, elegant, and functional design solutions.",
+  mission_title: SITE_SETTINGS_DEFAULTS.mission_title ?? "Our Mission",
+  mission_content: SITE_SETTINGS_DEFAULTS.mission_content ?? "To deliver unparalleled craftsmanship, meticulous attention to detail, and exceptional customer experience.",
+  footer_about: SITE_SETTINGS_DEFAULTS.footer_about ?? "End-to-end construction, architecture and interior solutions.",
+  footer_copyright: SITE_SETTINGS_DEFAULTS.footer_copyright ?? "© 2026 Elite Nest Interiors. All rights reserved.",
+};
+
+export const DEFAULT_GALLERY_ITEMS: GalleryItem[] = CURATED_GALLERY.map((c, i) => ({
+  id: c.id,
+  title: c.title,
+  category: c.category,
+  image_url: `asset://${c.assetKey}`,
+  description: c.description,
+  display_order: i + 1,
+  is_active: true,
+}));
 
 export const settingsQuery = queryOptions({
   queryKey: ["site_settings"],
   queryFn: async (): Promise<SiteSettings> => {
     try {
-      const { data, error } = await supabase
-        .from("site_settings")
-        .select("*")
-        .eq("id", 1)
-        .maybeSingle();
-      if (error) return fallbackOnMissingContent(error, { id: 1, business_name: "Elite Nest Interiors" } as SiteSettings);
-      return (data ?? { id: 1, business_name: "Elite Nest Interior" }) as SiteSettings;
-    } catch (err) { return fallbackOnMissingContent(err, { id: 1, business_name: "Elite Nest Interiors" } as SiteSettings); }
+      const data = await getSiteSettingsServerFn();
+      if (!data) return DEFAULT_SITE_SETTINGS;
+
+      const merged = { ...DEFAULT_SITE_SETTINGS };
+      for (const k of Object.keys(DEFAULT_SITE_SETTINGS) as Array<keyof SiteSettings>) {
+        if (data[k] !== null && data[k] !== undefined && data[k] !== "") {
+          (merged as any)[k] = data[k];
+        }
+      }
+      return merged;
+    } catch (err) {
+      return DEFAULT_SITE_SETTINGS;
+    }
   },
   staleTime: 15 * 60_000,
   retry: 1,
@@ -162,12 +270,10 @@ export const categoriesQuery = (opts: { onlyActive?: boolean } = {}) =>
     retry: 1,
     queryFn: async (): Promise<Category[]> => {
       try {
-        let q = supabase.from("service_categories").select("*").order("display_order");
-        if (opts.onlyActive ?? true) q = q.eq("is_active", true);
-        const { data, error } = await q;
-        if (error) return fallbackOnMissingContent(error, []);
-        return (data ?? []) as Category[];
-      } catch (err) { return fallbackOnMissingContent(err, []); }
+        const data = await getCategoriesServerFn({ data: { onlyActive: opts.onlyActive } });
+        if (!data || data.length === 0) return DEFAULT_CATEGORIES;
+        return data as Category[];
+      } catch (err) { return DEFAULT_CATEGORIES; }
     },
   });
 
@@ -178,16 +284,14 @@ export const servicesQuery = (opts: { onlyActive?: boolean } = {}) =>
     retry: 1,
     queryFn: async (): Promise<Service[]> => {
       try {
-        let q = supabase.from("services").select("*").order("display_order");
-        if (opts.onlyActive ?? true) q = q.eq("is_active", true);
-        const { data, error } = await q;
-        if (error) return fallbackOnMissingContent(error, []);
-        return (data ?? []).map((s) => ({
+        const data = await getServicesServerFn({ data: { onlyActive: opts.onlyActive } });
+        if (!data || data.length === 0) return DEFAULT_SERVICES;
+        return data.map((s: any) => ({
           ...s,
-          gallery: Array.isArray(s.gallery) ? (s.gallery as string[]) : [],
-          features: Array.isArray(s.features) ? (s.features as string[]) : [],
+          gallery: Array.isArray(s.gallery) ? s.gallery : [],
+          features: Array.isArray(s.features) ? s.features : [],
         })) as Service[];
-      } catch (err) { return fallbackOnMissingContent(err, []); }
+      } catch (err) { return DEFAULT_SERVICES; }
     },
   });
 
@@ -198,20 +302,31 @@ export const serviceBySlugQuery = (slug: string) =>
     retry: 1,
     queryFn: async (): Promise<Service | null> => {
       try {
-        const { data, error } = await supabase
-          .from("services")
-          .select("*")
-          .eq("slug", slug)
-          .eq("is_active", true)
-          .maybeSingle();
-        if (error) return fallbackOnMissingContent(error, null);
-        if (!data) return null;
+        const data = await getServiceBySlugServerFn({ data: { slug } });
+        if (!data) {
+          const match = DEFAULT_SERVICES.find((s) => s.slug === slug);
+          return match || null;
+        }
         return {
           ...data,
-          gallery: Array.isArray(data.gallery) ? (data.gallery as string[]) : [],
-          features: Array.isArray(data.features) ? (data.features as string[]) : [],
+          gallery: Array.isArray(data.gallery) ? data.gallery : [],
+          features: Array.isArray(data.features) ? data.features : [],
         } as Service;
-      } catch (err) { return fallbackOnMissingContent(err, null); }
+      } catch (err) {
+        return DEFAULT_SERVICES.find((s) => s.slug === slug) || null;
+      }
+    },
+  });
+
+export const enquiriesQuery = () =>
+  queryOptions({
+    queryKey: ["enquiries"],
+    staleTime: 30_000,
+    queryFn: async (): Promise<Enquiry[]> => {
+      try {
+        const data = await getEnquiriesServerFn();
+        return (data ?? []) as Enquiry[];
+      } catch (err) { return []; }
     },
   });
 
@@ -222,12 +337,10 @@ export const testimonialsQuery = (opts: { onlyActive?: boolean } = {}) =>
     retry: 1,
     queryFn: async (): Promise<Testimonial[]> => {
       try {
-        let q = supabase.from("testimonials").select("*").order("display_order");
-        if (opts.onlyActive ?? true) q = q.eq("is_active", true);
-        const { data, error } = await q;
-        if (error) return fallbackOnMissingContent(error, []);
-        return (data ?? []) as Testimonial[];
-      } catch (err) { return fallbackOnMissingContent(err, []); }
+        const data = await getTestimonialsServerFn({ data: { onlyActive: opts.onlyActive } });
+        if (!data || data.length === 0) return PLACEHOLDER_TESTIMONIALS;
+        return data as Testimonial[];
+      } catch (err) { return PLACEHOLDER_TESTIMONIALS; }
     },
   });
 
@@ -238,39 +351,24 @@ export const videoTestimonialsQuery = (opts: { onlyActive?: boolean } = {}) =>
     retry: 1,
     queryFn: async (): Promise<VideoTestimonial[]> => {
       try {
-        let q = supabase.from("video_testimonials").select("*").order("display_order");
-        if (opts.onlyActive ?? true) q = q.eq("is_active", true);
-        const { data, error } = await q;
-        if (error) return fallbackOnMissingContent(error, []);
-        return (data ?? []) as VideoTestimonial[];
-      } catch (err) { return fallbackOnMissingContent(err, []); }
+        const data = await getVideoTestimonialsServerFn({ data: { onlyActive: opts.onlyActive } });
+        if (!data) return [];
+        return data as VideoTestimonial[];
+      } catch (err) { return []; }
     },
   });
 
-export type Enquiry = {
-  id: string;
-  name: string;
-  phone: string;
-  email: string | null;
-  message: string | null;
-  service_id: string | null;
-  service_title: string | null;
-  source: string | null;
-  status: "new" | "contacted" | "in_progress" | "won" | "lost";
-  admin_notes: string | null;
-  created_at: string;
-};
+export const galleryQuery = (opts: { onlyActive?: boolean } = {}) =>
+  queryOptions({
+    queryKey: ["gallery_items", opts.onlyActive ?? true],
+    staleTime: 15 * 60_000,
+    retry: 1,
+    queryFn: async (): Promise<GalleryItem[]> => {
+      try {
+        const data = await getGalleryItemsServerFn({ data: { onlyActive: opts.onlyActive } });
+        if (!data || data.length === 0) return DEFAULT_GALLERY_ITEMS;
+        return data as GalleryItem[];
+      } catch (err) { return DEFAULT_GALLERY_ITEMS; }
+    },
+  });
 
-export const enquiriesQuery = queryOptions({
-  queryKey: ["enquiries"],
-  queryFn: async (): Promise<Enquiry[]> => {
-    try {
-      const { data, error } = await supabase
-        .from("enquiries")
-        .select("*")
-        .order("created_at", { ascending: false });
-      if (error) return fallbackOnMissingContent(error, []);
-      return (data ?? []) as Enquiry[];
-    } catch (err) { return fallbackOnMissingContent(err, []); }
-  },
-});

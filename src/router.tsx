@@ -17,7 +17,7 @@ export const getRouter = () => {
   const router = createRouter({
     routeTree,
     context: { queryClient },
-    scrollRestoration: false,     // disable auto scroll-to-top on route re-renders
+    scrollRestoration: true,     // enable auto scroll-to-top and position restoration
     defaultPreloadStaleTime: 5 * 60_000,
   });
 

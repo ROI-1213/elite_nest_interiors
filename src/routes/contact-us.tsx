@@ -25,6 +25,7 @@ import { Reveal } from "@/components/scroll-reveal";
 import { settingsQuery } from "@/lib/queries";
 import { supabase } from "@/integrations/supabase/client";
 import { redirectEnquiryToWhatsApp } from "@/lib/whatsapp-redirect";
+import { submitEnquiryServerFn } from "@/lib/server-functions";
 
 export const Route = createFileRoute("/contact-us")({
   head: () => ({
@@ -42,7 +43,9 @@ export const Route = createFileRoute("/contact-us")({
       },
     ],
   }),
-  loader: ({ context }) => { context.queryClient.prefetchQuery(settingsQuery); },
+  loader: async ({ context }) => {
+    await context.queryClient.prefetchQuery(settingsQuery);
+  },
   component: ContactPage,
 });
 
@@ -269,6 +272,21 @@ function FullEnquiryForm() {
     ]
       .filter(Boolean)
       .join("\n");
+
+    try {
+      await submitEnquiryServerFn({
+        data: {
+          name: data.name.trim(),
+          phone: data.phone.trim(),
+          email: data.email?.trim() || null,
+          message: details || null,
+          service_title: data.service,
+          source: "contact-us",
+        }
+      });
+    } catch (err) {
+      console.warn("Backend database insert failed:", err);
+    }
 
     try {
       await supabase.from("enquiries").insert({

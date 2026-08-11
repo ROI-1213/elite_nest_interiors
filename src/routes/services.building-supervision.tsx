@@ -16,8 +16,10 @@ import { settingsQuery } from "@/lib/queries";
 import heroImg from "@/assets/supervision-hero.jpg";
 
 export const Route = createFileRoute("/services/building-supervision")({
-  loader: ({ context }) => {
-    context.queryClient.prefetchQuery(settingsQuery);
+  loader: async ({ context }) => {
+    try {
+      await context?.queryClient?.prefetchQuery(settingsQuery);
+    } catch (_) {}
   },
   head: () => ({
     meta: [

@@ -5,7 +5,8 @@ import { useMemo, useState } from "react";
 import { Quote, Star, ShieldCheck, Sparkles, Users, HeartHandshake } from "lucide-react";
 import { SiteLayout } from "@/components/site-layout";
 import { Reveal } from "@/components/scroll-reveal";
-import { testimonialsQuery, type Testimonial } from "@/lib/queries";
+import { testimonialsQuery } from "@/lib/queries";
+import { PLACEHOLDER_TESTIMONIALS } from "@/lib/site-content";
 
 export const Route = createFileRoute("/testimonials")({
   head: () => ({
@@ -20,8 +21,8 @@ export const Route = createFileRoute("/testimonials")({
       { property: "og:description", content: "Real client stories and reviews." },
     ],
   }),
-  loader: ({ context }) => {
-    context.queryClient.prefetchQuery(testimonialsQuery());
+  loader: async ({ context }) => {
+    await context.queryClient.prefetchQuery(testimonialsQuery());
   },
   component: TestimonialsPage,
 });
@@ -35,87 +36,6 @@ const FILTERS = [
   "Supervision",
 ] as const;
 type Filter = (typeof FILTERS)[number];
-
-const PLACEHOLDERS: Testimonial[] = [
-  {
-    id: "p1",
-    author_name: "Anitha Reddy",
-    author_location: "Koramangala, Bengaluru",
-    author_avatar_url: null,
-    rating: 5,
-    content:
-      "Elite Nest handled our 3BHK interiors end-to-end. The detailing, materials and on-time delivery exceeded expectations.",
-    service_type: "Interior Design",
-    project_image_url: null,
-    display_order: 0,
-    is_active: true,
-  },
-  {
-    id: "p2",
-    author_name: "Rahul Verma",
-    author_location: "Indiranagar, Bengaluru",
-    author_avatar_url: null,
-    rating: 5,
-    content:
-      "Their site supervision was clear and disciplined. Weekly reports and proactive coordination kept the build on track.",
-    service_type: "Supervision",
-    project_image_url: null,
-    display_order: 0,
-    is_active: true,
-  },
-  {
-    id: "p3",
-    author_name: "Sneha Iyer",
-    author_location: "Whitefield, Bengaluru",
-    author_avatar_url: null,
-    rating: 5,
-    content:
-      "We chose the turnkey package and didn't have to chase anyone. Quality, budget and timeline were respected throughout.",
-    service_type: "Turnkey Solution",
-    project_image_url: null,
-    display_order: 0,
-    is_active: true,
-  },
-  {
-    id: "p4",
-    author_name: "Mohammed Ali",
-    author_location: "Jayanagar, Bengaluru",
-    author_avatar_url: null,
-    rating: 5,
-    content:
-      "From foundation to finishing, the construction team was professional and material quality was excellent.",
-    service_type: "Construction",
-    project_image_url: null,
-    display_order: 0,
-    is_active: true,
-  },
-  {
-    id: "p5",
-    author_name: "Divya Krishnan",
-    author_location: "HSR Layout, Bengaluru",
-    author_avatar_url: null,
-    rating: 5,
-    content:
-      "Our old home felt brand new after the renovation. Elegant choices, smart space planning and clean execution.",
-    service_type: "Renovation",
-    project_image_url: null,
-    display_order: 0,
-    is_active: true,
-  },
-  {
-    id: "p6",
-    author_name: "Vivek & Pooja",
-    author_location: "Sarjapur Road, Bengaluru",
-    author_avatar_url: null,
-    rating: 5,
-    content:
-      "Beautiful, functional interiors with a personal touch. The team listened to every detail and delivered with class.",
-    service_type: "Interior Design",
-    project_image_url: null,
-    display_order: 0,
-    is_active: true,
-  },
-];
 
 function Stars({ rating }: { rating: number }) {
   return (
@@ -132,7 +52,7 @@ function Stars({ rating }: { rating: number }) {
 
 function TestimonialsPage() {
   const { data: dbTestimonials = [] } = useQuery(testimonialsQuery());
-  const testimonials = dbTestimonials.length > 0 ? dbTestimonials : PLACEHOLDERS;
+  const testimonials = dbTestimonials.length > 0 ? dbTestimonials : PLACEHOLDER_TESTIMONIALS;
 
   const [filter, setFilter] = useState<Filter>("All");
 

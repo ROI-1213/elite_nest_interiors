@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { Fragment, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowRight, ShieldCheck, Hammer, Compass, Star, Play, Sparkles } from "lucide-react";
@@ -14,10 +14,11 @@ import { ConsultationEnquiry } from "@/components/consultation-enquiry";
 import { ServicesAccordionShowcase } from "@/components/services-accordion-showcase";
 import { FeaturedServiceListings } from "@/components/featured-service-listings";
 
+import { PLACEHOLDER_TESTIMONIALS, SITE_SETTINGS_DEFAULTS } from "@/lib/site-content";
+
 
 import {
   categoriesQuery,
-  galleryQuery,
   servicesQuery,
   settingsQuery,
   testimonialsQuery,
@@ -46,12 +47,13 @@ export const Route = createFileRoute("/")({
 
   loader: async ({ context }) => {
     try {
-      context?.queryClient?.prefetchQuery(settingsQuery);
-      context?.queryClient?.prefetchQuery(categoriesQuery());
-      context?.queryClient?.prefetchQuery(servicesQuery());
-      context?.queryClient?.prefetchQuery(testimonialsQuery());
-      context?.queryClient?.prefetchQuery(videoTestimonialsQuery());
-      context?.queryClient?.prefetchQuery(galleryQuery());
+      await Promise.all([
+        context?.queryClient?.prefetchQuery(settingsQuery),
+        context?.queryClient?.prefetchQuery(categoriesQuery()),
+        context?.queryClient?.prefetchQuery(servicesQuery()),
+        context?.queryClient?.prefetchQuery(testimonialsQuery()),
+        context?.queryClient?.prefetchQuery(videoTestimonialsQuery()),
+      ]);
     } catch (err) {
       console.warn("[loader] Supabase fetch failed, rendering with fallbacks:", err);
     }
@@ -88,20 +90,58 @@ const processSteps = [
   }
 ];
 
+function AccentedLines({ title }: { title: string }) {
+  const lines = title
+    .split("\n")
+    .map((l) => l.trim())
+    .filter(Boolean);
+  if (lines.length <= 1) return <>{lines[0] ?? ""}</>;
+  return (
+    <>
+      {lines.slice(0, -1).map((l, i) => (
+        <Fragment key={i}>
+          {i > 0 && <br />}
+          {l}
+        </Fragment>
+      ))}
+      <br />
+      <span className="italic" style={{ color: "#B8894D" }}>{lines[lines.length - 1]}</span>
+    </>
+  );
+}
+
 function HomePage() {
   const { data: settings = {} as any } = useQuery(settingsQuery);
   const { data: services = [] } = useQuery(servicesQuery());
-  const { data: testimonials = [] } = useQuery(testimonialsQuery());
+  const { data: dbTestimonials = [] } = useQuery(testimonialsQuery());
   const { data: videos = [] } = useQuery(videoTestimonialsQuery());
-  const { data: gallery = [] } = useQuery(galleryQuery());
+
+  const testimonials = dbTestimonials.length > 0 ? dbTestimonials : PLACEHOLDER_TESTIMONIALS;
 
   const heroBg = settings.hero_image_url || heroImg;
-  const heroTitle = settings.hero_title || "Crafted Interiors.\nBuilt to Last.";
-  const heroSubtitle = settings.hero_subtitle ||
-    "End-to-end construction, architecture, and turnkey interior design for residences and businesses that notice the details.";
-  const ctaTitle = settings.cta_title || "Ready to start your project?";
-  const ctaSubtitle = settings.cta_subtitle ||
-    "Tell us about your space. Our team will respond within one business day.";
+  const heroEyebrow = settings.hero_eyebrow || SITE_SETTINGS_DEFAULTS.hero_eyebrow;
+  const heroTitle = settings.hero_title || SITE_SETTINGS_DEFAULTS.hero_title;
+  const heroSubtitle = settings.hero_subtitle || SITE_SETTINGS_DEFAULTS.hero_subtitle;
+  const heroCtaLabel = settings.hero_cta_label || SITE_SETTINGS_DEFAULTS.hero_cta_label;
+  const ctaTitle = settings.cta_title || SITE_SETTINGS_DEFAULTS.cta_title;
+  const ctaSubtitle = settings.cta_subtitle || SITE_SETTINGS_DEFAULTS.cta_subtitle;
+
+  const whyUsTitle = settings.why_us_title || SITE_SETTINGS_DEFAULTS.why_us_title;
+  const traditionalFirmTitle = settings.traditional_firm_title || SITE_SETTINGS_DEFAULTS.traditional_firm_title;
+  const elitenestTitle = settings.elitenest_title || SITE_SETTINGS_DEFAULTS.elitenest_title;
+  const splitPoints = (v: string | null | undefined) =>
+    (v || "").split("\n").map((s) => s.trim()).filter(Boolean);
+  const traditionalPoints =
+    splitPoints(settings.traditional_firm_points).length > 0
+      ? splitPoints(settings.traditional_firm_points)
+      : splitPoints(SITE_SETTINGS_DEFAULTS.traditional_firm_points);
+  const elitenestPoints =
+    splitPoints(settings.elitenest_points).length > 0
+      ? splitPoints(settings.elitenest_points)
+      : splitPoints(SITE_SETTINGS_DEFAULTS.elitenest_points);
+
+  const whyAccent = whyUsTitle.lastIndexOf(" the ") >= 0 ? whyUsTitle.slice(whyUsTitle.lastIndexOf(" the ") + 5) : "";
+  const whyPre = whyAccent ? whyUsTitle.slice(0, whyUsTitle.lastIndexOf(" the ") + 5) : whyUsTitle;
 
   return (
     <SiteLayout transparentHeader>
@@ -143,7 +183,7 @@ function HomePage() {
                   className="text-[11px] font-semibold uppercase tracking-[0.32em]"
                   style={{ color: "#8A7458" }}
                 >
-                  Crafting Spaces
+                  {heroEyebrow}
                 </span>
               </div>
             </Reveal>
@@ -156,11 +196,7 @@ function HomePage() {
                   fontSize: "clamp(2.25rem, 5.6vw, 4.5rem)",
                 }}
               >
-                Where Design Meets
-                <br />
-                <span className="italic" style={{ color: "#B8894D" }}>
-                  Timeless Living
-                </span>
+                <AccentedLines title={heroTitle} />
               </h1>
             </Reveal>
 
@@ -169,7 +205,7 @@ function HomePage() {
                 className="mt-6 max-w-lg text-[15px] leading-relaxed sm:text-base"
                 style={{ color: "#5C4F41" }}
               >
-                Beautiful interiors. Thoughtful design. Perfectly executed.
+                {heroSubtitle}
               </p>
             </Reveal>
 
@@ -180,7 +216,7 @@ function HomePage() {
                   className="group inline-flex items-center gap-2 rounded-full px-6 py-3 text-[12px] font-semibold uppercase tracking-[0.2em] text-white shadow-[0_14px_30px_-14px_rgba(184,137,77,0.75)] transition hover:-translate-y-0.5 hover:brightness-95"
                   style={{ background: "linear-gradient(135deg,#C49A5A,#B8894D)" }}
                 >
-                  Explore Our Work
+                  {heroCtaLabel}
                   <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
                 </Link>
               </div>
@@ -202,23 +238,17 @@ function HomePage() {
         <div className="container-prose">
           <div className="text-center mb-12">
             <h2 className="font-serif text-3xl md:text-5xl" style={{ color: "#221912" }}>
-              Why choose <span style={{ color: "#B8894D" }}>the elitenest</span>
+              {whyPre}
+              {whyAccent && <span style={{ color: "#B8894D" }}>{whyAccent}</span>}
             </h2>
           </div>
           
           <div className="grid md:grid-cols-2 gap-8 lg:gap-16">
             {/* Traditional Firm */}
             <div className="bg-white rounded-3xl p-8 md:p-10 shadow-sm border border-[#E5D4BD]/30">
-              <h3 className="font-serif text-2xl mb-6 text-center text-[#221912]">Traditional firm</h3>
+              <h3 className="font-serif text-2xl mb-6 text-center text-[#221912]">{traditionalFirmTitle}</h3>
               <ul className="space-y-4">
-                {[
-                  "Beautiful designs that lack practicality",
-                  "Hidden costs and budget overruns",
-                  "Multiple vendors, multiple headaches",
-                  "Delays and inconsistent execution",
-                  "No clear ownership or accountability",
-                  "Spaces designed for looks, not everyday living"
-                ].map((item, i) => (
+                {traditionalPoints.map((item, i) => (
                   <li key={i} className="flex items-start gap-3 text-muted-foreground text-sm md:text-base">
                     <span className="text-red-500 shrink-0 mt-0.5">❌</span>
                     <span>{item}</span>
@@ -232,16 +262,9 @@ function HomePage() {
               <div className="absolute top-0 right-0 w-32 h-32 bg-[#B8894D] opacity-10 rounded-full blur-3xl" />
               <div className="absolute bottom-0 left-0 w-32 h-32 bg-[#C49A5A] opacity-10 rounded-full blur-3xl" />
               
-              <h3 className="font-serif text-2xl mb-6 text-center text-white">Elite Nest</h3>
+              <h3 className="font-serif text-2xl mb-6 text-center text-white">{elitenestTitle}</h3>
               <ul className="space-y-4 relative z-10">
-                {[
-                  "Function-led designs with timeless aesthetics",
-                  "Transparent budgets with no hidden surprises",
-                  "Single-point accountability from start to finish",
-                  "Structured execution with on-time delivery",
-                  "Smart sourcing for quality and value",
-                  "Spaces crafted for real-life comfort and performance"
-                ].map((item, i) => (
+                {elitenestPoints.map((item, i) => (
                   <li key={i} className="flex items-start gap-3 text-white/90 text-sm md:text-base">
                     <span className="text-[#B8894D] shrink-0 mt-0.5">✅</span>
                     <span>{item}</span>
@@ -266,7 +289,7 @@ function HomePage() {
 
 
       {/* CONSULTATION ENQUIRY */}
-      <ConsultationEnquiry />
+      <ConsultationEnquiry heading={ctaTitle} subtitle={ctaSubtitle} />
 
 
       {/* PROCESS */}
@@ -302,36 +325,7 @@ function HomePage() {
         </div>
       </section>
 
-      {/* GALLERY PREVIEW */}
-      {gallery.length > 0 && (
-        <section className="container-prose py-24 md:py-32">
-          <div className="flex flex-wrap items-end justify-between gap-6">
-            <Reveal>
-              <p className="eyebrow">Selected work</p>
-              <h2 className="mt-4 font-serif text-4xl text-foreground md:text-5xl">From the gallery.</h2>
-            </Reveal>
-            <Reveal delay={1}>
-              <Link to="/gallery" className="inline-flex items-center gap-2 text-sm font-medium text-accent">
-                View all <ArrowRight className="h-4 w-4" />
-              </Link>
-            </Reveal>
-          </div>
-          <div className="mt-12 grid gap-5 md:grid-cols-3">
-            {gallery.slice(0, 6).map((g, i) => (
-              <Reveal key={g.id} delay={((i % 3) + 1) as 1 | 2 | 3}>
-                <Link to="/gallery" className="group relative block aspect-[4/5] overflow-hidden rounded-2xl">
-                  <img src={g.image_url} alt={g.title} loading="lazy" className="h-full w-full object-cover transition duration-1000 group-hover:scale-110" />
-                  <div className="absolute inset-0 bg-gradient-to-t from-charcoal/80 via-charcoal/10 to-transparent" />
-                  <div className="absolute bottom-5 left-5 right-5 text-ivory">
-                    {g.category && <p className="text-[10px] uppercase tracking-[0.2em]" style={{ color: "var(--gold)" }}>{g.category}</p>}
-                    <h3 className="mt-1 font-serif text-xl">{g.title}</h3>
-                  </div>
-                </Link>
-              </Reveal>
-            ))}
-          </div>
-        </section>
-      )}
+
 
       {/* TESTIMONIALS */}
       {testimonials.length > 0 && (

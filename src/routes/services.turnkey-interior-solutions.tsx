@@ -22,9 +22,9 @@ import turnkeyLiving from "@/assets/turnkey-living.jpg";
 import turnkeyKitchen from "@/assets/turnkey-kitchen.jpg";
 
 export const Route = createFileRoute("/services/turnkey-interior-solutions")({
-  loader: ({ context }) => {
+  loader: async ({ context }) => {
     try {
-      context?.queryClient?.prefetchQuery(settingsQuery);
+      await context?.queryClient?.prefetchQuery(settingsQuery);
     } catch (_) {}
   },
   head: () => ({

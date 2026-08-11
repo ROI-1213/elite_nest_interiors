@@ -4,26 +4,22 @@ import { settingsQuery } from "@/lib/queries";
 
 const InstagramIcon = ({ className }: { className?: string }) => (
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className={className} width="24" height="24" fill="none">
-    {/* Outer rounded square */}
     <rect x="2" y="2" width="20" height="20" rx="5.5" stroke="#fff" strokeWidth="2" />
-    {/* Inner circle */}
     <circle cx="12" cy="12" r="4.5" stroke="#fff" strokeWidth="2" />
-    {/* Dot top-right */}
     <circle cx="17" cy="7" r="1.2" fill="#fff" />
   </svg>
 );
 
 const FacebookIcon = ({ className }: { className?: string }) => (
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className={className} width="24" height="24">
-    {/* Blue background */}
-    <rect width="24" height="24" fill="#1877F2" />
-    {/* White "f" letter */}
+    <rect width="24" height="24" fill="#1877F2" rx="4" />
     <path fill="#fff" d="M22.675 0h-21.35C0.6 0 0 0.6 0 1.333v21.333C0 23.4 0.6 24 1.333 24h11.5v-9.333H9.8v-3.8h3.033V8.9c0-3.066 1.867-4.733 4.6-4.733 1.333 0 2.467 0.1 2.8 0.133v3.267h-1.933c-1.533 0-1.833 0.733-1.833 1.8v2.367h3.667l-0.467 3.8h-3.2V24h6.267c0.733 0 1.333-0.6 1.333-1.333V1.333C24 0.6 23.4 0 22.675 0z"/>
   </svg>
 );
 
 const YoutubeIcon = ({ className }: { className?: string }) => (
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className={className} width="24" height="24">
+    <rect width="24" height="24" fill="#FF0000" rx="4" />
     <path fill="#fff" d="M23.498 6.186a3.016 3.016 0 00-2.122-2.136C19.505 3.5 12 3.5 12 3.5s-7.505 0-9.377.55a3.016 3.016 0 00-2.122 2.136C0 8.07 0 12 0 12s0 3.93.501 5.814a3.016 3.016 0 002.122 2.136c1.871.55 9.377.55 9.377.55s7.505 0 9.377-.55a3.016 3.016 0 002.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814z"/>
     <path fill="#FF0000" d="M9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
   </svg>
@@ -31,9 +27,17 @@ const YoutubeIcon = ({ className }: { className?: string }) => (
 
 const WhatsAppIcon = ({ className }: { className?: string }) => (
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className={className} width="24" height="24">
+    <rect width="24" height="24" fill="#25D366" rx="4" />
     <path fill="#fff" d="M20.52 3.449A11.97 11.97 0 0012 0C5.383 0 0 5.383 0 12.002c0 2.115.553 4.181 1.603 6l-1.6 5.845 5.98-1.567a11.956 11.956 0 006.015 1.621h.005c6.617 0 12-5.382 12-11.998a11.966 11.966 0 00-3.483-8.452z"/>
     <path fill="#25D366" d="M12.002 21.906h-.004a9.929 9.929 0 01-5.06-1.385l-.363-.215-3.766.987.998-3.67-.236-.375a9.932 9.932 0 01-1.517-5.242c0-5.485 4.464-9.95 9.953-9.95a9.887 9.887 0 017.039 2.915 9.88 9.88 0 012.913 7.037c0 5.484-4.466 9.948-9.953 9.948z"/>
     <path fill="#fff" d="M17.481 15.011c-.301-.151-1.782-.879-2.058-.979-.276-.1-.478-.151-.678.151-.201.301-.778.979-.954 1.18-.176.201-.352.226-.653.075-.301-.151-1.272-.469-2.423-1.494-.895-.798-1.5-1.784-1.676-2.085-.176-.301-.019-.464.132-.614.135-.135.301-.351.452-.527.151-.176.201-.301.301-.502.1-.201.05-.377-.025-.527-.075-.151-.678-1.631-.929-2.233-.243-.585-.491-.506-.678-.515-.176-.008-.377-.01-.578-.01-.201 0-.527.075-.803.377-.276.301-1.054 1.03-1.054 2.511 0 1.482 1.079 2.914 1.23 3.115.151.201 2.122 3.238 5.138 4.54.717.311 1.277.496 1.713.635.72.228 1.376.196 1.895.118.583-.087 1.782-.729 2.033-1.433.251-.703.251-1.306.176-1.433-.075-.126-.276-.201-.578-.352z"/>
+  </svg>
+);
+
+const LinkedinIcon = ({ className }: { className?: string }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className={className} width="24" height="24">
+    <rect width="24" height="24" fill="#0A66C2" rx="4" />
+    <path fill="#fff" d="M19 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14m-.5 15.5v-5.3a3.26 3.26 0 0 0-3.26-3.26c-.85 0-1.84.52-2.28 1.3v-1.11h-2.79v8.37h2.79v-4.93c0-.77.62-1.4 1.39-1.4a1.4 1.4 0 0 1 1.4 1.4v4.93h2.75M6.46 10.9v8.37H9.25V10.9H6.46M7.86 6.74a1.62 1.62 0 1 0 0 3.24 1.62 1.62 0 0 0 0-3.24z"/>
   </svg>
 );
 
@@ -41,28 +45,50 @@ export function SocialMediaSection() {
   const { data: settings } = useQuery(settingsQuery);
   const [isVisible] = useState(true);
 
+  const instagramUrl =
+    settings?.instagram_url ||
+    "https://www.instagram.com/elitenest5?igsh=MXdqbDBjaDlwOGYyZQ%3D%3D&utm_source=qr";
+  const linkedinUrl =
+    settings?.linkedin_url ||
+    "https://www.linkedin.com/in/elite-nest-architects-and-interiors-7b88b5427?utm_source=share_via&utm_content=profile&utm_medium=member_android";
+  const facebookUrl = settings?.facebook_url || null;
+  const youtubeUrl =
+    settings?.youtube_url ||
+    "https://youtube.com/@elitenestarchitectsinteriors?si=mNi5o-4Xiko1eLiN";
+  const whatsappUrl = settings?.whatsapp
+    ? settings.whatsapp.startsWith("http")
+      ? settings.whatsapp
+      : `https://wa.me/${settings.whatsapp.replace(/\D/g, "")}`
+    : "https://wa.me/919364048269";
+
   const socialLinks = [
     {
       name: "Instagram",
-      url: "https://www.instagram.com/elitenest5?igsh=MXdqbDBjaDlwOGYyZQ%3D%3D&utm_source=qr",
+      url: instagramUrl,
       icon: InstagramIcon,
       bg: "linear-gradient(135deg, #f9ce34 0%, #ee2a7b 50%, #6228d7 100%)",
     },
     {
+      name: "LinkedIn",
+      url: linkedinUrl,
+      icon: LinkedinIcon,
+      bg: "#0A66C2",
+    },
+    {
       name: "Facebook",
-      url: null, // No Facebook page yet — not clickable
+      url: facebookUrl,
       icon: FacebookIcon,
       bg: "#1877F2",
     },
     {
       name: "YouTube",
-      url: "https://youtube.com/@elitenestarchitectsinteriors?si=mNi5o-4Xiko1eLiN",
+      url: youtubeUrl,
       icon: YoutubeIcon,
       bg: "#FF0000",
     },
     {
       name: "WhatsApp",
-      url: `https://wa.me/919364048269`,
+      url: whatsappUrl,
       icon: WhatsAppIcon,
       bg: "#25D366",
     },
@@ -126,71 +152,56 @@ export function SocialMediaSection() {
               </p>
             </div>
 
-            {/* Social Icons */}
-            <div className="flex flex-wrap items-center justify-center gap-5">
-              {socialLinks.map((link, index) => {
-                const Icon = link.icon;
-                const hasUrl = !!link.url;
+            {/* Social Icons Grid */}
+            <div
+              className={`flex flex-wrap items-center justify-center gap-4 sm:gap-6 transition-all duration-700 delay-300 ease-out ${
+                isVisible ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0"
+              }`}
+            >
+              {socialLinks.map((item) => {
+                const IconComponent = item.icon;
+                const isClickable = Boolean(item.url);
 
-                const sharedClass = `group relative flex h-14 w-14 items-center justify-center rounded-2xl shadow-lg transition-all duration-300 ease-out ${
-                  isVisible ? "translate-y-0 opacity-100" : "translate-y-8 opacity-0"
-                } ${
-                  hasUrl
-                    ? "hover:-translate-y-2 hover:scale-110 hover:shadow-[0_10px_35px_rgba(0,0,0,0.4)] cursor-pointer"
-                    : "opacity-40 cursor-not-allowed grayscale"
-                }`;
-
-                const sharedStyle = {
-                  transitionDelay: isVisible ? `${300 + index * 80}ms` : "0ms",
-                  background: link.bg,
-                };
-
-                const inner = (
-                  <>
-                    <Icon className="social-icon transition-transform duration-300 group-hover:scale-110" />
-                    {hasUrl && (
-                      <span className="pointer-events-none absolute -top-10 scale-95 rounded bg-[#c9a96e] px-2.5 py-1 text-xs font-medium text-[#1a1410] opacity-0 shadow-lg transition-all duration-300 group-hover:scale-100 group-hover:opacity-100">
-                        {link.name}
-                        <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 border-4 border-transparent border-t-[#c9a96e]" />
-                      </span>
-                    )}
-                  </>
-                );
-
-                return hasUrl ? (
+                return isClickable ? (
                   <a
-                    key={link.name}
-                    href={link.url!}
+                    key={item.name}
+                    href={item.url!}
                     target="_blank"
                     rel="noopener noreferrer"
-                    aria-label={link.name}
-                    className={sharedClass}
-                    style={sharedStyle}
+                    aria-label={`Follow us on ${item.name}`}
+                    className="group relative flex h-14 w-14 items-center justify-center rounded-2xl transition-all duration-300 hover:-translate-y-1.5 hover:shadow-[0_10px_25px_rgba(0,0,0,0.5)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#c9a96e]"
+                    style={{ background: item.bg }}
                   >
-                    {inner}
+                    <IconComponent className="h-7 w-7 text-white transition-transform duration-300 group-hover:scale-110" />
+
+                    {/* Tooltip */}
+                    <span className="pointer-events-none absolute -bottom-9 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-md bg-[#251e18] px-2.5 py-1 text-[11px] font-medium text-ivory opacity-0 shadow-lg transition-all duration-200 group-hover:bottom-[-36px] group-hover:opacity-100 border border-[#c9a96e]/20">
+                      {item.name}
+                    </span>
                   </a>
                 ) : (
                   <div
-                    key={link.name}
-                    aria-label={`${link.name} (coming soon)`}
-                    title="Coming soon"
-                    className={sharedClass}
-                    style={sharedStyle}
+                    key={item.name}
+                    title={`${item.name} page coming soon`}
+                    className="relative flex h-14 w-14 cursor-not-allowed items-center justify-center rounded-2xl opacity-40 grayscale transition-all duration-300 hover:opacity-60"
+                    style={{ background: item.bg }}
                   >
-                    {inner}
+                    <IconComponent className="h-7 w-7 text-white" />
                   </div>
                 );
               })}
             </div>
 
-            {/* Bottom tagline */}
-            <p
-              className={`mt-10 text-xs tracking-widest text-ivory/30 uppercase transition-all duration-700 delay-700 ease-out ${
+            {/* Sub-caption */}
+            <div
+              className={`mt-10 transition-all duration-700 delay-400 ease-out ${
                 isVisible ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0"
               }`}
             >
-              Elite Nest Interiors · Bengaluru
-            </p>
+              <span className="text-[11px] font-medium uppercase tracking-[0.2em] text-ivory/30">
+                {settings?.business_name || "Elite Nest Interiors"} · Bengaluru
+              </span>
+            </div>
           </div>
         </div>
       </div>

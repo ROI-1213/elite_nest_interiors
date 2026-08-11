@@ -18,8 +18,10 @@ import beforeImg from "@/assets/reno-before.jpg";
 import afterImg from "@/assets/reno-after.jpg";
 
 export const Route = createFileRoute("/services/renovation-remodeling")({
-  loader: ({ context }) => {
-    context.queryClient.prefetchQuery(settingsQuery);
+  loader: async ({ context }) => {
+    try {
+      await context?.queryClient?.prefetchQuery(settingsQuery);
+    } catch (_) {}
   },
   head: () => ({
     meta: [

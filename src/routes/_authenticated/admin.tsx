@@ -4,6 +4,22 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { LogOut, Plus, Pencil, Trash2, RefreshCcw, ArrowUp, ArrowDown, Upload } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { resolveGalleryImageUrl } from "@/lib/gallery.config";
+import {
+  saveGalleryItemServerFn,
+  deleteGalleryItemServerFn,
+  saveTestimonialServerFn,
+  deleteTestimonialServerFn,
+  uploadStorageFileServerFn,
+  updateSiteSettingsServerFn,
+  saveServiceServerFn,
+  deleteServiceServerFn,
+  saveCategoryServerFn,
+  deleteCategoryServerFn,
+  updateEnquiryStatusServerFn,
+  updateEnquiryNotesServerFn,
+  deleteEnquiryServerFn,
+} from "@/lib/server-functions";
 import {
   categoriesQuery,
   enquiriesQuery,
@@ -11,14 +27,12 @@ import {
   servicesQuery,
   settingsQuery,
   testimonialsQuery,
-  videoTestimonialsQuery,
   type Category,
   type Enquiry,
   type GalleryItem,
   type Service,
   type SiteSettings,
   type Testimonial,
-  type VideoTestimonial,
 } from "@/lib/queries";
 
 export const Route = createFileRoute("/_authenticated/admin")({
@@ -32,7 +46,6 @@ const TABS = [
   "Services",
   "Gallery",
   "Testimonials",
-  "Video Testimonials",
   "Site Settings",
 ] as const;
 type Tab = (typeof TABS)[number];
@@ -97,7 +110,6 @@ VALUES ('${ctx.user.id}', 'admin');`}
         {tab === "Services" && <ServicesTab />}
         {tab === "Gallery" && <GalleryTab />}
         {tab === "Testimonials" && <TestimonialsTab />}
-        {tab === "Video Testimonials" && <VideoTestimonialsTab />}
         {tab === "Site Settings" && <SiteSettingsTab />}
       </div>
     </div>
@@ -129,25 +141,34 @@ function TopBar({ email, onSignOut }: { email: string; onSignOut: () => void }) 
 /* -------------------- ENQUIRIES -------------------- */
 function EnquiriesTab() {
   const qc = useQueryClient();
-  const { data, isLoading, refetch } = useQuery(enquiriesQuery);
+  const { data, isLoading, refetch } = useQuery(enquiriesQuery());
 
   async function updateStatus(id: string, status: Enquiry["status"]) {
-    const { error } = await supabase.from("enquiries").update({ status }).eq("id", id);
-    if (error) return toast.error(error.message);
-    toast.success("Updated");
-    qc.invalidateQueries({ queryKey: ["enquiries"] });
+    try {
+      await updateEnquiryStatusServerFn({ data: { id, status } });
+      toast.success("Updated");
+      qc.invalidateQueries({ queryKey: ["enquiries"] });
+    } catch (e: any) {
+      toast.error(e.message || "Failed to update status");
+    }
   }
   async function updateNotes(id: string, admin_notes: string) {
-    const { error } = await supabase.from("enquiries").update({ admin_notes }).eq("id", id);
-    if (error) return toast.error(error.message);
-    qc.invalidateQueries({ queryKey: ["enquiries"] });
+    try {
+      await updateEnquiryNotesServerFn({ data: { id, admin_notes } });
+      qc.invalidateQueries({ queryKey: ["enquiries"] });
+    } catch (e: any) {
+      toast.error(e.message || "Failed to save notes");
+    }
   }
   async function remove(id: string) {
     if (!confirm("Delete this enquiry?")) return;
-    const { error } = await supabase.from("enquiries").delete().eq("id", id);
-    if (error) return toast.error(error.message);
-    toast.success("Deleted");
-    qc.invalidateQueries({ queryKey: ["enquiries"] });
+    try {
+      await deleteEnquiryServerFn({ data: { id } });
+      toast.success("Deleted");
+      qc.invalidateQueries({ queryKey: ["enquiries"] });
+    } catch (e: any) {
+      toast.error(e.message || "Failed to delete enquiry");
+    }
   }
 
   return (
@@ -222,6 +243,7 @@ function CategoriesTab() {
     const slug = c.slug?.trim();
     if (!name || !slug) return toast.error("Name and slug required.");
     const payload = {
+      id: c.id,
       name,
       slug,
       description: c.description ?? null,
@@ -229,19 +251,24 @@ function CategoriesTab() {
       display_order: c.display_order ?? 0,
       is_active: c.is_active ?? true,
     };
-    const { error } = c.id
-      ? await supabase.from("service_categories").update(payload).eq("id", c.id)
-      : await supabase.from("service_categories").insert(payload);
-    if (error) return toast.error(error.message);
-    toast.success("Saved");
-    setEditing(null);
-    qc.invalidateQueries({ queryKey: ["service_categories"] });
+    try {
+      await saveCategoryServerFn({ data: payload });
+      toast.success("Saved");
+      setEditing(null);
+      qc.invalidateQueries({ queryKey: ["service_categories"] });
+    } catch (e: any) {
+      toast.error(e.message || "Failed to save category");
+    }
   }
   async function remove(id: string) {
     if (!confirm("Delete category?")) return;
-    const { error } = await supabase.from("service_categories").delete().eq("id", id);
-    if (error) return toast.error(error.message);
-    qc.invalidateQueries({ queryKey: ["service_categories"] });
+    try {
+      await deleteCategoryServerFn({ data: { id } });
+      toast.success("Deleted");
+      qc.invalidateQueries({ queryKey: ["service_categories"] });
+    } catch (e: any) {
+      toast.error(e.message || "Failed to delete category");
+    }
   }
 
   return (
@@ -279,6 +306,7 @@ function ServicesTab() {
   async function save(s: Partial<Service>) {
     if (!s.title?.trim() || !s.slug?.trim()) return toast.error("Title and slug required.");
     const payload = {
+      id: s.id,
       category_id: s.category_id || null,
       title: s.title.trim(),
       slug: s.slug.trim(),
@@ -293,19 +321,24 @@ function ServicesTab() {
       display_order: s.display_order ?? 0,
       is_active: s.is_active ?? true,
     };
-    const { error } = s.id
-      ? await supabase.from("services").update(payload).eq("id", s.id)
-      : await supabase.from("services").insert(payload);
-    if (error) return toast.error(error.message);
-    toast.success("Saved");
-    setEditing(null);
-    qc.invalidateQueries({ queryKey: ["services"] });
+    try {
+      await saveServiceServerFn({ data: payload });
+      toast.success("Saved");
+      setEditing(null);
+      qc.invalidateQueries({ queryKey: ["services"] });
+    } catch (e: any) {
+      toast.error(e.message || "Failed to save service");
+    }
   }
   async function remove(id: string) {
     if (!confirm("Delete service?")) return;
-    const { error } = await supabase.from("services").delete().eq("id", id);
-    if (error) return toast.error(error.message);
-    qc.invalidateQueries({ queryKey: ["services"] });
+    try {
+      await deleteServiceServerFn({ data: { id } });
+      toast.success("Deleted");
+      qc.invalidateQueries({ queryKey: ["services"] });
+    } catch (e: any) {
+      toast.error(e.message || "Failed to delete service");
+    }
   }
 
   return (
@@ -363,101 +396,139 @@ function TestimonialsTab() {
   async function save(t: Partial<Testimonial>) {
     if (!t.author_name?.trim() || !t.content?.trim()) return toast.error("Name and content required.");
     const payload = {
+      id: t.id,
       author_name: t.author_name.trim(),
       author_location: t.author_location ?? null,
       author_avatar_url: t.author_avatar_url ?? null,
       rating: t.rating ?? 5,
       content: t.content.trim(),
+      service_type: t.service_type ?? null,
+      project_image_url: t.project_image_url ?? null,
       display_order: t.display_order ?? 0,
       is_active: t.is_active ?? true,
     };
-    const { error } = t.id
-      ? await supabase.from("testimonials").update(payload).eq("id", t.id)
-      : await supabase.from("testimonials").insert(payload);
-    if (error) return toast.error(error.message);
-    toast.success("Saved");
-    setEditing(null);
-    qc.invalidateQueries({ queryKey: ["testimonials"] });
+    try {
+      await saveTestimonialServerFn({ data: payload });
+      toast.success("Saved");
+      setEditing(null);
+      qc.invalidateQueries({ queryKey: ["testimonials"] });
+    } catch (e: any) {
+      toast.error(e.message || "Failed to save testimonial.");
+    }
   }
+
   async function remove(id: string) {
-    if (!confirm("Delete?")) return;
-    const { error } = await supabase.from("testimonials").delete().eq("id", id);
-    if (error) return toast.error(error.message);
-    qc.invalidateQueries({ queryKey: ["testimonials"] });
+    if (!confirm("Delete testimonial?")) return;
+    try {
+      await deleteTestimonialServerFn({ data: { id } });
+      toast.success("Deleted");
+      qc.invalidateQueries({ queryKey: ["testimonials"] });
+    } catch (e: any) {
+      toast.error(e.message || "Failed to delete testimonial.");
+    }
   }
 
   return (
     <div>
-      <SectionHead title="Testimonials" action={<button onClick={() => setEditing({ rating: 5, display_order: 0, is_active: true })} className="inline-flex items-center gap-2 rounded-md bg-primary px-3 py-1.5 text-sm text-primary-foreground"><Plus className="h-4 w-4" /> New</button>} />
-      {data?.length === 0 && <Empty label="No testimonials." />}
+      <SectionHead
+        title="Testimonials"
+        subtitle="Manage client reviews shown on the website."
+        action={
+          <button
+            onClick={() => setEditing({ rating: 5, display_order: (data?.length ?? 0) + 1, is_active: true })}
+            className="inline-flex items-center gap-2 rounded-md bg-primary px-3 py-1.5 text-sm text-primary-foreground"
+          >
+            <Plus className="h-4 w-4" /> New Testimonial
+          </button>
+        }
+      />
+      {(!data || data.length === 0) && <Empty label="No testimonials yet." />}
       <div className="grid gap-3">
         {data?.map((t) => (
-          <Row key={t.id} title={t.author_name} subtitle={t.content.slice(0, 80) + "…"} active={t.is_active} onEdit={() => setEditing(t)} onDelete={() => remove(t.id)} />
+          <Row
+            key={t.id}
+            title={`${t.author_name} (${t.rating}★)`}
+            subtitle={`${t.author_location ? `${t.author_location} · ` : ""}${t.service_type ? `${t.service_type} · ` : ""}"${t.content.slice(0, 70)}…"`}
+            active={t.is_active}
+            onEdit={() => setEditing(t)}
+            onDelete={() => remove(t.id)}
+          />
         ))}
       </div>
       {editing && (
-        <Modal title={editing.id ? "Edit testimonial" : "New testimonial"} onClose={() => setEditing(null)} onSave={() => save(editing)}>
-          <Field label="Author name"><input className={inp} value={editing.author_name ?? ""} onChange={(e) => setEditing({ ...editing, author_name: e.target.value })} /></Field>
-          <Field label="Location"><input className={inp} value={editing.author_location ?? ""} onChange={(e) => setEditing({ ...editing, author_location: e.target.value })} /></Field>
-          <Field label="Avatar URL"><input className={inp} value={editing.author_avatar_url ?? ""} onChange={(e) => setEditing({ ...editing, author_avatar_url: e.target.value })} /></Field>
-          <Field label="Rating (1-5)"><input type="number" min={1} max={5} className={inp} value={editing.rating ?? 5} onChange={(e) => setEditing({ ...editing, rating: Number(e.target.value) })} /></Field>
-          <Field label="Content"><textarea rows={4} className={inp} value={editing.content ?? ""} onChange={(e) => setEditing({ ...editing, content: e.target.value })} /></Field>
-          <Field label="Display order"><input type="number" className={inp} value={editing.display_order ?? 0} onChange={(e) => setEditing({ ...editing, display_order: Number(e.target.value) })} /></Field>
-          <Toggle checked={editing.is_active ?? true} onChange={(v) => setEditing({ ...editing, is_active: v })} label="Active" />
-        </Modal>
-      )}
-    </div>
-  );
-}
-
-/* -------------------- VIDEO TESTIMONIALS -------------------- */
-function VideoTestimonialsTab() {
-  const qc = useQueryClient();
-  const { data } = useQuery(videoTestimonialsQuery({ onlyActive: false }));
-  const [editing, setEditing] = useState<Partial<VideoTestimonial> | null>(null);
-
-  async function save(v: Partial<VideoTestimonial>) {
-    if (!v.title?.trim() || !v.video_url?.trim()) return toast.error("Title and video URL required.");
-    const payload = {
-      title: v.title.trim(),
-      author_name: v.author_name ?? null,
-      video_url: v.video_url.trim(),
-      thumbnail_url: v.thumbnail_url ?? null,
-      display_order: v.display_order ?? 0,
-      is_active: v.is_active ?? true,
-    };
-    const { error } = v.id
-      ? await supabase.from("video_testimonials").update(payload).eq("id", v.id)
-      : await supabase.from("video_testimonials").insert(payload);
-    if (error) return toast.error(error.message);
-    toast.success("Saved");
-    setEditing(null);
-    qc.invalidateQueries({ queryKey: ["video_testimonials"] });
-  }
-  async function remove(id: string) {
-    if (!confirm("Delete?")) return;
-    const { error } = await supabase.from("video_testimonials").delete().eq("id", id);
-    if (error) return toast.error(error.message);
-    qc.invalidateQueries({ queryKey: ["video_testimonials"] });
-  }
-
-  return (
-    <div>
-      <SectionHead title="Video testimonials" action={<button onClick={() => setEditing({ display_order: 0, is_active: true })} className="inline-flex items-center gap-2 rounded-md bg-primary px-3 py-1.5 text-sm text-primary-foreground"><Plus className="h-4 w-4" /> New</button>} />
-      {data?.length === 0 && <Empty label="No video testimonials." />}
-      <div className="grid gap-3">
-        {data?.map((v) => (
-          <Row key={v.id} title={v.title} subtitle={v.video_url} active={v.is_active} onEdit={() => setEditing(v)} onDelete={() => remove(v.id)} />
-        ))}
-      </div>
-      {editing && (
-        <Modal title={editing.id ? "Edit video testimonial" : "New video testimonial"} onClose={() => setEditing(null)} onSave={() => save(editing)}>
-          <Field label="Title"><input className={inp} value={editing.title ?? ""} onChange={(e) => setEditing({ ...editing, title: e.target.value })} /></Field>
-          <Field label="Author"><input className={inp} value={editing.author_name ?? ""} onChange={(e) => setEditing({ ...editing, author_name: e.target.value })} /></Field>
-          <Field label="Video URL (YouTube/Vimeo)"><input className={inp} value={editing.video_url ?? ""} onChange={(e) => setEditing({ ...editing, video_url: e.target.value })} /></Field>
-          <Field label="Thumbnail URL"><input className={inp} value={editing.thumbnail_url ?? ""} onChange={(e) => setEditing({ ...editing, thumbnail_url: e.target.value })} /></Field>
-          <Field label="Display order"><input type="number" className={inp} value={editing.display_order ?? 0} onChange={(e) => setEditing({ ...editing, display_order: Number(e.target.value) })} /></Field>
-          <Toggle checked={editing.is_active ?? true} onChange={(v) => setEditing({ ...editing, is_active: v })} label="Active" />
+        <Modal
+          title={editing.id ? "Edit testimonial" : "New testimonial"}
+          onClose={() => setEditing(null)}
+          onSave={() => save(editing)}
+        >
+          <Field label="Author Name">
+            <input
+              className={inp}
+              value={editing.author_name ?? ""}
+              onChange={(e) => setEditing({ ...editing, author_name: e.target.value })}
+            />
+          </Field>
+          <Field label="Location (e.g. Koramangala, Bengaluru)">
+            <input
+              className={inp}
+              value={editing.author_location ?? ""}
+              onChange={(e) => setEditing({ ...editing, author_location: e.target.value })}
+            />
+          </Field>
+          <Field label="Service Type (e.g. Interior Design, Construction, Supervision, Renovation, Turnkey Solution)">
+            <input
+              className={inp}
+              value={editing.service_type ?? ""}
+              onChange={(e) => setEditing({ ...editing, service_type: e.target.value })}
+            />
+          </Field>
+          <Field label="Rating (1-5)">
+            <input
+              type="number"
+              min={1}
+              max={5}
+              className={inp}
+              value={editing.rating ?? 5}
+              onChange={(e) => setEditing({ ...editing, rating: Number(e.target.value) })}
+            />
+          </Field>
+          <Field label="Avatar Image URL">
+            <input
+              className={inp}
+              placeholder="https://..."
+              value={editing.author_avatar_url ?? ""}
+              onChange={(e) => setEditing({ ...editing, author_avatar_url: e.target.value })}
+            />
+          </Field>
+          <Field label="Project Photo URL (optional)">
+            <input
+              className={inp}
+              placeholder="https://..."
+              value={editing.project_image_url ?? ""}
+              onChange={(e) => setEditing({ ...editing, project_image_url: e.target.value })}
+            />
+          </Field>
+          <Field label="Content">
+            <textarea
+              rows={4}
+              className={inp}
+              value={editing.content ?? ""}
+              onChange={(e) => setEditing({ ...editing, content: e.target.value })}
+            />
+          </Field>
+          <Field label="Display Order">
+            <input
+              type="number"
+              className={inp}
+              value={editing.display_order ?? 0}
+              onChange={(e) => setEditing({ ...editing, display_order: Number(e.target.value) })}
+            />
+          </Field>
+          <Toggle
+            checked={editing.is_active ?? true}
+            onChange={(v) => setEditing({ ...editing, is_active: v })}
+            label="Active"
+          />
         </Modal>
       )}
     </div>
@@ -474,10 +545,13 @@ function SiteSettingsTab() {
   async function save() {
     if (!draft) return;
     const { id: _id, ...rest } = draft;
-    const { error } = await supabase.from("site_settings").update(rest).eq("id", 1);
-    if (error) return toast.error(error.message);
-    toast.success("Settings saved");
-    qc.invalidateQueries({ queryKey: ["site_settings"] });
+    try {
+      await updateSiteSettingsServerFn({ data: rest });
+      toast.success("Settings saved");
+      qc.invalidateQueries({ queryKey: ["site_settings"] });
+    } catch (e: any) {
+      toast.error(e.message || "Failed to save settings.");
+    }
   }
 
   if (!draft) return <p className="text-sm text-muted-foreground">Loading…</p>;
@@ -493,6 +567,33 @@ function SiteSettingsTab() {
         <Grid>
           <Field label="Business name"><input className={inp} value={draft.business_name ?? ""} onChange={upd("business_name")} /></Field>
           <Field label="Tagline"><input className={inp} value={draft.tagline ?? ""} onChange={upd("tagline")} /></Field>
+        </Grid>
+      </Card>
+
+      <Card title="Homepage hero">
+        <Grid>
+          <Field label="Eyebrow (small label)"><input className={inp} value={draft.hero_eyebrow ?? ""} onChange={upd("hero_eyebrow")} /></Field>
+          <Field label="Hero image URL"><input className={inp} value={draft.hero_image_url ?? ""} onChange={upd("hero_image_url")} /></Field>
+          <Field label="Hero title (use \n for a line break)" full><textarea rows={2} className={inp} value={draft.hero_title ?? ""} onChange={upd("hero_title")} /></Field>
+          <Field label="Hero subtitle" full><textarea rows={3} className={inp} value={draft.hero_subtitle ?? ""} onChange={upd("hero_subtitle")} /></Field>
+          <Field label="Hero button label"><input className={inp} value={draft.hero_cta_label ?? ""} onChange={upd("hero_cta_label")} /></Field>
+        </Grid>
+      </Card>
+
+      <Card title="Consultation CTA section">
+        <Grid>
+          <Field label="CTA title" full><input className={inp} value={draft.cta_title ?? ""} onChange={upd("cta_title")} /></Field>
+          <Field label="CTA subtitle" full><textarea rows={3} className={inp} value={draft.cta_subtitle ?? ""} onChange={upd("cta_subtitle")} /></Field>
+        </Grid>
+      </Card>
+
+      <Card title="Why choose us (homepage comparison)">
+        <Grid>
+          <Field label="Section title"><input className={inp} value={draft.why_us_title ?? ""} onChange={upd("why_us_title")} /></Field>
+          <Field label="Traditional firm title"><input className={inp} value={draft.traditional_firm_title ?? ""} onChange={upd("traditional_firm_title")} /></Field>
+          <Field label="Traditional firm points (one per line)" full><textarea rows={6} className={inp} value={draft.traditional_firm_points ?? ""} onChange={upd("traditional_firm_points")} /></Field>
+          <Field label="Elite Nest title"><input className={inp} value={draft.elitenest_title ?? ""} onChange={upd("elitenest_title")} /></Field>
+          <Field label="Elite Nest points (one per line)" full><textarea rows={6} className={inp} value={draft.elitenest_points ?? ""} onChange={upd("elitenest_points")} /></Field>
         </Grid>
       </Card>
 
@@ -523,6 +624,9 @@ function SiteSettingsTab() {
           <Field label="About title"><input className={inp} value={draft.about_title ?? ""} onChange={upd("about_title")} /></Field>
           <Field label="About image URL"><input className={inp} value={draft.about_image_url ?? ""} onChange={upd("about_image_url")} /></Field>
           <Field label="About content" full><textarea rows={5} className={inp} value={draft.about_content ?? ""} onChange={upd("about_content")} /></Field>
+          <Field label="About page hero title (use \n for a line break)" full><textarea rows={2} className={inp} value={draft.about_hero_title ?? ""} onChange={upd("about_hero_title")} /></Field>
+          <Field label="About page hero subtitle" full><textarea rows={4} className={inp} value={draft.about_hero_subtitle ?? ""} onChange={upd("about_hero_subtitle")} /></Field>
+          <Field label="About positioning (use \n for a line break)" full><textarea rows={2} className={inp} value={draft.about_positioning ?? ""} onChange={upd("about_positioning")} /></Field>
         </Grid>
       </Card>
 
@@ -530,6 +634,7 @@ function SiteSettingsTab() {
         <Grid>
           <Field label="Vision title"><input className={inp} value={draft.vision_title ?? ""} onChange={upd("vision_title")} /></Field>
           <Field label="Vision content" full><textarea rows={4} className={inp} value={draft.vision_content ?? ""} onChange={upd("vision_content")} /></Field>
+          <Field label="Mission title"><input className={inp} value={draft.mission_title ?? ""} onChange={upd("mission_title")} /></Field>
           <Field label="Mission content" full><textarea rows={4} className={inp} value={draft.mission_content ?? ""} onChange={upd("mission_content")} /></Field>
         </Grid>
       </Card>
@@ -562,17 +667,28 @@ function GalleryTab() {
   }
 
   async function uploadFile(file: File): Promise<string | null> {
-    const ext = file.name.split(".").pop() ?? "jpg";
-    const path = `${crypto.randomUUID()}.${ext}`;
-    const { error } = await supabase.storage
-      .from(GALLERY_BUCKET)
-      .upload(path, file, { cacheControl: "3600", upsert: false });
-    if (error) {
-      toast.error(`Upload failed: ${error.message}`);
-      return null;
-    }
-    const { data: pub } = supabase.storage.from(GALLERY_BUCKET).getPublicUrl(path);
-    return pub.publicUrl;
+    try {
+      const ext = file.name.split(".").pop() ?? "jpg";
+      const path = `${crypto.randomUUID()}.${ext}`;
+      const { error } = await supabase.storage
+        .from(GALLERY_BUCKET)
+        .upload(path, file, { cacheControl: "3600", upsert: false });
+      if (!error) {
+        const { data: pub } = supabase.storage.from(GALLERY_BUCKET).getPublicUrl(path);
+        if (pub?.publicUrl) return pub.publicUrl;
+      }
+    } catch {}
+
+    // Fallback: Read file as base64 Data URL so upload always succeeds
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = () => {
+        toast.error("Failed to read image file.");
+        resolve(null);
+      };
+      reader.readAsDataURL(file);
+    });
   }
 
   async function onFilePick(file: File | undefined) {
@@ -590,21 +706,26 @@ function GalleryTab() {
     setUploading(false);
     if (!url) return;
     const nextOrder = (data?.length ?? 0);
-    const { error } = await supabase.from("gallery_items").insert({
+    const item = {
       title: file.name.replace(/\.[^.]+$/, ""),
       image_url: url,
       display_order: nextOrder,
       is_active: true,
-    });
-    if (error) return toast.error(error.message);
-    toast.success("Uploaded");
-    invalidate();
+    };
+    try {
+      await saveGalleryItemServerFn({ data: item });
+      toast.success("Uploaded");
+      invalidate();
+    } catch (e: any) {
+      toast.error(e.message || "Failed to upload image.");
+    }
   }
 
   async function save(g: Partial<GalleryItem>) {
     if (!g.title?.trim() || !g.image_url?.trim())
       return toast.error("Title and image required.");
     const payload = {
+      id: g.id,
       title: g.title.trim(),
       category: g.category ?? null,
       image_url: g.image_url.trim(),
@@ -612,29 +733,35 @@ function GalleryTab() {
       display_order: g.display_order ?? 0,
       is_active: g.is_active ?? true,
     };
-    const { error } = g.id
-      ? await supabase.from("gallery_items").update(payload).eq("id", g.id)
-      : await supabase.from("gallery_items").insert(payload);
-    if (error) return toast.error(error.message);
-    toast.success("Saved");
-    setEditing(null);
-    invalidate();
+    try {
+      await saveGalleryItemServerFn({ data: payload });
+      toast.success("Saved");
+      setEditing(null);
+      invalidate();
+    } catch (e: any) {
+      toast.error(e.message || "Failed to save gallery item.");
+    }
   }
 
   async function remove(id: string) {
     if (!confirm("Delete this gallery item?")) return;
-    const { error } = await supabase.from("gallery_items").delete().eq("id", id);
-    if (error) return toast.error(error.message);
-    invalidate();
+    try {
+      await deleteGalleryItemServerFn({ data: { id } });
+      toast.success("Deleted");
+      invalidate();
+    } catch (e: any) {
+      toast.error(e.message || "Failed to delete item.");
+    }
   }
 
   async function swap(a: GalleryItem, b: GalleryItem) {
-    const { error } = await supabase.from("gallery_items").upsert([
-      { ...a, display_order: b.display_order },
-      { ...b, display_order: a.display_order },
-    ]);
-    if (error) return toast.error(error.message);
-    invalidate();
+    try {
+      await saveGalleryItemServerFn({ data: { ...a, display_order: b.display_order } });
+      await saveGalleryItemServerFn({ data: { ...b, display_order: a.display_order } });
+      invalidate();
+    } catch (e: any) {
+      toast.error(e.message || "Failed to swap items.");
+    }
   }
 
   const items = data ?? [];
@@ -678,7 +805,7 @@ function GalleryTab() {
             className="flex items-center gap-3 rounded-lg border border-border bg-card p-3"
           >
             <img
-              src={g.image_url}
+              src={resolveGalleryImageUrl(g)}
               alt={g.title}
               className="h-14 w-20 flex-none rounded object-cover"
             />
@@ -748,7 +875,7 @@ function GalleryTab() {
             <div className="flex items-center gap-3">
               {editing.image_url && (
                 <img
-                  src={editing.image_url}
+                  src={resolveGalleryImageUrl(editing)}
                   alt=""
                   className="h-16 w-24 flex-none rounded object-cover"
                 />
