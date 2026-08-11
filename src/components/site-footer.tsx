@@ -41,12 +41,13 @@ export function SiteFooter() {
 
       <div className="container-prose grid gap-12 py-20 md:grid-cols-12">
         <div className="md:col-span-4">
-          <Link to="/" className="inline-flex items-center">
+          {/* Clip the transparent PNG padding while keeping the logo visually large */}
+          <Link to="/" className="block overflow-hidden" style={{ height: "120px" }}>
             <img
               src={logo}
               alt={s?.business_name ?? "Elite Nest Interiors"}
-              className="h-56 md:h-72 w-auto object-contain object-left transition-transform duration-300 hover:scale-105"
-              style={{ mixBlendMode: "screen" }}
+              className="h-72 md:h-96 w-auto object-contain object-left transition-transform duration-300 hover:scale-105"
+              style={{ mixBlendMode: "screen", marginTop: "-60px" }}
             />
           </Link>
           <p className="mt-3 max-w-sm text-sm leading-relaxed text-[#FFF8EE]/78">
