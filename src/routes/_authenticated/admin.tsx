@@ -1479,14 +1479,62 @@ function SiteSettingsTab() {
 /* -------------------- GALLERY -------------------- */
 const GALLERY_BUCKET = "gallery";
 
+const GALLERY_CATEGORIES = [
+  "Construction",
+  "Residential Interiors",
+  "Commercial Interiors",
+  "Renovation",
+  "Turnkey Projects",
+  "Bedrooms",
+  "Living Rooms",
+  "Kitchens",
+  "Dining",
+  "Pooja / Foyer",
+];
+
 function GalleryTab() {
   const qc = useQueryClient();
   const { data } = useQuery(galleryQuery({ onlyActive: false }));
+  const { data: settingsData } = useQuery(settingsQuery);
   const [editing, setEditing] = useState<Partial<GalleryItem> | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [uploadingHero, setUploadingHero] = useState(false);
+  const [pageSettings, setPageSettings] = useState<SiteSettings | null>(null);
+
+  useEffect(() => {
+    if (settingsData && !pageSettings) setPageSettings(settingsData);
+  }, [settingsData, pageSettings]);
 
   function invalidate() {
     qc.invalidateQueries({ queryKey: ["gallery_items"] });
+  }
+
+  async function savePageSettings() {
+    if (!pageSettings) return;
+    const { id: _id, ...rest } = pageSettings;
+    try {
+      await updateSiteSettingsServerFn({ data: rest });
+      toast.success("Gallery page settings saved successfully!");
+      qc.invalidateQueries({ queryKey: ["site_settings"] });
+    } catch (e: any) {
+      toast.error(e.message || "Failed to save gallery page settings.");
+    }
+  }
+
+  async function handleHeroUpload(file?: File) {
+    if (!file || !pageSettings) return;
+    setUploadingHero(true);
+    try {
+      const url = await uploadToStorage(file, "gallery-hero");
+      if (url) {
+        setPageSettings({ ...pageSettings, gallery_hero_image_url: url });
+        toast.success("Gallery hero image uploaded.");
+      }
+    } catch (err: any) {
+      toast.error("Upload failed: " + err.message);
+    } finally {
+      setUploadingHero(false);
+    }
   }
 
   async function uploadFile(file: File): Promise<string | null> {
@@ -1517,16 +1565,18 @@ function GalleryTab() {
     const url = await uploadFile(file);
     setUploading(false);
     if (!url) return;
-    const nextOrder = (data?.length ?? 0);
+    const nextOrder = (data?.length ?? 0) + 1;
     const item = {
       title: file.name.replace(/\.[^.]+$/, ""),
       image_url: url,
+      category: "Residential Interiors",
+      location: "Bengaluru",
       display_order: nextOrder,
       is_active: true,
     };
     try {
       await saveGalleryItemServerFn({ data: item });
-      toast.success("Uploaded");
+      toast.success("Uploaded and saved to gallery!");
       invalidate();
     } catch (e: any) {
       toast.error(e.message || "Failed to upload image.");
@@ -1540,6 +1590,7 @@ function GalleryTab() {
       id: g.id,
       title: g.title.trim(),
       category: g.category ?? null,
+      location: g.location?.trim() || null,
       image_url: g.image_url.trim(),
       description: g.description ?? null,
       display_order: g.display_order ?? 0,
@@ -1547,7 +1598,7 @@ function GalleryTab() {
     };
     try {
       await saveGalleryItemServerFn({ data: payload });
-      toast.success("Saved");
+      toast.success("Saved gallery item");
       setEditing(null);
       invalidate();
     } catch (e: any) {
@@ -1580,167 +1631,257 @@ function GalleryTab() {
 
   const items = [...(data ?? [])].sort((a, b) => a.display_order - b.display_order);
 
+  const updPage = (k: keyof SiteSettings) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    if (pageSettings) {
+      setPageSettings({ ...pageSettings, [k]: e.target.value });
+    }
+  };
+
   return (
-    <div>
-      <SectionHead
-        title="Gallery"
-        subtitle="Manage interior design portfolio photos shown in the curated gallery."
-        action={
-          <div className="flex items-center gap-2">
-            <label className="inline-flex cursor-pointer items-center gap-2 rounded-md border border-border px-3 py-1.5 text-sm hover:border-accent">
-              <Upload className="h-4 w-4" />
-              {uploading ? "Uploading…" : "Quick upload"}
-              <input
-                type="file"
-                accept="image/*"
-                className="hidden"
-                disabled={uploading}
-                onChange={(e) => {
-                  quickUpload(e.target.files?.[0]);
-                  e.target.value = "";
-                }}
-              />
-            </label>
-            <button
-              onClick={() =>
-                setEditing({ display_order: items.length, is_active: true })
-              }
-              className="inline-flex items-center gap-2 rounded-md bg-primary px-3 py-1.5 text-sm text-primary-foreground"
-            >
-              <Plus className="h-4 w-4" /> New Item
+    <div className="space-y-8">
+      {/* GALLERY PAGE SETTINGS */}
+      {pageSettings && (
+        <Card title="Gallery Page Settings (Headlines, Hero Image & CTAs)">
+          <Grid>
+            <Field label="Hero Title">
+              <input className={inp} value={pageSettings.gallery_hero_title ?? ""} onChange={updPage("gallery_hero_title")} />
+            </Field>
+            <Field label="Hero Subtitle">
+              <input className={inp} value={pageSettings.gallery_hero_subtitle ?? ""} onChange={updPage("gallery_hero_subtitle")} />
+            </Field>
+            <Field label="Hero Background Image" full>
+              <div className="flex flex-wrap items-center gap-3">
+                {pageSettings.gallery_hero_image_url && (
+                  <img src={pageSettings.gallery_hero_image_url} alt="" className="h-16 w-28 rounded object-cover border border-border" />
+                )}
+                <label className="inline-flex cursor-pointer items-center gap-2 rounded-md border border-border px-3 py-1.5 text-sm hover:border-accent">
+                  <Upload className="h-4 w-4" />
+                  {uploadingHero ? "Uploading…" : "Upload Hero Image"}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => {
+                      handleHeroUpload(e.target.files?.[0]);
+                      e.target.value = "";
+                    }}
+                  />
+                </label>
+              </div>
+              <input className={`${inp} mt-2`} placeholder="…or paste image URL" value={pageSettings.gallery_hero_image_url ?? ""} onChange={updPage("gallery_hero_image_url")} />
+            </Field>
+            <Field label="Featured Section Eyebrow">
+              <input className={inp} value={pageSettings.gallery_featured_eyebrow ?? ""} onChange={updPage("gallery_featured_eyebrow")} />
+            </Field>
+            <Field label="Grid Eyebrow">
+              <input className={inp} value={pageSettings.gallery_grid_eyebrow ?? ""} onChange={updPage("gallery_grid_eyebrow")} />
+            </Field>
+            <Field label="Grid Main Title">
+              <input className={inp} value={pageSettings.gallery_grid_title ?? ""} onChange={updPage("gallery_grid_title")} />
+            </Field>
+            <Field label="Video Section Eyebrow">
+              <input className={inp} value={pageSettings.gallery_video_eyebrow ?? ""} onChange={updPage("gallery_video_eyebrow")} />
+            </Field>
+            <Field label="Video Section Title">
+              <input className={inp} value={pageSettings.gallery_video_title ?? ""} onChange={updPage("gallery_video_title")} />
+            </Field>
+            <Field label="CTA Headline">
+              <input className={inp} value={pageSettings.gallery_cta_title ?? ""} onChange={updPage("gallery_cta_title")} />
+            </Field>
+            <Field label="CTA Subtitle" full>
+              <textarea rows={2} className={inp} value={pageSettings.gallery_cta_subtitle ?? ""} onChange={updPage("gallery_cta_subtitle")} />
+            </Field>
+            <Field label="CTA Button 1 Label">
+              <input className={inp} value={pageSettings.gallery_cta_btn1 ?? ""} onChange={updPage("gallery_cta_btn1")} />
+            </Field>
+            <Field label="CTA Button 2 Label">
+              <input className={inp} value={pageSettings.gallery_cta_btn2 ?? ""} onChange={updPage("gallery_cta_btn2")} />
+            </Field>
+          </Grid>
+          <div className="mt-4 flex justify-end">
+            <button onClick={savePageSettings} className="rounded-md bg-primary px-5 py-2 text-sm font-medium text-primary-foreground hover:opacity-90 transition">
+              Save gallery page settings
             </button>
           </div>
-        }
-      />
-      {items.length === 0 && <Empty label="No gallery items yet." />}
-      <div className="grid gap-3">
-        {items.map((g, i) => (
-          <div
-            key={g.id}
-            className="flex items-center gap-3 rounded-lg border border-border bg-card p-3"
-          >
-            <img
-              src={resolveGalleryImageUrl(g)}
-              alt={g.title}
-              className="h-14 w-20 flex-none rounded object-cover"
-            />
-            <div className="min-w-0 flex-1">
-              <p className="truncate font-medium text-foreground">{g.title}</p>
-              <p className="truncate text-xs text-muted-foreground">
-                {g.category ?? "—"} · order {g.display_order}
-              </p>
-            </div>
-            <div className="flex items-center gap-1">
-              {!g.is_active && (
-                <span className="rounded-full bg-secondary px-2 py-0.5 text-[10px] uppercase tracking-wider text-muted-foreground">
-                  Inactive
-                </span>
-              )}
-              <button
-                disabled={i === 0}
-                onClick={() => swap(g, items[i - 1])}
-                className="rounded-md border border-border p-1.5 hover:border-accent disabled:opacity-30"
-              >
-                <ArrowUp className="h-4 w-4" />
-              </button>
-              <button
-                disabled={i === items.length - 1}
-                onClick={() => swap(g, items[i + 1])}
-                className="rounded-md border border-border p-1.5 hover:border-accent disabled:opacity-30"
-              >
-                <ArrowDown className="h-4 w-4" />
-              </button>
-              <button
-                onClick={() => setEditing(g)}
-                className="rounded-md border border-border p-1.5 hover:border-accent"
-              >
-                <Pencil className="h-4 w-4" />
-              </button>
-              <button
-                onClick={() => remove(g.id)}
-                className="rounded-md border border-border p-1.5 text-destructive hover:border-destructive"
-              >
-                <Trash2 className="h-4 w-4" />
-              </button>
-            </div>
-          </div>
-        ))}
-      </div>
-      {editing && (
-        <Modal
-          title={editing.id ? "Edit gallery item" : "New gallery item"}
-          onClose={() => setEditing(null)}
-          onSave={() => save(editing)}
-        >
-          <Field label="Title">
-            <input
-              className={inp}
-              value={editing.title ?? ""}
-              onChange={(e) => setEditing({ ...editing, title: e.target.value })}
-            />
-          </Field>
-          <Field label="Category">
-            <input
-              className={inp}
-              value={editing.category ?? ""}
-              onChange={(e) => setEditing({ ...editing, category: e.target.value })}
-            />
-          </Field>
-          <Field label="Image" full>
-            <div className="flex items-center gap-3">
-              {editing.image_url && (
-                <img
-                  src={resolveGalleryImageUrl(editing)}
-                  alt=""
-                  className="h-16 w-24 flex-none rounded object-cover"
-                />
-              )}
+        </Card>
+      )}
+
+      {/* PORTFOLIO ITEMS LIST */}
+      <div>
+        <SectionHead
+          title="Portfolio Projects"
+          subtitle="Manage all interior, construction, and architectural projects shown in the gallery."
+          action={
+            <div className="flex items-center gap-2">
               <label className="inline-flex cursor-pointer items-center gap-2 rounded-md border border-border px-3 py-1.5 text-sm hover:border-accent">
                 <Upload className="h-4 w-4" />
-                {uploading ? "Uploading…" : "Upload image"}
+                {uploading ? "Uploading…" : "Quick upload"}
                 <input
                   type="file"
                   accept="image/*"
                   className="hidden"
+                  disabled={uploading}
                   onChange={(e) => {
-                    onFilePick(e.target.files?.[0]);
+                    quickUpload(e.target.files?.[0]);
                     e.target.value = "";
                   }}
                 />
               </label>
+              <button
+                onClick={() =>
+                  setEditing({ display_order: items.length + 1, is_active: true, category: "Residential Interiors" })
+                }
+                className="inline-flex items-center gap-2 rounded-md bg-primary px-3 py-1.5 text-sm text-primary-foreground hover:opacity-90 transition"
+              >
+                <Plus className="h-4 w-4" /> New Project
+              </button>
             </div>
-            <input
-              className={`${inp} mt-2`}
-              placeholder="…or paste image URL"
-              value={editing.image_url ?? ""}
-              onChange={(e) => setEditing({ ...editing, image_url: e.target.value })}
+          }
+        />
+        {items.length === 0 && <Empty label="No gallery items yet." />}
+        <div className="grid gap-3">
+          {items.map((g, i) => (
+            <div
+              key={g.id}
+              className="flex items-center gap-3 rounded-lg border border-border bg-card p-3"
+            >
+              <img
+                src={resolveGalleryImageUrl(g)}
+                alt={g.title}
+                className="h-14 w-20 flex-none rounded object-cover"
+              />
+              <div className="min-w-0 flex-1">
+                <p className="truncate font-medium text-foreground">{g.title}</p>
+                <p className="truncate text-xs text-muted-foreground">
+                  {g.category ?? "—"} {g.location ? `· ${g.location}` : ""} · order {g.display_order}
+                </p>
+              </div>
+              <div className="flex items-center gap-1">
+                {!g.is_active && (
+                  <span className="rounded-full bg-secondary px-2 py-0.5 text-[10px] uppercase tracking-wider text-muted-foreground">
+                    Inactive
+                  </span>
+                )}
+                <button
+                  disabled={i === 0}
+                  onClick={() => swap(g, items[i - 1])}
+                  className="rounded-md border border-border p-1.5 hover:border-accent disabled:opacity-30"
+                >
+                  <ArrowUp className="h-4 w-4" />
+                </button>
+                <button
+                  disabled={i === items.length - 1}
+                  onClick={() => swap(g, items[i + 1])}
+                  className="rounded-md border border-border p-1.5 hover:border-accent disabled:opacity-30"
+                >
+                  <ArrowDown className="h-4 w-4" />
+                </button>
+                <button
+                  onClick={() => setEditing(g)}
+                  className="rounded-md border border-border p-1.5 hover:border-accent"
+                >
+                  <Pencil className="h-4 w-4" />
+                </button>
+                <button
+                  onClick={() => remove(g.id)}
+                  className="rounded-md border border-border p-1.5 text-destructive hover:border-destructive"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+        {editing && (
+          <Modal
+            title={editing.id ? "Edit gallery project" : "New gallery project"}
+            onClose={() => setEditing(null)}
+            onSave={() => save(editing)}
+          >
+            <Field label="Project Title" full>
+              <input
+                className={inp}
+                placeholder="e.g. Modern Villa, Indiranagar"
+                value={editing.title ?? ""}
+                onChange={(e) => setEditing({ ...editing, title: e.target.value })}
+              />
+            </Field>
+            <Field label="Category">
+              <select
+                className={inp}
+                value={editing.category ?? "Residential Interiors"}
+                onChange={(e) => setEditing({ ...editing, category: e.target.value })}
+              >
+                {GALLERY_CATEGORIES.map((cat) => (
+                  <option key={cat} value={cat}>{cat}</option>
+                ))}
+              </select>
+            </Field>
+            <Field label="Location">
+              <input
+                className={inp}
+                placeholder="e.g. Indiranagar, Bengaluru"
+                value={editing.location ?? ""}
+                onChange={(e) => setEditing({ ...editing, location: e.target.value })}
+              />
+            </Field>
+            <Field label="Project Image" full>
+              <div className="flex items-center gap-3">
+                {editing.image_url && (
+                  <img
+                    src={resolveGalleryImageUrl(editing)}
+                    alt=""
+                    className="h-16 w-24 flex-none rounded object-cover"
+                  />
+                )}
+                <label className="inline-flex cursor-pointer items-center gap-2 rounded-md border border-border px-3 py-1.5 text-sm hover:border-accent">
+                  <Upload className="h-4 w-4" />
+                  {uploading ? "Uploading…" : "Upload image"}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => {
+                      onFilePick(e.target.files?.[0]);
+                      e.target.value = "";
+                    }}
+                  />
+                </label>
+              </div>
+              <input
+                className={`${inp} mt-2`}
+                placeholder="…or paste image URL"
+                value={editing.image_url ?? ""}
+                onChange={(e) => setEditing({ ...editing, image_url: e.target.value })}
+              />
+            </Field>
+            <Field label="Description" full>
+              <textarea
+                rows={3}
+                className={inp}
+                placeholder="Description of materials, finishes, or scope..."
+                value={editing.description ?? ""}
+                onChange={(e) => setEditing({ ...editing, description: e.target.value })}
+              />
+            </Field>
+            <Field label="Display order">
+              <input
+                type="number"
+                className={inp}
+                value={editing.display_order ?? 0}
+                onChange={(e) =>
+                  setEditing({ ...editing, display_order: Number(e.target.value) })
+                }
+              />
+            </Field>
+            <Toggle
+              checked={editing.is_active ?? true}
+              onChange={(v) => setEditing({ ...editing, is_active: v })}
+              label="Active (visible on website)"
             />
-          </Field>
-          <Field label="Description" full>
-            <textarea
-              rows={3}
-              className={inp}
-              value={editing.description ?? ""}
-              onChange={(e) => setEditing({ ...editing, description: e.target.value })}
-            />
-          </Field>
-          <Field label="Display order">
-            <input
-              type="number"
-              className={inp}
-              value={editing.display_order ?? 0}
-              onChange={(e) =>
-                setEditing({ ...editing, display_order: Number(e.target.value) })
-              }
-            />
-          </Field>
-          <Toggle
-            checked={editing.is_active ?? true}
-            onChange={(v) => setEditing({ ...editing, is_active: v })}
-            label="Active"
-          />
-        </Modal>
-      )}
+          </Modal>
+        )}
+      </div>
     </div>
   );
 }

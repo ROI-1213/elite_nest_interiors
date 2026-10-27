@@ -225,6 +225,18 @@ export type SiteSettings = {
   about_cta_title?: string | null;
   about_cta_desc?: string | null;
   about_cta_button?: string | null;
+  gallery_hero_title?: string | null;
+  gallery_hero_subtitle?: string | null;
+  gallery_hero_image_url?: string | null;
+  gallery_featured_eyebrow?: string | null;
+  gallery_grid_eyebrow?: string | null;
+  gallery_grid_title?: string | null;
+  gallery_video_eyebrow?: string | null;
+  gallery_video_title?: string | null;
+  gallery_cta_title?: string | null;
+  gallery_cta_subtitle?: string | null;
+  gallery_cta_btn1?: string | null;
+  gallery_cta_btn2?: string | null;
 };
 
 export type GalleryItem = {
@@ -233,6 +245,7 @@ export type GalleryItem = {
   category: string | null;
   image_url: string;
   description: string | null;
+  location?: string | null;
   display_order: number;
   is_active: boolean;
 };
@@ -370,6 +383,18 @@ export const DEFAULT_SITE_SETTINGS: SiteSettings = {
   about_cta_title: "Interiors that work better, last longer, and improve every day.",
   about_cta_desc: "Beautiful in photographs is easy. Beautiful to live and work in — for years — is the standard we build to.",
   about_cta_button: "Book a Consultation",
+  gallery_hero_title: "Our Project Gallery",
+  gallery_hero_subtitle: "Explore our construction, renovation, and interior design works.",
+  gallery_hero_image_url: null,
+  gallery_featured_eyebrow: "Featured Project",
+  gallery_grid_eyebrow: "Selected Work",
+  gallery_grid_title: "Project gallery.",
+  gallery_video_eyebrow: "Walkthroughs",
+  gallery_video_title: "Video walkthroughs.",
+  gallery_cta_title: "Like what you see?",
+  gallery_cta_subtitle: "Let Elite Nest Interiors create a beautiful, functional, and professionally executed space for you.",
+  gallery_cta_btn1: "Contact Us",
+  gallery_cta_btn2: "Get a Free Consultation",
 };
 
 export const DEFAULT_GALLERY_ITEMS: GalleryItem[] = CURATED_GALLERY.map((c, i) => ({
@@ -378,6 +403,7 @@ export const DEFAULT_GALLERY_ITEMS: GalleryItem[] = CURATED_GALLERY.map((c, i) =
   category: c.category,
   image_url: `asset://${c.assetKey}`,
   description: c.description,
+  location: c.location,
   display_order: i + 1,
   is_active: true,
 }));

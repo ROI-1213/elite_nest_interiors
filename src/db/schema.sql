@@ -85,6 +85,7 @@ CREATE TABLE IF NOT EXISTS public.gallery_items (
   description TEXT,
   image_url TEXT NOT NULL,
   category TEXT,
+  location TEXT,
   display_order INT NOT NULL DEFAULT 0,
   is_active BOOLEAN NOT NULL DEFAULT true,
   created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
@@ -241,6 +242,18 @@ CREATE TABLE IF NOT EXISTS public.site_settings (
   about_cta_title TEXT DEFAULT 'Interiors that work better, last longer, and improve every day.',
   about_cta_desc TEXT,
   about_cta_button TEXT DEFAULT 'Book a Consultation',
+  gallery_hero_title TEXT DEFAULT 'Our Project Gallery',
+  gallery_hero_subtitle TEXT DEFAULT 'Explore our construction, renovation, and interior design works.',
+  gallery_hero_image_url TEXT,
+  gallery_featured_eyebrow TEXT DEFAULT 'Featured Project',
+  gallery_grid_eyebrow TEXT DEFAULT 'Selected Work',
+  gallery_grid_title TEXT DEFAULT 'Project gallery.',
+  gallery_video_eyebrow TEXT DEFAULT 'Walkthroughs',
+  gallery_video_title TEXT DEFAULT 'Video walkthroughs.',
+  gallery_cta_title TEXT DEFAULT 'Like what you see?',
+  gallery_cta_subtitle TEXT DEFAULT 'Let Elite Nest Interiors create a beautiful, functional, and professionally executed space for you.',
+  gallery_cta_btn1 TEXT DEFAULT 'Contact Us',
+  gallery_cta_btn2 TEXT DEFAULT 'Get a Free Consultation',
   updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
 

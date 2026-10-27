@@ -318,8 +318,8 @@ export const saveGalleryItemServerFn = createServerFn({ method: "POST" })
     if (data.id) {
       await queryDb(
         `UPDATE public.gallery_items SET
-          title = $1, category = $2, image_url = $3, description = $4, display_order = $5, is_active = $6, updated_at = NOW()
-         WHERE id = $7`,
+          title = $1, category = $2, image_url = $3, description = $4, display_order = $5, is_active = $6, location = $7, updated_at = NOW()
+         WHERE id = $8`,
         [
           data.title,
           data.category ?? null,
@@ -327,13 +327,14 @@ export const saveGalleryItemServerFn = createServerFn({ method: "POST" })
           data.description ?? null,
           data.display_order ?? 0,
           data.is_active ?? true,
+          data.location ?? null,
           data.id,
         ]
       );
     } else {
       await queryDb(
-        `INSERT INTO public.gallery_items (title, category, image_url, description, display_order, is_active)
-         VALUES ($1, $2, $3, $4, $5, $6)`,
+        `INSERT INTO public.gallery_items (title, category, image_url, description, display_order, is_active, location)
+         VALUES ($1, $2, $3, $4, $5, $6, $7)`,
         [
           data.title,
           data.category ?? null,
@@ -341,6 +342,7 @@ export const saveGalleryItemServerFn = createServerFn({ method: "POST" })
           data.description ?? null,
           data.display_order ?? 0,
           data.is_active ?? true,
+          data.location ?? null,
         ]
       );
     }

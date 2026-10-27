@@ -14,7 +14,7 @@ import { CURATED_GALLERY, resolveGalleryImageUrl } from "@/lib/gallery.config";
 import imgCommercial from "@/assets/gallery-commercial-1.jpg";
 import imgBlrLiving from "@/assets/gallery-blr-living.png";
 
-const heroImg = imgBlrLiving;
+const defaultHeroImg = imgBlrLiving;
 
 export const Route = createFileRoute("/gallery")({
   head: () => ({
@@ -141,7 +141,7 @@ function GalleryPage() {
       title: g.title,
       category: mapCategory(g.category),
       description: g.description,
-      location: null,
+      location: g.location || null,
     }));
   }, [gallery]);
 
@@ -163,7 +163,7 @@ function GalleryPage() {
       {/* HERO */}
       <section className="relative isolate overflow-hidden bg-charcoal text-ivory">
         <img
-          src={heroImg}
+          src={settings.gallery_hero_image_url || defaultHeroImg}
           alt=""
           className="absolute inset-0 -z-10 h-full w-full object-cover opacity-50 animate-hero-zoom"
         />
@@ -237,7 +237,7 @@ function GalleryPage() {
       {featured && filter === "All" && (
         <section className="container-prose py-20 md:py-24">
           <Reveal>
-            <p className="eyebrow">Featured Project</p>
+            <p className="eyebrow">{settings.gallery_featured_eyebrow || "Featured Project"}</p>
           </Reveal>
           <div className="mt-8 grid gap-10 md:grid-cols-2 md:items-center">
             <Reveal>
