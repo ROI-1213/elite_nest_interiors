@@ -58,16 +58,21 @@ export const CURATED_GALLERY: CuratedGalleryItem[] = [
 /**
  * Resolves a gallery item's display URL.
  * - `asset://<assetKey>` references a bundled image and is resolved to its built URL.
- * - Real URLs (http/https, data:, uploads) are returned unchanged.
+ * - If image_url is empty or contains an Unsplash placeholder, it always resolves to
+ *   the original curated Bengaluru project image matching the item title.
+ * - Custom uploads (data:, /uploads/, /api/storage/, or custom https:// URLs) are returned as-is.
  * - Anything else falls back to the curated item with the same title.
  */
 export function resolveGalleryImageUrl(g: { title?: string; image_url?: string }): string {
   const url = g.image_url ?? "";
   if (url.startsWith("asset://")) {
     const key = url.slice("asset://".length);
-    return CURATED_GALLERY.find((c) => c.assetKey === key)?.url || url;
+    return CURATED_GALLERY.find((c) => c.assetKey === key)?.url || CURATED_GALLERY.find((c) => c.title === g.title)?.url || url;
   }
-  if (url.startsWith("data:") || url.includes("/uploads/") || /^https?:\/\//i.test(url)) {
+  if (!url || url.includes("unsplash.com")) {
+    return CURATED_GALLERY.find((c) => c.title === g.title)?.url || CURATED_GALLERY[0].url;
+  }
+  if (url.startsWith("data:") || url.includes("/uploads/") || url.includes("/api/storage/") || /^https?:\/\//i.test(url)) {
     return url;
   }
   return CURATED_GALLERY.find((c) => c.title === g.title)?.url || url;
