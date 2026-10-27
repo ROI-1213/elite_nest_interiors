@@ -237,6 +237,26 @@ export type SiteSettings = {
   gallery_cta_subtitle?: string | null;
   gallery_cta_btn1?: string | null;
   gallery_cta_btn2?: string | null;
+  contact_hero_eyebrow?: string | null;
+  contact_hero_title?: string | null;
+  contact_hero_subtitle?: string | null;
+  contact_hero_image_url?: string | null;
+  contact_hero_cta1?: string | null;
+  contact_hero_cta2?: string | null;
+  contact_stat1_val?: string | null;
+  contact_stat1_label?: string | null;
+  contact_stat2_val?: string | null;
+  contact_stat2_label?: string | null;
+  contact_stat3_val?: string | null;
+  contact_stat3_label?: string | null;
+  contact_enquiry_eyebrow?: string | null;
+  contact_enquiry_title?: string | null;
+  contact_enquiry_subtitle?: string | null;
+  contact_guarantee1?: string | null;
+  contact_guarantee2?: string | null;
+  contact_guarantee3?: string | null;
+  contact_map_eyebrow?: string | null;
+  contact_map_title?: string | null;
 };
 
 export type GalleryItem = {
@@ -395,6 +415,26 @@ export const DEFAULT_SITE_SETTINGS: SiteSettings = {
   gallery_cta_subtitle: "Let Elite Nest Interiors create a beautiful, functional, and professionally executed space for you.",
   gallery_cta_btn1: "Contact Us",
   gallery_cta_btn2: "Get a Free Consultation",
+  contact_hero_eyebrow: "Get In Touch",
+  contact_hero_title: "Let's Build Something That Lasts.",
+  contact_hero_subtitle: "Elite Nest Interiors crafts thoughtfully engineered spaces — from intimate residences to signature commercial interiors — delivered with precision across Bengaluru.",
+  contact_hero_image_url: "https://images.unsplash.com/photo-1600210491892-03d54c0aaf87?auto=format&fit=crop&w=1920&q=90",
+  contact_hero_cta1: "Book a Free Consultation",
+  contact_hero_cta2: "WhatsApp Us",
+  contact_stat1_val: "120+",
+  contact_stat1_label: "Projects Delivered",
+  contact_stat2_val: "15+",
+  contact_stat2_label: "Years of Craft",
+  contact_stat3_val: "24hr",
+  contact_stat3_label: "Response Time",
+  contact_enquiry_eyebrow: "Enquiry",
+  contact_enquiry_title: "Tell Us About Your Project",
+  contact_enquiry_subtitle: "Share a few details and our project consultant will reach out within one business day with a tailored response.",
+  contact_guarantee1: "Free design consultation",
+  contact_guarantee2: "Transparent quote within 48 hrs",
+  contact_guarantee3: "Dedicated project manager",
+  contact_map_eyebrow: "Location",
+  contact_map_title: "Visit Our Office",
 };
 
 export const DEFAULT_GALLERY_ITEMS: GalleryItem[] = CURATED_GALLERY.map((c, i) => ({

@@ -89,7 +89,7 @@ function ContactPage() {
   return (
     <SiteLayout>
       {/* HERO — cinematic gallery */}
-      <ContactHero waHref={waHref} />
+      <ContactHero s={s} waHref={waHref} />
 
 
       {/* CONTACT INFO CARDS */}
@@ -134,18 +134,17 @@ function ContactPage() {
         <div className="container-prose">
           <div className="grid gap-12 lg:grid-cols-5">
             <Reveal className="lg:col-span-2">
-              <p className="text-xs uppercase tracking-[0.3em] text-bronze">Enquiry</p>
+              <p className="text-xs uppercase tracking-[0.3em] text-bronze">{s.contact_enquiry_eyebrow || "Enquiry"}</p>
               <h2 className="mt-3 font-display text-3xl md:text-4xl text-charcoal">
-                Tell Us About Your Project
+                {s.contact_enquiry_title || "Tell Us About Your Project"}
               </h2>
               <p className="mt-4 text-charcoal/70">
-                Share a few details and our project consultant will reach out within one business day with a
-                tailored response.
+                {s.contact_enquiry_subtitle || "Share a few details and our project consultant will reach out within one business day with a tailored response."}
               </p>
               <ul className="mt-6 space-y-3 text-sm text-charcoal/80">
-                <li className="flex items-start gap-2"><ArrowRight className="mt-0.5 h-4 w-4 text-bronze" /> Free design consultation</li>
-                <li className="flex items-start gap-2"><ArrowRight className="mt-0.5 h-4 w-4 text-bronze" /> Transparent quote within 48 hrs</li>
-                <li className="flex items-start gap-2"><ArrowRight className="mt-0.5 h-4 w-4 text-bronze" /> Dedicated project manager</li>
+                <li className="flex items-start gap-2"><ArrowRight className="mt-0.5 h-4 w-4 text-bronze" /> {s.contact_guarantee1 || "Free design consultation"}</li>
+                <li className="flex items-start gap-2"><ArrowRight className="mt-0.5 h-4 w-4 text-bronze" /> {s.contact_guarantee2 || "Transparent quote within 48 hrs"}</li>
+                <li className="flex items-start gap-2"><ArrowRight className="mt-0.5 h-4 w-4 text-bronze" /> {s.contact_guarantee3 || "Dedicated project manager"}</li>
               </ul>
             </Reveal>
 
@@ -162,8 +161,8 @@ function ContactPage() {
       <section className="bg-charcoal py-20 text-ivory">
         <div className="container-prose">
           <Reveal>
-            <p className="text-xs uppercase tracking-[0.3em] text-bronze">Location</p>
-            <h2 className="mt-3 font-display text-3xl md:text-4xl">Visit Our Office</h2>
+            <p className="text-xs uppercase tracking-[0.3em] text-bronze">{s.contact_map_eyebrow || "Location"}</p>
+            <h2 className="mt-3 font-display text-3xl md:text-4xl">{s.contact_map_title || "Visit Our Office"}</h2>
           </Reveal>
           <div className="mt-8 overflow-hidden rounded-2xl border border-bronze/30">
             <iframe
@@ -399,12 +398,26 @@ function Field({
 const CONTACT_HERO_BG =
   "https://images.unsplash.com/photo-1600210491892-03d54c0aaf87?auto=format&fit=crop&w=1920&q=90";
 
-function ContactHero({ waHref }: { waHref: string }) {
+function ContactHero({ s, waHref }: { s: any; waHref: string }) {
+  const heroBg = s.contact_hero_image_url || CONTACT_HERO_BG;
+  const eyebrow = s.contact_hero_eyebrow || "Get In Touch";
+  const title = s.contact_hero_title || "Let's Build Something That Lasts.";
+  const subtitle =
+    s.contact_hero_subtitle ||
+    "Elite Nest Interiors crafts thoughtfully engineered spaces — from intimate residences to signature commercial interiors — delivered with precision across Bengaluru.";
+  const cta1 = s.contact_hero_cta1 || "Book a Free Consultation";
+  const cta2 = s.contact_hero_cta2 || "WhatsApp Us";
+  const stats = [
+    { k: s.contact_stat1_val || "120+", v: s.contact_stat1_label || "Projects Delivered" },
+    { k: s.contact_stat2_val || "15+", v: s.contact_stat2_label || "Years of Craft" },
+    { k: s.contact_stat3_val || "24hr", v: s.contact_stat3_label || "Response Time" },
+  ];
+
   return (
     <section className="relative isolate overflow-hidden">
       {/* Background image — Bengaluru luxury interior */}
       <img
-        src={CONTACT_HERO_BG}
+        src={heroBg}
         alt="Luxury Bengaluru interior by Elite Nest Interiors"
         className="absolute inset-0 -z-10 h-full w-full object-cover animate-hero-zoom"
       />
@@ -423,18 +436,16 @@ function ContactHero({ waHref }: { waHref: string }) {
 
         {/* Eyebrow + Heading */}
         <Reveal delay={1}>
-          <p className="eyebrow mt-8 text-accent">Get In Touch</p>
+          <p className="eyebrow mt-8 text-accent">{eyebrow}</p>
           <h1 className="mt-4 max-w-4xl font-serif text-5xl text-balance md:text-7xl">
-            Let's Build Something{" "}
-            <span className="italic text-accent">That Lasts.</span>
+            {title}
           </h1>
         </Reveal>
 
         {/* Subtext */}
         <Reveal delay={2}>
           <p className="mt-5 max-w-2xl text-ivory/80 md:text-lg">
-            Elite Nest Interiors crafts thoughtfully engineered spaces — from intimate
-            residences to signature commercial interiors — delivered with precision across Bengaluru.
+            {subtitle}
           </p>
         </Reveal>
 
@@ -442,7 +453,7 @@ function ContactHero({ waHref }: { waHref: string }) {
         <Reveal delay={3}>
           <div className="mt-8 flex flex-wrap gap-3">
             <a href="#enquiry" className="btn-bronze transition-transform duration-300 hover:-translate-y-0.5">
-              Book a Free Consultation
+              {cta1}
             </a>
             <a
               href={waHref}
@@ -450,7 +461,7 @@ function ContactHero({ waHref }: { waHref: string }) {
               rel="noopener noreferrer"
               className="btn-ghost-dark transition-transform duration-300 hover:-translate-y-0.5"
             >
-              <MessageCircle className="h-4 w-4" /> WhatsApp Us
+              <MessageCircle className="h-4 w-4" /> {cta2}
             </a>
           </div>
         </Reveal>
@@ -458,11 +469,7 @@ function ContactHero({ waHref }: { waHref: string }) {
         {/* Stat strip */}
         <Reveal delay={4}>
           <div className="mt-12 grid grid-cols-3 gap-6 border-t border-ivory/15 pt-6 max-w-md">
-            {[
-              { k: "120+", v: "Projects Delivered" },
-              { k: "15+", v: "Years of Craft" },
-              { k: "24hr", v: "Response Time" },
-            ].map((stat) => (
+            {stats.map((stat) => (
               <div key={stat.v}>
                 <div className="font-serif text-2xl text-accent">{stat.k}</div>
                 <div className="mt-1 text-[11px] uppercase tracking-[0.22em] text-ivory/60">{stat.v}</div>

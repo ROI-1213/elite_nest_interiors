@@ -47,6 +47,7 @@ const TABS = [
   "Enquiries",
   "Homepage Content",
   "About Us Page",
+  "Contact Page",
   "Categories",
   "Services",
   "Gallery",
@@ -115,6 +116,7 @@ function AdminPage() {
         {tab === "Enquiries" && <EnquiriesTab />}
         {tab === "Homepage Content" && <HomepageContentTab />}
         {tab === "About Us Page" && <AboutPageContentTab />}
+        {tab === "Contact Page" && <ContactPageContentTab />}
         {tab === "Categories" && <CategoriesTab />}
         {tab === "Services" && <ServicesTab />}
         {tab === "Gallery" && <GalleryTab />}
@@ -1067,6 +1069,200 @@ function EnquiriesTab() {
             />
           </div>
         ))}
+      </div>
+    </div>
+  );
+}
+
+/* -------------------- CONTACT PAGE CONTENT TAB -------------------- */
+function ContactPageContentTab() {
+  const qc = useQueryClient();
+  const { data } = useQuery(settingsQuery);
+  const [draft, setDraft] = useState<SiteSettings | null>(null);
+  const [uploadingHero, setUploadingHero] = useState(false);
+
+  useEffect(() => {
+    if (data && !draft) setDraft(data);
+  }, [data, draft]);
+
+  async function save() {
+    if (!draft) return;
+    const { id: _id, ...rest } = draft;
+    try {
+      await updateSiteSettingsServerFn({ data: rest });
+      toast.success("Contact Page settings saved successfully!");
+      qc.invalidateQueries({ queryKey: ["site_settings"] });
+    } catch (e: any) {
+      toast.error(e.message || "Failed to save Contact Page settings.");
+    }
+  }
+
+  async function handleHeroUpload(file?: File) {
+    if (!file || !draft) return;
+    setUploadingHero(true);
+    try {
+      const url = await uploadToStorage(file, "contact-hero");
+      if (url) {
+        setDraft({ ...draft, contact_hero_image_url: url });
+        toast.success("Contact hero image uploaded.");
+      }
+    } catch (err: any) {
+      toast.error("Upload failed: " + err.message);
+    } finally {
+      setUploadingHero(false);
+    }
+  }
+
+  if (!draft) return <p className="text-sm text-muted-foreground">Loading Contact Page settings…</p>;
+
+  const upd = (k: keyof SiteSettings) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
+    setDraft({ ...draft, [k]: e.target.value });
+
+  return (
+    <div className="space-y-8">
+      <SectionHead
+        title="Contact Page Content"
+        subtitle="Manage business contact channels, hero headline & background image, 3 stat counters, enquiry guarantees, and Google Maps embed."
+        action={
+          <button
+            onClick={save}
+            className="rounded-md bg-primary px-5 py-2 text-sm font-medium text-primary-foreground hover:opacity-90 transition"
+          >
+            Save Contact Page changes
+          </button>
+        }
+      />
+
+      {/* 1. Direct Contact Channels */}
+      <Card title="1. Direct Contact Channels (Phone, WhatsApp, Email & Address)">
+        <Grid>
+          <Field label="Phone Number (Clickable tel:)">
+            <input className={inp} placeholder="+91 93640 48269" value={draft.phone ?? ""} onChange={upd("phone")} />
+          </Field>
+          <Field label="WhatsApp Number (incl. country code)">
+            <input className={inp} placeholder="+91 93640 48269" value={draft.whatsapp ?? ""} onChange={upd("whatsapp")} />
+          </Field>
+          <Field label="Contact Email Address">
+            <input className={inp} placeholder="contact@elitenestinteriors.com" value={draft.email ?? ""} onChange={upd("email")} />
+          </Field>
+          <Field label="Business Hours">
+            <input className={inp} placeholder="Mon–Sat · 10am – 7pm" value={draft.business_hours ?? ""} onChange={upd("business_hours")} />
+          </Field>
+          <Field label="Studio / Office Address" full>
+            <textarea rows={2} className={inp} placeholder="Physical address..." value={draft.address ?? ""} onChange={upd("address")} />
+          </Field>
+          <Field label="Google Maps Location or Embed URL" full>
+            <input className={inp} placeholder="https://maps.google.com/..." value={draft.google_map_url ?? ""} onChange={upd("google_map_url")} />
+          </Field>
+        </Grid>
+      </Card>
+
+      {/* 2. Hero Section */}
+      <Card title="2. Hero Section (Above the Fold)">
+        <Grid>
+          <Field label="Hero Eyebrow">
+            <input className={inp} placeholder="Get In Touch" value={draft.contact_hero_eyebrow ?? ""} onChange={upd("contact_hero_eyebrow")} />
+          </Field>
+          <Field label="Hero Title" full>
+            <input className={inp} placeholder="Let's Build Something That Lasts." value={draft.contact_hero_title ?? ""} onChange={upd("contact_hero_title")} />
+          </Field>
+          <Field label="Hero Subtitle" full>
+            <textarea rows={3} className={inp} placeholder="Description..." value={draft.contact_hero_subtitle ?? ""} onChange={upd("contact_hero_subtitle")} />
+          </Field>
+          <Field label="Hero Background Image" full>
+            <div className="flex flex-wrap items-center gap-3">
+              {draft.contact_hero_image_url && (
+                <img src={draft.contact_hero_image_url} alt="" className="h-16 w-28 rounded object-cover border border-border" />
+              )}
+              <label className="inline-flex cursor-pointer items-center gap-2 rounded-md border border-border px-3 py-1.5 text-sm hover:border-accent">
+                <Upload className="h-4 w-4" />
+                {uploadingHero ? "Uploading…" : "Upload Hero Image"}
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => {
+                    handleHeroUpload(e.target.files?.[0]);
+                    e.target.value = "";
+                  }}
+                />
+              </label>
+            </div>
+            <input className={`${inp} mt-2`} placeholder="…or paste image URL" value={draft.contact_hero_image_url ?? ""} onChange={upd("contact_hero_image_url")} />
+          </Field>
+          <Field label="CTA Button 1 Label">
+            <input className={inp} placeholder="Book a Free Consultation" value={draft.contact_hero_cta1 ?? ""} onChange={upd("contact_hero_cta1")} />
+          </Field>
+          <Field label="CTA Button 2 Label">
+            <input className={inp} placeholder="WhatsApp Us" value={draft.contact_hero_cta2 ?? ""} onChange={upd("contact_hero_cta2")} />
+          </Field>
+        </Grid>
+      </Card>
+
+      {/* 3. Stat Strip */}
+      <Card title="3. Hero Trust Stats (3 Counters)">
+        <Grid>
+          <Field label="Stat 1 Value (e.g. 120+)">
+            <input className={inp} value={draft.contact_stat1_val ?? ""} onChange={upd("contact_stat1_val")} />
+          </Field>
+          <Field label="Stat 1 Label (e.g. Projects Delivered)">
+            <input className={inp} value={draft.contact_stat1_label ?? ""} onChange={upd("contact_stat1_label")} />
+          </Field>
+          <Field label="Stat 2 Value (e.g. 15+)">
+            <input className={inp} value={draft.contact_stat2_val ?? ""} onChange={upd("contact_stat2_val")} />
+          </Field>
+          <Field label="Stat 2 Label (e.g. Years of Craft)">
+            <input className={inp} value={draft.contact_stat2_label ?? ""} onChange={upd("contact_stat2_label")} />
+          </Field>
+          <Field label="Stat 3 Value (e.g. 24hr)">
+            <input className={inp} value={draft.contact_stat3_val ?? ""} onChange={upd("contact_stat3_val")} />
+          </Field>
+          <Field label="Stat 3 Label (e.g. Response Time)">
+            <input className={inp} value={draft.contact_stat3_label ?? ""} onChange={upd("contact_stat3_label")} />
+          </Field>
+        </Grid>
+      </Card>
+
+      {/* 4. Enquiry Section */}
+      <Card title="4. Enquiry Section & Value Guarantees">
+        <Grid>
+          <Field label="Section Eyebrow">
+            <input className={inp} value={draft.contact_enquiry_eyebrow ?? ""} onChange={upd("contact_enquiry_eyebrow")} />
+          </Field>
+          <Field label="Section Main Heading">
+            <input className={inp} value={draft.contact_enquiry_title ?? ""} onChange={upd("contact_enquiry_title")} />
+          </Field>
+          <Field label="Section Subtitle / Description" full>
+            <textarea rows={2} className={inp} value={draft.contact_enquiry_subtitle ?? ""} onChange={upd("contact_enquiry_subtitle")} />
+          </Field>
+          <Field label="Guarantee 1 (e.g. Free design consultation)">
+            <input className={inp} value={draft.contact_guarantee1 ?? ""} onChange={upd("contact_guarantee1")} />
+          </Field>
+          <Field label="Guarantee 2 (e.g. Transparent quote within 48 hrs)">
+            <input className={inp} value={draft.contact_guarantee2 ?? ""} onChange={upd("contact_guarantee2")} />
+          </Field>
+          <Field label="Guarantee 3 (e.g. Dedicated project manager)" full>
+            <input className={inp} value={draft.contact_guarantee3 ?? ""} onChange={upd("contact_guarantee3")} />
+          </Field>
+        </Grid>
+      </Card>
+
+      {/* 5. Map Section */}
+      <Card title="5. Google Maps Location Section">
+        <Grid>
+          <Field label="Section Eyebrow">
+            <input className={inp} value={draft.contact_map_eyebrow ?? ""} onChange={upd("contact_map_eyebrow")} />
+          </Field>
+          <Field label="Section Main Heading">
+            <input className={inp} value={draft.contact_map_title ?? ""} onChange={upd("contact_map_title")} />
+          </Field>
+        </Grid>
+      </Card>
+
+      <div className="flex justify-end pb-8">
+        <button onClick={save} className="rounded-md bg-primary px-6 py-2.5 text-sm font-medium text-primary-foreground hover:opacity-90 transition">
+          Save Contact Page changes
+        </button>
       </div>
     </div>
   );
