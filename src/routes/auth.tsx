@@ -48,7 +48,7 @@ function AuthPage() {
         },
       });
 
-      if (res?.token && res?.isAdmin) {
+      if (res?.success && res?.token && res?.isAdmin) {
         if (typeof window !== "undefined") {
           localStorage.setItem("elite_admin_token", res.token);
           // Set cookie for 7 days matching JWT expiration to ensure cross-request persistence
@@ -57,17 +57,19 @@ function AuthPage() {
         toast.success("Welcome back, Administrator!");
         window.location.replace("/admin");
         return;
-      } else if (res && !res.isAdmin) {
-        toast.error("Account does not have administrator privileges.");
-        setBusy(false);
-        return;
-      } else {
-        toast.error("Invalid email or password. Please try again.");
+      }
+
+      if (res && !res.success) {
+        toast.error(res.error || "Invalid email or password. Please try again.");
         setBusy(false);
         return;
       }
+
+      toast.error("Invalid email or password. Please try again.");
+      setBusy(false);
     } catch (err: any) {
-      const msg = err?.message || "Invalid email or password. Please try again.";
+      console.error("[signIn error]:", err);
+      const msg = err?.message || "Connection error. Please try again.";
       toast.error(msg);
       setBusy(false);
     }
