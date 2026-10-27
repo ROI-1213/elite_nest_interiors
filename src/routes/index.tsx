@@ -330,6 +330,7 @@ function HomePage() {
         eyebrow={settings.featured_listings_eyebrow}
         title={settings.featured_listings_title}
         subtitle={settings.featured_listings_subtitle}
+        cardsJson={settings.featured_listings_cards}
       />
 
 

@@ -26,6 +26,11 @@ import {
 } from "@/lib/queries";
 import { SERVICE_IMAGES, SERVICE_ORDER, resolveServiceImageUrl } from "@/lib/services.config";
 import { DEFAULT_SPACE_IMAGES, resolveSpaceImageUrl } from "@/lib/spaces.config";
+import {
+  DEFAULT_FEATURED_CATEGORIES,
+  parseOverrides,
+  type CardOverride,
+} from "@/lib/featured-listings.config";
 
 export const Route = createFileRoute("/_authenticated/home-editor")({
   head: () => ({ meta: [{ title: "Home Page Editor — Elite Nest Interiors" }] }),
@@ -81,6 +86,8 @@ function HomePageEditorPage() {
   const [uploadingHero, setUploadingHero] = useState(false);
   const [uploadingSvcId, setUploadingSvcId] = useState<string | null>(null);
   const [uploadingSpaceKey, setUploadingSpaceKey] = useState<string | null>(null);
+  const [activeFeaturedCat, setActiveFeaturedCat] = useState("turnkey");
+  const [uploadingCardKey, setUploadingCardKey] = useState<string | null>(null);
   const [activeSection, setActiveSection] = useState("sec-hero");
 
   useEffect(() => {
@@ -186,6 +193,35 @@ function HomePageEditorPage() {
     } finally {
       setUploadingSpaceKey(null);
     }
+  }
+
+  async function handleFeaturedCardUpload(catKey: string, cardIdx: number, file?: File) {
+    if (!file || !draft) return;
+    const key = `${catKey}_${cardIdx}`;
+    setUploadingCardKey(key);
+    try {
+      const url = await uploadToStorage(file, "featured-cards");
+      if (url) {
+        const overrides = parseOverrides(draft.featured_listings_cards);
+        overrides[key] = { ...(overrides[key] || {}), image: url };
+        setDraft({ ...draft, featured_listings_cards: JSON.stringify(overrides) });
+        setIsDirty(true);
+        toast.success("Card image updated!");
+      }
+    } catch (err: any) {
+      toast.error("Upload failed: " + err.message);
+    } finally {
+      setUploadingCardKey(null);
+    }
+  }
+
+  function updateCardOverride(catKey: string, cardIdx: number, patch: CardOverride) {
+    if (!draft) return;
+    const key = `${catKey}_${cardIdx}`;
+    const overrides = parseOverrides(draft.featured_listings_cards);
+    overrides[key] = { ...(overrides[key] || {}), ...patch };
+    setDraft({ ...draft, featured_listings_cards: JSON.stringify(overrides) });
+    setIsDirty(true);
   }
 
   const upd = (k: keyof SiteSettings) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -772,10 +808,10 @@ function HomePageEditorPage() {
             <div>
               <span className="text-[11px] font-bold uppercase tracking-[0.25em] text-[#B8894D]">Section 06</span>
               <h2 className="font-serif text-2xl font-bold text-[#2A1D13] mt-0.5">
-                Featured Service Listings (Interactive Packages)
+                Featured Service Listings (Interactive Packages & Cards)
               </h2>
               <p className="text-xs sm:text-sm text-[#736353] mt-1">
-                The interactive package showcase with filter pills (Turnkey, Residential, Commercial, Renovation, Structural, etc.).
+                Edit the section headers, plus the individual cards and photos for all 9 category tabs.
               </p>
             </div>
             <span className="shrink-0 rounded-full bg-[#F3ECE0] px-3 py-1 text-xs font-medium text-[#735128]">
@@ -783,42 +819,187 @@ function HomePageEditorPage() {
             </span>
           </div>
 
-          <div className="grid gap-5 sm:grid-cols-2">
-            <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-[#5D4A36] mb-1.5">
-                Eyebrow Badge
-              </label>
-              <input
-                className={inp}
-                placeholder="Featured Service Listings"
-                value={draft.featured_listings_eyebrow ?? ""}
-                onChange={upd("featured_listings_eyebrow")}
-              />
+          <div className="space-y-6">
+            <div className="grid gap-5 sm:grid-cols-2">
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wider text-[#5D4A36] mb-1.5">
+                  Eyebrow Badge
+                </label>
+                <input
+                  className={inp}
+                  placeholder="Featured Service Listings"
+                  value={draft.featured_listings_eyebrow ?? ""}
+                  onChange={upd("featured_listings_eyebrow")}
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wider text-[#5D4A36] mb-1.5">
+                  Section Title
+                </label>
+                <input
+                  className={inp}
+                  placeholder="Featured Listings"
+                  value={draft.featured_listings_title ?? ""}
+                  onChange={upd("featured_listings_title")}
+                />
+              </div>
+
+              <div className="sm:col-span-2">
+                <label className="block text-xs font-semibold uppercase tracking-wider text-[#5D4A36] mb-1.5">
+                  Section Subtitle / Description
+                </label>
+                <textarea
+                  rows={2}
+                  className={inp}
+                  placeholder="Explore our curated work across interiors, construction, supervision, and design execution."
+                  value={draft.featured_listings_subtitle ?? ""}
+                  onChange={upd("featured_listings_subtitle")}
+                />
+              </div>
             </div>
 
-            <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-[#5D4A36] mb-1.5">
-                Section Title
-              </label>
-              <input
-                className={inp}
-                placeholder="Featured Listings"
-                value={draft.featured_listings_title ?? ""}
-                onChange={upd("featured_listings_title")}
-              />
-            </div>
+            {/* Interactive Category Selector & Card Image Editor */}
+            <div className="border-t border-[#F0E6D6] pt-6">
+              <div className="mb-4">
+                <h3 className="font-serif text-lg font-bold text-[#2A1D13]">
+                  Category Tab Showcase Cards & Images
+                </h3>
+                <p className="text-xs text-[#7A6B5D]">
+                  Select a category tab below to preview and customize its 5 showcase cards, upload new photos, or edit titles.
+                </p>
+              </div>
 
-            <div className="sm:col-span-2">
-              <label className="block text-xs font-semibold uppercase tracking-wider text-[#5D4A36] mb-1.5">
-                Section Subtitle / Description
-              </label>
-              <textarea
-                rows={2}
-                className={inp}
-                placeholder="Explore our curated work across interiors, construction, supervision, and design execution."
-                value={draft.featured_listings_subtitle ?? ""}
-                onChange={upd("featured_listings_subtitle")}
-              />
+              {/* Tab Pills */}
+              <div className="flex flex-wrap gap-2 pb-2">
+                {DEFAULT_FEATURED_CATEGORIES.map((cat) => {
+                  const isSelected = cat.key === activeFeaturedCat;
+                  return (
+                    <button
+                      key={cat.key}
+                      type="button"
+                      onClick={() => setActiveFeaturedCat(cat.key)}
+                      className={`rounded-full px-3.5 py-1.5 text-xs font-medium transition cursor-pointer ${
+                        isSelected
+                          ? "bg-[#B8894D] text-white shadow-xs font-semibold"
+                          : "border border-[#DECDB3] bg-[#FAF5EB] text-[#5D4A36] hover:bg-[#F2E8D8]"
+                      }`}
+                    >
+                      {cat.label}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* 5 Cards for Selected Category */}
+              {(() => {
+                const currentCat =
+                  DEFAULT_FEATURED_CATEGORIES.find((c) => c.key === activeFeaturedCat) ||
+                  DEFAULT_FEATURED_CATEGORIES[0];
+                const overrides = parseOverrides(draft.featured_listings_cards);
+
+                return (
+                  <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                    {currentCat.cards.map((card, idx) => {
+                      const key = `${currentCat.key}_${idx}`;
+                      const ov = overrides[key] || {};
+                      const currentImg =
+                        ov.image && !ov.image.includes("unsplash.com")
+                          ? ov.image
+                          : card.image;
+                      const currentTitle = ov.title ?? card.title;
+                      const currentDesc = ov.description ?? card.description;
+                      const currentTag = ov.tag ?? card.tag;
+                      const isUploading = uploadingCardKey === key;
+
+                      return (
+                        <div
+                          key={key}
+                          className="rounded-xl border border-[#DECDB3] bg-[#FAF5EB] p-4 flex flex-col justify-between"
+                        >
+                          <div>
+                            <div className="relative aspect-video w-full rounded-lg overflow-hidden border border-[#D5C2A5] bg-black/5 mb-3">
+                              <img
+                                src={currentImg}
+                                alt={currentTitle}
+                                className="h-full w-full object-cover"
+                              />
+                              {currentTag && (
+                                <span className="absolute top-2 left-2 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[#E9C98A] border border-[#C58B45]/40 bg-[#1a140e]/90 backdrop-blur-xs">
+                                  {currentTag}
+                                </span>
+                              )}
+                            </div>
+                            <div className="space-y-2">
+                              <div>
+                                <label className="block text-[10px] font-bold uppercase tracking-wider text-[#735128]">
+                                  Card Title
+                                </label>
+                                <input
+                                  className="w-full rounded-md border border-[#DECDB3] bg-white px-2 py-1 text-xs text-[#2A1D13] font-semibold focus:border-accent focus:outline-none"
+                                  value={currentTitle}
+                                  onChange={(e) =>
+                                    updateCardOverride(currentCat.key, idx, { title: e.target.value })
+                                  }
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-[10px] font-bold uppercase tracking-wider text-[#735128]">
+                                  Card Tag
+                                </label>
+                                <input
+                                  className="w-full rounded-md border border-[#DECDB3] bg-white px-2 py-1 text-xs text-[#2A1D13] focus:border-accent focus:outline-none"
+                                  value={currentTag}
+                                  onChange={(e) =>
+                                    updateCardOverride(currentCat.key, idx, { tag: e.target.value })
+                                  }
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-[10px] font-bold uppercase tracking-wider text-[#735128]">
+                                  Description
+                                </label>
+                                <input
+                                  className="w-full rounded-md border border-[#DECDB3] bg-white px-2 py-1 text-xs text-[#2A1D13] focus:border-accent focus:outline-none"
+                                  value={currentDesc}
+                                  onChange={(e) =>
+                                    updateCardOverride(currentCat.key, idx, { description: e.target.value })
+                                  }
+                                />
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="mt-3 pt-3 border-t border-[#DECDB3]/60 space-y-2">
+                            <label className="w-full inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg border border-[#DECDB3] bg-white px-3 py-1.5 text-xs font-semibold text-[#4A3B2C] hover:bg-[#F2E8D8] transition shadow-xs">
+                              <Upload className="h-3 w-3 text-[#B8894D]" />
+                              <span>{isUploading ? "Uploading…" : "Change Image"}</span>
+                              <input
+                                type="file"
+                                accept="image/*"
+                                className="hidden"
+                                disabled={isUploading}
+                                onChange={(e) => {
+                                  handleFeaturedCardUpload(currentCat.key, idx, e.target.files?.[0]);
+                                  e.target.value = "";
+                                }}
+                              />
+                            </label>
+                            <input
+                              className="w-full rounded-lg border border-[#DECDB3] bg-white px-2 py-1 text-[11px] text-foreground placeholder:text-muted-foreground/60 focus:border-accent focus:outline-none"
+                              placeholder="…or paste image URL"
+                              value={((ov.image?.includes("unsplash.com") ? "" : ov.image) ?? "")}
+                              onChange={(e) =>
+                                updateCardOverride(currentCat.key, idx, { image: e.target.value })
+                              }
+                            />
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                );
+              })()}
             </div>
           </div>
         </section>

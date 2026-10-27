@@ -27,6 +27,11 @@ import { resolveGalleryImageUrl } from "@/lib/gallery.config";
 import { resolveServiceImageUrl } from "@/lib/services.config";
 import { resolveSpaceImageUrl, DEFAULT_SPACE_IMAGES } from "@/lib/spaces.config";
 import {
+  DEFAULT_FEATURED_CATEGORIES,
+  parseOverrides,
+  type CardOverride,
+} from "@/lib/featured-listings.config";
+import {
   saveGalleryItemServerFn,
   deleteGalleryItemServerFn,
   saveTestimonialServerFn,
@@ -336,6 +341,8 @@ function HomepageContentTab() {
   const [uploadingHero, setUploadingHero] = useState(false);
   const [uploadingSvcId, setUploadingSvcId] = useState<string | null>(null);
   const [uploadingSpaceKey, setUploadingSpaceKey] = useState<string | null>(null);
+  const [activeFeaturedCat, setActiveFeaturedCat] = useState("turnkey");
+  const [uploadingCardKey, setUploadingCardKey] = useState<string | null>(null);
 
   useEffect(() => {
     if (data && !draft) setDraft(data);
@@ -420,6 +427,33 @@ function HomepageContentTab() {
     } finally {
       setUploadingSpaceKey(null);
     }
+  }
+
+  async function handleFeaturedCardUpload(catKey: string, cardIdx: number, file?: File) {
+    if (!file || !draft) return;
+    const key = `${catKey}_${cardIdx}`;
+    setUploadingCardKey(key);
+    try {
+      const url = await uploadToStorage(file, "featured-cards");
+      if (url) {
+        const overrides = parseOverrides(draft.featured_listings_cards);
+        overrides[key] = { ...(overrides[key] || {}), image: url };
+        setDraft({ ...draft, featured_listings_cards: JSON.stringify(overrides) });
+        toast.success("Card image updated!");
+      }
+    } catch (err: any) {
+      toast.error("Upload failed: " + err.message);
+    } finally {
+      setUploadingCardKey(null);
+    }
+  }
+
+  function updateCardOverride(catKey: string, cardIdx: number, patch: CardOverride) {
+    if (!draft) return;
+    const key = `${catKey}_${cardIdx}`;
+    const overrides = parseOverrides(draft.featured_listings_cards);
+    overrides[key] = { ...(overrides[key] || {}), ...patch };
+    setDraft({ ...draft, featured_listings_cards: JSON.stringify(overrides) });
   }
 
   if (!draft) return <p className="text-sm text-muted-foreground">Loading homepage settings…</p>;
@@ -715,9 +749,9 @@ function HomepageContentTab() {
       </Card>
 
       {/* 6. Featured Service Listings */}
-      <Card title="6. Featured Service Listings (Interactive Packages)">
+      <Card title="6. Featured Service Listings (Interactive Packages & Cards)">
         <p className="text-xs text-muted-foreground mb-4">
-          The horizontal card carousel with category tabs (Turnkey, Residential, Commercial, Renovation, Structural, etc.).
+          The horizontal card carousel with category tabs (Turnkey, Residential, Commercial, Renovation, Structural, etc.). Edit headers, switch category tabs, and change card images/details below.
         </p>
         <Grid>
           <Field label="Eyebrow Badge">
@@ -730,6 +764,147 @@ function HomepageContentTab() {
             <textarea rows={2} className={inp} placeholder="Explore our curated work across interiors, construction, supervision, and design execution." value={draft.featured_listings_subtitle ?? ""} onChange={upd("featured_listings_subtitle")} />
           </Field>
         </Grid>
+
+        {/* Category Tabs & Cards Editor */}
+        <div className="mt-6 border-t border-border pt-5">
+          <h4 className="font-serif text-base text-foreground mb-1">
+            Category Tab Showcase Cards & Images
+          </h4>
+          <p className="text-xs text-muted-foreground mb-4">
+            Select a category tab to edit its 5 showcase cards, upload new photos, or edit titles.
+          </p>
+
+          {/* Tab selector */}
+          <div className="flex flex-wrap gap-2 pb-2">
+            {DEFAULT_FEATURED_CATEGORIES.map((cat) => {
+              const isSelected = cat.key === activeFeaturedCat;
+              return (
+                <button
+                  key={cat.key}
+                  type="button"
+                  onClick={() => setActiveFeaturedCat(cat.key)}
+                  className={`rounded-full px-3 py-1 text-xs font-medium transition cursor-pointer ${
+                    isSelected
+                      ? "bg-accent text-accent-foreground font-semibold shadow-xs"
+                      : "border border-border bg-background hover:bg-muted text-muted-foreground"
+                  }`}
+                >
+                  {cat.label}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* 5 Cards for Selected Category */}
+          {(() => {
+            const currentCat =
+              DEFAULT_FEATURED_CATEGORIES.find((c) => c.key === activeFeaturedCat) ||
+              DEFAULT_FEATURED_CATEGORIES[0];
+            const overrides = parseOverrides(draft.featured_listings_cards);
+
+            return (
+              <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                {currentCat.cards.map((card, idx) => {
+                  const key = `${currentCat.key}_${idx}`;
+                  const ov = overrides[key] || {};
+                  const currentImg =
+                    ov.image && !ov.image.includes("unsplash.com")
+                      ? ov.image
+                      : card.image;
+                  const currentTitle = ov.title ?? card.title;
+                  const currentDesc = ov.description ?? card.description;
+                  const currentTag = ov.tag ?? card.tag;
+                  const isUploading = uploadingCardKey === key;
+
+                  return (
+                    <div
+                      key={key}
+                      className="rounded-lg border border-border/80 bg-background/50 p-3 flex flex-col justify-between"
+                    >
+                      <div>
+                        <div className="relative aspect-video w-full rounded overflow-hidden border border-border bg-muted mb-2">
+                          <img
+                            src={currentImg}
+                            alt={currentTitle}
+                            className="h-full w-full object-cover"
+                          />
+                          {currentTag && (
+                            <span className="absolute top-1.5 left-1.5 rounded-full px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-accent border border-accent/40 bg-background/90">
+                              {currentTag}
+                            </span>
+                          )}
+                        </div>
+                        <div className="space-y-1.5">
+                          <div>
+                            <label className="block text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                              Card Title
+                            </label>
+                            <input
+                              className="w-full rounded border border-border bg-background px-2 py-1 text-xs text-foreground font-medium focus:border-accent focus:outline-none"
+                              value={currentTitle}
+                              onChange={(e) =>
+                                updateCardOverride(currentCat.key, idx, { title: e.target.value })
+                              }
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                              Card Tag
+                            </label>
+                            <input
+                              className="w-full rounded border border-border bg-background px-2 py-1 text-xs text-foreground focus:border-accent focus:outline-none"
+                              value={currentTag}
+                              onChange={(e) =>
+                                updateCardOverride(currentCat.key, idx, { tag: e.target.value })
+                              }
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                              Description
+                            </label>
+                            <input
+                              className="w-full rounded border border-border bg-background px-2 py-1 text-xs text-foreground focus:border-accent focus:outline-none"
+                              value={currentDesc}
+                              onChange={(e) =>
+                                updateCardOverride(currentCat.key, idx, { description: e.target.value })
+                              }
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="mt-2.5 pt-2.5 border-t border-border space-y-1.5">
+                        <label className="w-full inline-flex cursor-pointer items-center justify-center gap-1.5 rounded border border-border bg-card px-2.5 py-1 text-xs font-medium text-foreground hover:bg-muted transition">
+                          <Upload className="h-3 w-3 text-accent" />
+                          <span>{isUploading ? "Uploading…" : "Change Image"}</span>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            disabled={isUploading}
+                            onChange={(e) => {
+                              handleFeaturedCardUpload(currentCat.key, idx, e.target.files?.[0]);
+                              e.target.value = "";
+                            }}
+                          />
+                        </label>
+                        <input
+                          className="w-full rounded border border-border bg-background px-2 py-1 text-[11px] text-foreground placeholder:text-muted-foreground focus:border-accent focus:outline-none"
+                          placeholder="…or paste image URL"
+                          value={((ov.image?.includes("unsplash.com") ? "" : ov.image) ?? "")}
+                          onChange={(e) =>
+                            updateCardOverride(currentCat.key, idx, { image: e.target.value })
+                          }
+                        />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          })()}
+        </div>
       </Card>
 
       {/* 7. Free Consultation CTA Banner */}

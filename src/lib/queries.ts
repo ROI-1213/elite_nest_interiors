@@ -169,6 +169,7 @@ export type SiteSettings = {
   featured_listings_eyebrow?: string | null;
   featured_listings_title?: string | null;
   featured_listings_subtitle?: string | null;
+  featured_listings_cards?: string | null;
   accordion_section_eyebrow?: string | null;
   accordion_section_title?: string | null;
   accordion_section_subtitle?: string | null;
@@ -349,6 +350,7 @@ export const DEFAULT_SITE_SETTINGS: SiteSettings = {
   featured_listings_eyebrow: "Featured Service Listings",
   featured_listings_title: "Featured Listings",
   featured_listings_subtitle: "Explore our curated work across interiors, construction, supervision, and design execution.",
+  featured_listings_cards: null,
   accordion_section_eyebrow: "Our Services",
   accordion_section_title: "Crafting Bengaluru Spaces With Design, Precision & Execution",
   accordion_section_subtitle: "Explore our premium architecture, construction, supervision, and interior design services tailored for modern Bengaluru living and working spaces.",

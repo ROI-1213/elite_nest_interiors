@@ -256,7 +256,7 @@ function AboutPage() {
       </section>
 
       {/* FEATURED SERVICES SCROLLING IMAGES SECTION */}
-      <FeaturedServiceListings />
+      <FeaturedServiceListings cardsJson={s.featured_listings_cards} />
 
       {/* PHILOSOPHY */}
       <section className="border-y border-border bg-bone">

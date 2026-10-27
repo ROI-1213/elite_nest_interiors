@@ -136,6 +136,13 @@ export const getSiteSettingsServerFn = createServerFn({ method: "GET" })
 export const updateSiteSettingsServerFn = createServerFn({ method: "POST" })
   .validator((data: Record<string, any>) => data)
   .handler(async ({ data }) => {
+    // Ensure newly added columns exist in PostgreSQL
+    try {
+      await queryDb("ALTER TABLE public.site_settings ADD COLUMN IF NOT EXISTS featured_listings_cards TEXT;");
+    } catch {
+      // ignore
+    }
+
     const fields = Object.keys(data).filter((k) => k !== "id" && k !== "updated_at");
     if (fields.length === 0) return { success: true };
 
