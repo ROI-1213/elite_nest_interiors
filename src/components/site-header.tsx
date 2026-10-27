@@ -156,7 +156,6 @@ export function SiteHeader({ transparent = false }: { transparent?: boolean }) {
                   src={logo}
                   alt={settings?.business_name ?? "Elite Nest Interiors"}
                   className="h-full w-auto max-h-[78%] md:max-h-[84%] object-contain object-center scale-[3.0] md:scale-[2.4] origin-center transition-transform duration-300 hover:scale-[3.2]"
-                  style={{ mixBlendMode: "multiply" }}
                 />
               </Link>
             </div>

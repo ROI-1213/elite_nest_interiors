@@ -4,7 +4,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { toast } from "sonner";
 import { ArrowRight, Sparkles } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
 import { redirectEnquiryToWhatsApp } from "@/lib/whatsapp-redirect";
 import { Reveal } from "@/components/scroll-reveal";
 import { submitEnquiryServerFn } from "@/lib/server-functions";
@@ -70,19 +69,6 @@ export function ConsultationEnquiry({
       });
     } catch (err) {
       console.warn("Backend database insert failed:", err);
-    }
-
-    try {
-      await supabase.from("enquiries").insert({
-        name: data.name.trim(),
-        phone: data.phone.trim(),
-        email: data.email.trim(),
-        message: composedMessage,
-        service_title: data.serviceType,
-        source: "homepage-consultation",
-      });
-    } catch (err) {
-      console.warn("Database insert skipped/failed:", err);
     } finally {
       setSubmitting(false);
     }

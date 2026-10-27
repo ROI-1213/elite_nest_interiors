@@ -22,7 +22,7 @@ import pg from 'pg';
 
 const connectionString =
   process.env.DATABASE_URL ||
-  'postgresql://elite47:z74zT9hvpAYamMsKjkbG5Guhm@168.119.64.101:5432/elite47';
+  'postgresql://elite47:z74zT9hvpAYamMsKjkbG5Guhm@localhost:5432/elite47';
 
 const SEED_GALLERY = [
   { id: '00000000-0000-4000-8000-000000000001', title: 'Villa Under Construction, Whitefield', category: 'Construction', description: 'Premium independent villa framing works in progress.', assetKey: 'gallery-construction-1', display_order: 1 },

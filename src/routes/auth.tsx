@@ -1,56 +1,111 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
+import { Mail, Lock, Eye, EyeOff, Loader2, ShieldCheck, ArrowLeft } from "lucide-react";
+import { signInServerFn, verifyTokenServerFn } from "@/lib/server-functions";
 import logo from "@/assets/logo.png";
 
 export const Route = createFileRoute("/auth")({
-  head: () => ({ meta: [{ title: "Admin Sign In — Elite Nest Interior" }] }),
+  head: () => ({ meta: [{ title: "Admin Portal Sign In — Elite Nest Interiors" }] }),
   component: AuthPage,
 });
 
 function AuthPage() {
   const navigate = useNavigate();
-  const [email, setEmail] = useState("admin@elitenest.com");
-  const [password, setPassword] = useState("Admin@123456");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [checkingSession, setCheckingSession] = useState(true);
 
+  // If already logged in, redirect straight to /admin
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
-      if (data?.session) navigate({ to: "/admin" });
-    });
+    let isMounted = true;
+
+    async function checkExistingAuth() {
+      if (typeof window !== "undefined") {
+        const token = localStorage.getItem("elite_admin_token");
+        if (token) {
+          try {
+            const verified = await verifyTokenServerFn({ data: { token } });
+            if (verified?.isAdmin && isMounted) {
+              navigate({ to: "/admin" });
+              return;
+            }
+          } catch (_) {
+            localStorage.removeItem("elite_admin_token");
+          }
+        }
+      }
+
+      if (isMounted) setCheckingSession(false);
+    }
+
+    checkExistingAuth();
+    return () => {
+      isMounted = false;
+    };
   }, [navigate]);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
+    if (!email.trim() || !password) {
+      toast.error("Please enter both email and password.");
+      return;
+    }
+
     setBusy(true);
-    
+
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-      if (!error && data?.session) {
-        setBusy(false);
-        toast.success("Welcome back.");
+      // Authenticate directly against PostgreSQL database using JWT
+      const res = await signInServerFn({
+        data: {
+          email: email.trim().toLowerCase(),
+          password,
+        },
+      });
+
+      if (res?.token && res?.isAdmin) {
+        if (typeof window !== "undefined") {
+          localStorage.setItem("elite_admin_token", res.token);
+        }
+        toast.success("Welcome back, Administrator!");
         navigate({ to: "/admin" });
         return;
+      } else if (res && !res.isAdmin) {
+        toast.error("Account does not have administrator privileges.");
+        setBusy(false);
+        return;
       }
-    } catch (_) {}
+    } catch (err: any) {
+      const msg = err?.message || "Invalid email or password. Please try again.";
+      toast.error(msg);
+    } finally {
+      setBusy(false);
+    }
+  }
 
-    setBusy(false);
-    toast.error("Invalid email or password. Please try again.");
+  if (checkingSession) {
+    return (
+      <div className="min-h-screen w-full bg-[#FAF6F0] flex flex-col justify-center items-center">
+        <Loader2 className="h-8 w-8 animate-spin text-[#B8894D]" />
+        <p className="mt-3 text-xs uppercase tracking-[0.2em] text-[#8F8173]">Verifying session...</p>
+      </div>
+    );
   }
 
   return (
     <div className="min-h-screen w-full bg-[#FAF6F0] flex flex-col justify-center items-center p-4 relative overflow-hidden">
-      {/* Decorative subtle background accents */}
-      <div className="absolute -top-32 -left-32 h-96 w-96 rounded-full bg-[#B8894D]/10 blur-3xl pointer-events-none" />
-      <div className="absolute -bottom-32 -right-32 h-96 w-96 rounded-full bg-[#B8894D]/10 blur-3xl pointer-events-none" />
+      {/* Decorative luxury gradient background glows */}
+      <div className="absolute -top-32 -left-32 h-96 w-96 rounded-full bg-[#B8894D]/15 blur-3xl pointer-events-none" />
+      <div className="absolute -bottom-32 -right-32 h-96 w-96 rounded-full bg-[#B8894D]/15 blur-3xl pointer-events-none" />
 
-      {/* Main Standalone Card */}
+      {/* Main Login Card */}
       <div className="w-full max-w-md rounded-3xl border border-[#E5D4BD] bg-white p-8 md:p-10 shadow-2xl relative z-10">
         <div className="text-center mb-6">
-          {/* Logo in Dark Luxury Pill for 100% High-Contrast Clarity */}
-          <Link to="/" className="inline-block mb-4 overflow-visible">
-            <div className="mx-auto flex h-20 w-full max-w-[280px] items-center justify-center rounded-2xl bg-[#1A1410] px-6 py-3 border border-[#C49A5A]/50 shadow-md transition-transform hover:scale-105">
+          {/* Logo in Dark Luxury Pill */}
+          <Link to="/" className="inline-block mb-4 overflow-visible group">
+            <div className="mx-auto flex h-20 w-full max-w-[280px] items-center justify-center rounded-2xl bg-[#1A1410] px-6 py-3 border border-[#C49A5A]/50 shadow-md transition-transform group-hover:scale-105">
               <img
                 src={logo}
                 alt="Elite Nest Interiors"
@@ -60,63 +115,93 @@ function AuthPage() {
           </Link>
 
           <div>
-            <span className="inline-block rounded-full bg-[#B8894D]/15 px-3.5 py-1 text-[10px] font-semibold uppercase tracking-[0.25em] text-[#B8894D]">
-              Admin Control Panel
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-[#B8894D]/15 px-3.5 py-1 text-[11px] font-semibold uppercase tracking-[0.25em] text-[#9E6E34]">
+              <ShieldCheck className="h-3.5 w-3.5" /> Admin Control Panel
             </span>
           </div>
-          <h1 className="mt-4 font-serif text-3xl text-[#221912]">
-            Sign in
+          <h1 className="mt-4 font-serif text-3xl font-medium text-[#221912]">
+            Admin Sign In
           </h1>
-          <p className="mt-2 text-xs text-[#6F6257]">
-            Access the admin dashboard to manage your website content.
+          <p className="mt-2 text-xs text-[#6F6257] leading-relaxed">
+            Enter your administrator credentials to manage projects, services, enquiries & content.
           </p>
         </div>
 
+        {/* Credentials Form */}
         <form onSubmit={submit} className="space-y-4">
           <div>
-            <label className="mb-1 block text-xs font-semibold text-[#221912] uppercase tracking-wider">
+            <label className="mb-1.5 block text-xs font-semibold text-[#221912] uppercase tracking-wider">
               Email Address
             </label>
-            <input
-              type="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="admin@elitenest.com"
-              className="w-full rounded-xl border border-[#E5D4BD] bg-[#FDFBF7] px-4 py-3 text-sm outline-none focus:border-[#B8894D] focus:ring-2 focus:ring-[#B8894D]/20 transition"
-            />
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-[#9E6E34]/70">
+                <Mail className="h-4 w-4" />
+              </div>
+              <input
+                type="email"
+                required
+                autoComplete="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="Enter your email"
+                className="w-full rounded-xl border border-[#E5D4BD] bg-[#FDFBF7] pl-10 pr-4 py-3 text-sm text-[#221912] outline-none focus:border-[#B8894D] focus:ring-2 focus:ring-[#B8894D]/25 transition placeholder:text-[#A89C91]"
+              />
+            </div>
           </div>
 
           <div>
-            <label className="mb-1 block text-xs font-semibold text-[#221912] uppercase tracking-wider">
+            <label className="mb-1.5 block text-xs font-semibold text-[#221912] uppercase tracking-wider">
               Password
             </label>
-            <input
-              type="password"
-              required
-              minLength={6}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••"
-              className="w-full rounded-xl border border-[#E5D4BD] bg-[#FDFBF7] px-4 py-3 text-sm outline-none focus:border-[#B8894D] focus:ring-2 focus:ring-[#B8894D]/20 transition"
-            />
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-[#9E6E34]/70">
+                <Lock className="h-4 w-4" />
+              </div>
+              <input
+                type={showPassword ? "text" : "password"}
+                required
+                autoComplete="current-password"
+                minLength={6}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••"
+                className="w-full rounded-xl border border-[#E5D4BD] bg-[#FDFBF7] pl-10 pr-11 py-3 text-sm text-[#221912] outline-none focus:border-[#B8894D] focus:ring-2 focus:ring-[#B8894D]/25 transition placeholder:text-[#A89C91]"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                tabIndex={-1}
+                className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-[#8F8173] hover:text-[#221912] transition"
+                aria-label={showPassword ? "Hide password" : "Show password"}
+              >
+                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
+            </div>
           </div>
 
           <button
             type="submit"
             disabled={busy}
-            className="w-full rounded-xl bg-[#B8894D] py-3.5 text-xs font-semibold uppercase tracking-[0.2em] text-white shadow-lg transition hover:bg-[#A0743C] active:scale-[0.99] disabled:opacity-60"
+            className="w-full rounded-xl bg-[#B8894D] py-3.5 text-xs font-semibold uppercase tracking-[0.2em] text-white shadow-lg transition hover:bg-[#A0743C] active:scale-[0.99] disabled:opacity-60 flex items-center justify-center gap-2 cursor-pointer"
           >
-            {busy ? "Signing in..." : "Sign In to Admin"}
+            {busy ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Signing In...
+              </>
+            ) : (
+              "Sign In to Admin Portal"
+            )}
           </button>
         </form>
 
         <div className="mt-6 pt-4 border-t border-[#F0E6D8] text-center text-xs">
-          <p>
-            <Link to="/" className="text-[#8F8173] hover:text-[#221912] transition font-medium">
-              ← Return to Website
-            </Link>
-          </p>
+          <Link
+            to="/"
+            className="inline-flex items-center gap-1.5 text-[#8F8173] hover:text-[#221912] transition font-medium"
+          >
+            <ArrowLeft className="h-3.5 w-3.5" /> Return to Website
+          </Link>
         </div>
       </div>
     </div>

@@ -23,7 +23,6 @@ import { Link } from "@tanstack/react-router";
 import { SiteLayout } from "@/components/site-layout";
 import { Reveal } from "@/components/scroll-reveal";
 import { settingsQuery } from "@/lib/queries";
-import { supabase } from "@/integrations/supabase/client";
 import { redirectEnquiryToWhatsApp } from "@/lib/whatsapp-redirect";
 import { submitEnquiryServerFn } from "@/lib/server-functions";
 
@@ -170,8 +169,9 @@ function ContactPage() {
             <iframe
               title="Office location"
               src={
-                s.google_map_url ||
-                "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3888.123!2d77.5946!3d12.9716!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zMTLCsDU4JzE3LjgiTiA3N8KwMzUnNDAuNiJF!5e0!3m2!1sen!2sin!4v0"
+                s.google_map_url?.includes("embed")
+                  ? s.google_map_url
+                  : "https://maps.google.com/maps?q=Elite+Nest+Architects+%26+Interiors&t=&z=16&ie=UTF8&iwloc=&output=embed"
               }
               width="100%"
               height="420"
@@ -286,19 +286,6 @@ function FullEnquiryForm() {
       });
     } catch (err) {
       console.warn("Backend database insert failed:", err);
-    }
-
-    try {
-      await supabase.from("enquiries").insert({
-        name: data.name.trim(),
-        phone: data.phone.trim(),
-        email: data.email?.trim() || null,
-        message: details || null,
-        service_title: data.service,
-        source: "contact-us",
-      });
-    } catch (err) {
-      console.warn("Database insert skipped/failed:", err);
     } finally {
       setSubmitting(false);
     }

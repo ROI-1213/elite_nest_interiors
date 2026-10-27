@@ -164,10 +164,25 @@ CREATE TABLE IF NOT EXISTS public.site_settings (
   updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
 
--- 10. Storage Objects table (storing buckets & binary blobs inside PostgreSQL)
+-- 10. Storage Buckets table
+CREATE TABLE IF NOT EXISTS public.storage_buckets (
+  id TEXT PRIMARY KEY,
+  name TEXT NOT NULL,
+  public BOOLEAN DEFAULT true,
+  created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);
+
+INSERT INTO public.storage_buckets (id, name, public) VALUES
+  ('gallery', 'Gallery Images', true),
+  ('services', 'Service Images', true),
+  ('testimonials', 'Testimonial Images', true),
+  ('general', 'General Uploads', true)
+ON CONFLICT (id) DO NOTHING;
+
+-- 11. Storage Objects table (storing buckets & binary blobs inside PostgreSQL)
 CREATE TABLE IF NOT EXISTS public.storage_objects (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  bucket_id TEXT NOT NULL,
+  bucket_id TEXT NOT NULL REFERENCES public.storage_buckets(id) ON DELETE CASCADE,
   filename TEXT NOT NULL,
   mime_type TEXT NOT NULL,
   file_data BYTEA NOT NULL,

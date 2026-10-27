@@ -538,6 +538,14 @@ export const deleteEnquiryServerFn = createServerFn({ method: "POST" })
 export const uploadStorageFileServerFn = createServerFn({ method: "POST" })
   .validator((data: { bucket: string; filename: string; mimeType: string; base64Data: string }) => data)
   .handler(async ({ data }) => {
+    // Ensure bucket exists in storage_buckets table
+    await queryDb(
+      `INSERT INTO public.storage_buckets (id, name, public)
+       VALUES ($1, $1, true)
+       ON CONFLICT (id) DO NOTHING`,
+      [data.bucket]
+    );
+
     const buffer = Buffer.from(data.base64Data, "base64");
     await queryDb(
       `INSERT INTO public.storage_objects (bucket_id, filename, mime_type, file_data)
@@ -547,8 +555,8 @@ export const uploadStorageFileServerFn = createServerFn({ method: "POST" })
       [data.bucket, data.filename, data.mimeType, buffer]
     );
 
-    // Return Data URL stored directly inside PostgreSQL storage table
+    // Return the PostgreSQL storage endpoint URL
     return {
-      publicUrl: `data:${data.mimeType};base64,${data.base64Data}`,
+      publicUrl: `/api/storage/${data.bucket}/${encodeURIComponent(data.filename)}`,
     };
   });

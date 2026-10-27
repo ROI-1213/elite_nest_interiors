@@ -7,9 +7,9 @@ import bcrypt from 'bcryptjs';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const connectionString = process.env.DATABASE_URL || 'postgresql://elite47:z74zT9hvpAYamMsKjkbG5Guhm@168.119.64.101:5432/elite47';
+const connectionString = process.env.DATABASE_URL || 'postgresql://elite47:z74zT9hvpAYamMsKjkbG5Guhm@localhost:5432/elite47';
 
-console.log('Connecting to PostgreSQL database at 168.119.64.101:5432/elite47...');
+console.log('Connecting to PostgreSQL database at localhost:5432/elite47...');
 
 const client = new pg.Client({
   connectionString,
@@ -124,8 +124,8 @@ async function main() {
     console.log('Schema executed successfully!');
 
     // Create default admin user if not exists
-    const adminEmail = 'admin@elitenest.com';
-    const adminPassword = 'Admin@123456';
+    const adminEmail = 'elitenestinteriors@gmail.com';
+    const adminPassword = 'elitenest@2026';
     const salt = await bcrypt.genSalt(10);
     const hash = await bcrypt.hash(adminPassword, salt);
 

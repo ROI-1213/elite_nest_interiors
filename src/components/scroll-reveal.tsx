@@ -12,17 +12,10 @@ export function Reveal({ children, delay = 0, as: Tag = "div", ...rest }: Props)
     const el = ref.current;
     if (!el) return;
 
-    // If IntersectionObserver is not available (old browser / SSR edge case), show immediately
-    if (typeof IntersectionObserver === "undefined") {
-      el.classList.add("is-visible");
-      return;
-    }
+    // Always add is-visible immediately on mount to prevent any first-load invisible content frame
+    el.classList.add("is-visible");
 
-    // If element is already in the viewport (above the fold), show it immediately
-    // without waiting for the observer callback — prevents flash of invisible content
-    const rect = el.getBoundingClientRect();
-    if (rect.top < window.innerHeight && rect.bottom > 0) {
-      el.classList.add("is-visible");
+    if (typeof IntersectionObserver === "undefined") {
       return;
     }
 
@@ -35,8 +28,7 @@ export function Reveal({ children, delay = 0, as: Tag = "div", ...rest }: Props)
           }
         }
       },
-      // Larger rootMargin so elements just below the fold get triggered earlier
-      { threshold: 0.05, rootMargin: "0px 0px 60px 0px" },
+      { threshold: 0.01, rootMargin: "100px 0px 100px 0px" },
     );
     io.observe(el);
     return () => io.disconnect();

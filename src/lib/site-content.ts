@@ -94,8 +94,7 @@ export const SITE_SETTINGS_DEFAULTS: Record<string, string> = {
   email: "contact@elitenestinteriors.com",
   address: "No. 42, 100 Feet Road, Indiranagar, Bengaluru, Karnataka 560038",
   business_hours: "Mon–Sat · 10am – 7pm",
-  google_map_url:
-    "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3888.123!2d77.5946!3d12.9716!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zMTLCsDU4JzE3LjgiTiA3N8KwMzUnNDAuNeJF!5e0!3m2!1sen!2sin!4v0",
+  google_map_url: "https://maps.app.goo.gl/9W8aWwyw2Rfq5vCfA?g_st=iw",
   instagram_url:
     "https://www.instagram.com/elitenest5?igsh=MXdqbDBjaDlwOGYyZQ%3D%3D&utm_source=qr",
   youtube_url:

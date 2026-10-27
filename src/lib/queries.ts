@@ -1,5 +1,4 @@
 import { queryOptions } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
 import { SERVICE_ORDER, SERVICE_SLUGS, SERVICE_DESCRIPTIONS, SERVICE_IMAGES } from "@/lib/services.config";
 import {
   getCategoriesServerFn,
@@ -14,12 +13,12 @@ import {
 import { SITE_SETTINGS_DEFAULTS, PLACEHOLDER_TESTIMONIALS } from "@/lib/site-content";
 import { CURATED_GALLERY } from "@/lib/gallery.config";
 
-type SupabaseReadError = { code?: string; message?: string; details?: string };
+type DatabaseReadError = { code?: string; message?: string; details?: string };
 
-function isRecoverableContentReadError(error: SupabaseReadError | null | unknown): boolean {
+function isRecoverableContentReadError(error: DatabaseReadError | null | unknown): boolean {
   if (!error) return false;
   if (error instanceof TypeError) return true;
-  const e = error as SupabaseReadError;
+  const e = error as DatabaseReadError;
   const text = `${e.code ?? ""} ${e.message ?? ""} ${e.details ?? ""}`.toLowerCase();
   return (
     text.includes("pgrst205") ||
@@ -36,7 +35,7 @@ function isRecoverableContentReadError(error: SupabaseReadError | null | unknown
   );
 }
 
-function fallbackOnMissingContent<T>(error: SupabaseReadError | null | unknown, fallback: T): T {
+function fallbackOnMissingContent<T>(error: DatabaseReadError | null | unknown, fallback: T): T {
   console.warn("[content] Using fallback data:", (error as Error)?.message ?? error);
   return fallback;
 }
@@ -197,7 +196,7 @@ export const DEFAULT_SITE_SETTINGS: SiteSettings = {
   whatsapp: SITE_SETTINGS_DEFAULTS.whatsapp ?? "+91 93640 48269",
   email: SITE_SETTINGS_DEFAULTS.email ?? "contact@elitenestinteriors.com",
   address: SITE_SETTINGS_DEFAULTS.address ?? "No. 42, 100 Feet Road, Indiranagar, Bengaluru, Karnataka 560038",
-  google_map_url: SITE_SETTINGS_DEFAULTS.google_map_url ?? "https://www.google.com/maps",
+  google_map_url: SITE_SETTINGS_DEFAULTS.google_map_url ?? "https://maps.app.goo.gl/9W8aWwyw2Rfq5vCfA?g_st=iw",
   business_hours: SITE_SETTINGS_DEFAULTS.business_hours ?? "Mon–Sat · 10am – 7pm",
   facebook_url: null,
   instagram_url: SITE_SETTINGS_DEFAULTS.instagram_url ?? null,
@@ -243,6 +242,7 @@ export const DEFAULT_GALLERY_ITEMS: GalleryItem[] = CURATED_GALLERY.map((c, i) =
 
 export const settingsQuery = queryOptions({
   queryKey: ["site_settings"],
+  placeholderData: DEFAULT_SITE_SETTINGS,
   queryFn: async (): Promise<SiteSettings> => {
     try {
       const data = await getSiteSettingsServerFn();
@@ -259,7 +259,7 @@ export const settingsQuery = queryOptions({
       return DEFAULT_SITE_SETTINGS;
     }
   },
-  staleTime: 30 * 1000, // 30 seconds to reduce caching delay
+  staleTime: 30 * 1000,
   refetchOnWindowFocus: true,
   retry: 1,
 });
@@ -267,6 +267,7 @@ export const settingsQuery = queryOptions({
 export const categoriesQuery = (opts: { onlyActive?: boolean } = {}) =>
   queryOptions({
     queryKey: ["service_categories", opts.onlyActive ?? true],
+    placeholderData: DEFAULT_CATEGORIES,
     staleTime: 15 * 60_000,
     retry: 1,
     queryFn: async (): Promise<Category[]> => {
@@ -281,6 +282,7 @@ export const categoriesQuery = (opts: { onlyActive?: boolean } = {}) =>
 export const servicesQuery = (opts: { onlyActive?: boolean } = {}) =>
   queryOptions({
     queryKey: ["services", opts.onlyActive ?? true],
+    placeholderData: DEFAULT_SERVICES,
     staleTime: 15 * 60_000,
     retry: 1,
     queryFn: async (): Promise<Service[]> => {
@@ -299,6 +301,7 @@ export const servicesQuery = (opts: { onlyActive?: boolean } = {}) =>
 export const serviceBySlugQuery = (slug: string) =>
   queryOptions({
     queryKey: ["service", slug],
+    placeholderData: () => DEFAULT_SERVICES.find((s) => s.slug === slug) || DEFAULT_SERVICES[0],
     staleTime: 15 * 60_000,
     retry: 1,
     queryFn: async (): Promise<Service | null> => {
@@ -334,6 +337,7 @@ export const enquiriesQuery = () =>
 export const testimonialsQuery = (opts: { onlyActive?: boolean } = {}) =>
   queryOptions({
     queryKey: ["testimonials", opts.onlyActive ?? true],
+    placeholderData: PLACEHOLDER_TESTIMONIALS,
     staleTime: 15 * 60_000,
     retry: 1,
     queryFn: async (): Promise<Testimonial[]> => {
@@ -362,6 +366,7 @@ export const videoTestimonialsQuery = (opts: { onlyActive?: boolean } = {}) =>
 export const galleryQuery = (opts: { onlyActive?: boolean } = {}) =>
   queryOptions({
     queryKey: ["gallery_items", opts.onlyActive ?? true],
+    placeholderData: DEFAULT_GALLERY_ITEMS,
     staleTime: 15 * 60_000,
     retry: 1,
     queryFn: async (): Promise<GalleryItem[]> => {

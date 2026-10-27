@@ -1,43 +1,33 @@
 import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
-import { supabase } from "@/integrations/supabase/client";
+import { verifyTokenServerFn } from "@/lib/server-functions";
 
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
   beforeLoad: async () => {
-    try {
-      const { data, error } = await supabase.auth.getUser();
-      if (error || !data.user) {
-        // If Supabase is not configured (no env vars), allow local admin access
-        // so the admin panel works for development/preview
-        const hasSupabase = !!(
-          (import.meta as any).env?.VITE_SUPABASE_URL ||
-          (typeof process !== "undefined" && process.env?.SUPABASE_URL)
-        );
-        if (!hasSupabase) {
-          return {
-            user: { id: "local-admin", email: "admin@elitenest.com" },
-            isAdmin: true,
-          };
+    // Check local JWT token verified directly with PostgreSQL database
+    if (typeof window !== "undefined") {
+      const token = localStorage.getItem("elite_admin_token");
+      if (token) {
+        try {
+          const verified = await verifyTokenServerFn({ data: { token } });
+          if (verified && verified.isAdmin) {
+            return {
+              user: verified.user,
+              isAdmin: true,
+            };
+          }
+        } catch (err) {
+          console.warn("PostgreSQL token verification error:", err);
+          localStorage.removeItem("elite_admin_token");
         }
-        throw redirect({ to: "/auth" });
       }
-      // Check admin role
-      const { data: roleRow } = await supabase
-        .from("user_roles")
-        .select("role")
-        .eq("user_id", data.user.id)
-        .eq("role", "admin")
-        .maybeSingle();
-      return { user: data.user, isAdmin: !!roleRow };
-    } catch (err) {
-      // If it's a redirect, re-throw it
-      if (err && typeof err === "object" && "to" in (err as any)) throw err;
-      // Otherwise, allow local access
-      return {
-        user: { id: "local-admin", email: "admin@elitenest.com" },
-        isAdmin: true,
-      };
     }
+
+    // Not authenticated -> redirect to admin login
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("elite_admin_token");
+    }
+    throw redirect({ to: "/auth" });
   },
   component: () => <Outlet />,
 });

@@ -64,17 +64,30 @@ export const Route = createFileRoute("/services/$slug")({
 
 function ServiceDetailPage() {
   const { slug } = Route.useParams();
-  const { data: service } = useQuery(serviceBySlugQuery(slug));
+  const { data: dbService, isLoading } = useQuery(serviceBySlugQuery(slug));
   const { data: allServices = [] } = useQuery(servicesQuery());
   const { data: settings = { whatsapp: "", phone: "" } } = useQuery(settingsQuery);
 
-  if (!service) {
+  const fallbackService = allServices.find((s) => s.slug === slug);
+  const service = dbService || fallbackService;
+
+  if (!service && !isLoading) {
     return (
       <SiteLayout>
         <div className="container-prose py-32 text-center">
           <p className="eyebrow">404</p>
           <h1 className="mt-3 font-serif text-4xl">Service not found</h1>
           <Link to="/services" className="btn-bronze mt-8">Browse services</Link>
+        </div>
+      </SiteLayout>
+    );
+  }
+
+  if (!service) {
+    return (
+      <SiteLayout>
+        <div className="container-prose py-32 text-center">
+          <p className="eyebrow">Loading...</p>
         </div>
       </SiteLayout>
     );

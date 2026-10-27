@@ -3,7 +3,6 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { LogOut, Plus, Pencil, Trash2, RefreshCcw, ArrowUp, ArrowDown, Upload } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
 import { resolveGalleryImageUrl } from "@/lib/gallery.config";
 import {
   saveGalleryItemServerFn,
@@ -62,7 +61,10 @@ function AdminPage() {
   }, [ctx.isAdmin]);
 
   async function signOut() {
-    await supabase.auth.signOut();
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("elite_admin_token");
+    }
+    toast.success("Signed out successfully.");
     navigate({ to: "/auth" });
   }
 
@@ -669,26 +671,40 @@ function GalleryTab() {
   async function uploadFile(file: File): Promise<string | null> {
     try {
       const ext = file.name.split(".").pop() ?? "jpg";
-      const path = `${crypto.randomUUID()}.${ext}`;
-      const { error } = await supabase.storage
-        .from(GALLERY_BUCKET)
-        .upload(path, file, { cacheControl: "3600", upsert: false });
-      if (!error) {
-        const { data: pub } = supabase.storage.from(GALLERY_BUCKET).getPublicUrl(path);
-        if (pub?.publicUrl) return pub.publicUrl;
-      }
-    } catch {}
+      const filename = `${crypto.randomUUID()}.${ext}`;
+      const mimeType = file.type || "image/jpeg";
 
-    // Fallback: Read file as base64 Data URL so upload always succeeds
-    return new Promise((resolve) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(reader.result as string);
-      reader.onerror = () => {
-        toast.error("Failed to read image file.");
-        resolve(null);
-      };
-      reader.readAsDataURL(file);
-    });
+      // Read file as base64
+      const base64Data = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          const res = reader.result as string;
+          const base64 = res.split(",")[1] || "";
+          resolve(base64);
+        };
+        reader.onerror = () => reject(new Error("Failed to read image file"));
+        reader.readAsDataURL(file);
+      });
+
+      // Save directly into PostgreSQL storage_objects table
+      const res = await uploadStorageFileServerFn({
+        data: {
+          bucket: GALLERY_BUCKET,
+          filename,
+          mimeType,
+          base64Data,
+        },
+      });
+
+      if (res?.publicUrl) {
+        toast.success("Image saved to database successfully.");
+        return res.publicUrl;
+      }
+    } catch (err: any) {
+      console.error("Storage upload failed:", err);
+      toast.error(err?.message || "Failed to upload image.");
+    }
+    return null;
   }
 
   async function onFilePick(file: File | undefined) {

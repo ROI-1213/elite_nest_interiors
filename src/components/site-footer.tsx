@@ -41,13 +41,12 @@ export function SiteFooter() {
 
       <div className="container-prose grid gap-12 py-20 md:grid-cols-12">
         <div className="md:col-span-4">
-          <div className="overflow-hidden" style={{ height: "140px" }}>
-            <Link to="/">
+          <div className="flex items-center overflow-visible py-2">
+            <Link to="/" className="inline-block">
               <img
                 src={logo}
                 alt={s?.business_name ?? "Elite Nest Interiors"}
-                className="w-72 md:w-80 h-auto"
-                style={{ marginTop: "-145px" }}
+                className="h-24 md:h-32 w-auto object-contain scale-[1.8] md:scale-[2.1] origin-left transition-transform duration-300"
               />
             </Link>
           </div>
@@ -146,7 +145,16 @@ export function SiteFooter() {
               Developed by ROI Infotech
             </a>
           </p>
-          <p>Crafted with care · Premium turnkey design build studio</p>
+          <div className="flex items-center gap-2">
+            <span>Crafted with care · Premium turnkey design build studio</span>
+            <span className="opacity-40">·</span>
+            <Link
+              to="/auth"
+              className="underline opacity-75 hover:opacity-100 hover:text-white transition-opacity"
+            >
+              Admin Login
+            </Link>
+          </div>
         </div>
       </div>
     </footer>

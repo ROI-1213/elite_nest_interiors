@@ -55,7 +55,7 @@ export const Route = createFileRoute("/")({
         context?.queryClient?.prefetchQuery(videoTestimonialsQuery()),
       ]);
     } catch (err) {
-      console.warn("[loader] Supabase fetch failed, rendering with fallbacks:", err);
+      console.warn("[loader] Database fetch error, rendering with fallbacks:", err);
     }
   },
 
