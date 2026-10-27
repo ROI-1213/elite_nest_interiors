@@ -1,7 +1,15 @@
 import { useState, useRef, useCallback } from "react";
 import { Link } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
 import { ArrowRight } from "lucide-react";
-import { SERVICE_ORDER, SERVICE_SLUGS, SERVICE_DESCRIPTIONS, SERVICE_IMAGES } from "@/lib/services.config";
+import {
+  SERVICE_ORDER,
+  SERVICE_SLUGS,
+  SERVICE_DESCRIPTIONS,
+  SERVICE_IMAGES,
+  resolveServiceImageUrl,
+} from "@/lib/services.config";
+import { servicesQuery } from "@/lib/queries";
 
 type Panel = {
   slug: string;
@@ -11,7 +19,7 @@ type Panel = {
   to: string;
 };
 
-const PANELS: Panel[] = SERVICE_ORDER.map(name => ({
+const DEFAULT_PANELS: Panel[] = SERVICE_ORDER.map(name => ({
   slug: SERVICE_SLUGS[name],
   title: name,
   description: SERVICE_DESCRIPTIONS[name],
@@ -28,10 +36,22 @@ export function ServicesAccordionShowcase({
   title?: string | null;
   subtitle?: string | null;
 } = {}) {
-  const [active, setActive] = useState<string>(PANELS[0].slug);
+  const { data: dbServices = [] } = useQuery(servicesQuery({ onlyActive: true }));
 
-  const activePanel = PANELS.find((p) => p.slug === active) || PANELS[0];
-  const otherPanels = PANELS.filter((p) => p.slug !== activePanel.slug);
+  const panelsList: Panel[] = dbServices && dbServices.length > 0
+    ? dbServices.map((s) => ({
+        slug: s.slug,
+        title: s.title,
+        description: s.short_description || SERVICE_DESCRIPTIONS[s.title as keyof typeof SERVICE_DESCRIPTIONS] || "",
+        image: resolveServiceImageUrl(s.title, s.image_url),
+        to: `/services/${s.slug}`,
+      }))
+    : DEFAULT_PANELS;
+
+  const [active, setActive] = useState<string>(panelsList[0]?.slug || DEFAULT_PANELS[0].slug);
+
+  const activePanel = panelsList.find((p) => p.slug === active) || panelsList[0] || DEFAULT_PANELS[0];
+  const otherPanels = panelsList.filter((p) => p.slug !== activePanel.slug);
 
   // Timer ref — used to debounce the reset-to-first on mouse leave for desktop
   const leaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -46,9 +66,9 @@ export function ServicesAccordionShowcase({
   const handleContainerLeave = useCallback(() => {
     if (typeof window !== "undefined" && window.innerWidth < 768) return;
     leaveTimer.current = setTimeout(() => {
-      setActive(PANELS[0].slug);
+      setActive(panelsList[0]?.slug || DEFAULT_PANELS[0].slug);
     }, 120);
-  }, []);
+  }, [panelsList]);
 
   const handlePanelEnter = useCallback((slug: string) => {
     if (typeof window !== "undefined" && window.innerWidth < 768) return;
@@ -78,14 +98,12 @@ export function ServicesAccordionShowcase({
             style={{ fontSize: "clamp(1.75rem, 3.4vw, 2.75rem)", color: "#2D241F" }}
           >
             {title || "Crafting Bengaluru Spaces With Design, Precision & Execution"}
-
           </h2>
           <p
             className="mt-4 max-w-2xl text-[14.5px] leading-relaxed"
             style={{ color: "rgba(45,36,31,0.72)" }}
           >
             {subtitle}
-
           </p>
         </div>
 
@@ -148,13 +166,10 @@ export function ServicesAccordionShowcase({
                       "linear-gradient(180deg, rgba(20,15,12,0.25) 0%, rgba(20,15,12,0.88) 100%)",
                   }}
                 />
-                <div className="absolute inset-x-3 bottom-3 z-10">
-                  <h4 className="font-serif text-sm sm:text-base font-medium leading-snug text-white line-clamp-2 drop-shadow-sm">
+                <div className="absolute inset-x-0 bottom-0 p-3 flex flex-col justify-end">
+                  <h4 className="font-serif text-xs sm:text-sm font-medium text-white line-clamp-2">
                     {p.title}
                   </h4>
-                  <span className="mt-1.5 inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wider text-[#E9C98A]">
-                    Select <ArrowRight className="h-2.5 w-2.5" />
-                  </span>
                 </div>
               </button>
             ))}
@@ -163,11 +178,10 @@ export function ServicesAccordionShowcase({
 
         {/* ── Desktop Layout (>= md): Horizontal Expanding Accordion ── */}
         <div
-          className="mt-10 hidden md:flex flex-row w-full gap-2 md:gap-3 md:h-[500px] lg:h-[600px] overflow-hidden"
           onMouseLeave={handleContainerLeave}
-          onMouseEnter={cancelLeave}
+          className="mt-14 hidden md:flex h-[480px] lg:h-[540px] w-full gap-3 overflow-hidden rounded-[28px] p-2 bg-[#FAF5EB]/60 border border-[#C49A5A]/20"
         >
-          {PANELS.map((p) => {
+          {panelsList.map((p) => {
             const isActive = p.slug === active;
             return (
               <div

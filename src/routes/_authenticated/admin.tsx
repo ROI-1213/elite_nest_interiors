@@ -24,6 +24,7 @@ import {
   X,
 } from "lucide-react";
 import { resolveGalleryImageUrl } from "@/lib/gallery.config";
+import { resolveServiceImageUrl } from "@/lib/services.config";
 import {
   saveGalleryItemServerFn,
   deleteGalleryItemServerFn,
@@ -561,7 +562,7 @@ function HomepageContentTab() {
 
           <div className="space-y-3">
             {services.map((svc: any) => {
-              const currentImg = svc.image_url || "https://images.unsplash.com/photo-1600210491892-03d54c0aaf87?auto=format&fit=crop&w=1200&q=80";
+              const currentImg = resolveServiceImageUrl(svc.title, svc.image_url);
               const isUploading = uploadingSvcId === svc.id;
 
               return (

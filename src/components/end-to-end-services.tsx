@@ -1,7 +1,7 @@
 import { useRef, useState, useEffect, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { SERVICE_ORDER, SERVICE_SLUGS, SERVICE_IMAGES } from "@/lib/services.config";
+import { SERVICE_ORDER, SERVICE_SLUGS, SERVICE_IMAGES, resolveServiceImageUrl } from "@/lib/services.config";
 import { servicesQuery } from "@/lib/queries";
 
 type ServiceCard = {
@@ -33,7 +33,7 @@ export function EndToEndServices({
     ? dbServices.map((s) => ({
         title: s.title,
         slug: s.slug,
-        image: s.image_url || SERVICE_IMAGES[s.title] || SERVICE_IMAGES[SERVICE_ORDER[0]],
+        image: resolveServiceImageUrl(s.title, s.image_url),
       }))
     : DEFAULT_CATEGORIES;
 

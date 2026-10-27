@@ -24,7 +24,7 @@ import {
   type SiteSettings,
   type Service,
 } from "@/lib/queries";
-import { SERVICE_IMAGES, SERVICE_ORDER } from "@/lib/services.config";
+import { SERVICE_IMAGES, SERVICE_ORDER, resolveServiceImageUrl } from "@/lib/services.config";
 
 import bedroomImg from "@/assets/cat-bedroom.jpg";
 import kitchenImg from "@/assets/cat-kitchen.jpg";
@@ -521,7 +521,7 @@ function HomePageEditorPage() {
                   display_order: idx + 1,
                   is_active: true,
                 }))).map((svc: any) => {
-                  const currentImg = svc.image_url || SERVICE_IMAGES[svc.title] || SERVICE_IMAGES[SERVICE_ORDER[0]];
+                  const currentImg = resolveServiceImageUrl(svc.title, svc.image_url);
                   const isUploading = uploadingSvcId === svc.id;
 
                   return (

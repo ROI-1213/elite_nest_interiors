@@ -61,3 +61,10 @@ export const SERVICE_DESCRIPTIONS: Record<ServiceName, string> = {
 export const getServiceSlug = (title: string) => {
   return SERVICE_SLUGS[title as ServiceName] || title.toLowerCase().replace(/\s+/g, '-');
 };
+
+export function resolveServiceImageUrl(title: string, imageUrl?: string | null): string {
+  if (imageUrl && typeof imageUrl === "string" && imageUrl.trim() && !imageUrl.includes("unsplash.com")) {
+    return imageUrl.trim();
+  }
+  return SERVICE_IMAGES[title as ServiceName] || turnkeyImg;
+}
