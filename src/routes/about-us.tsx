@@ -59,16 +59,7 @@ export const Route = createFileRoute("/about-us")({
   component: AboutPage,
 });
 
-const philosophy = [
-  { Icon: Compass, title: "Function Before Decoration", body: "Every element earns its place through daily usefulness — not just visual appeal." },
-  { Icon: Timer, title: "Timeless Over Trendy", body: "We design for a decade of relevance, not a season of applause." },
-  { Icon: Sparkles, title: "Smart Cost Optimization", body: "Premium where it matters, disciplined everywhere else." },
-  { Icon: Ruler, title: "Precision in Execution", body: "Millimetre-level detailing, dimensionally accurate joinery, consistent finishes." },
-  { Icon: ShieldCheck, title: "Durability Matters", body: "Materials and construction chosen to withstand real, everyday use." },
-  { Icon: Wrench, title: "Maintenance-Friendly", body: "Surfaces, hardware, and layouts that are easy to clean, service, and live with." },
-];
-
-const traditional = [
+const defaultTraditional = [
   "Beautiful designs that lack practicality",
   "Hidden costs and budget overruns",
   "Multiple vendors, multiple headaches",
@@ -77,7 +68,7 @@ const traditional = [
   "Spaces designed for looks, not everyday living",
 ];
 
-const antigravity = [
+const defaultAntigravity = [
   "Function-led designs with timeless aesthetics",
   "Transparent budgets with no hidden surprises",
   "Single-point accountability from start to finish",
@@ -86,60 +77,107 @@ const antigravity = [
   "Spaces crafted for real-life comfort and performance",
 ];
 
-const process = [
-  { Icon: Compass, title: "Understand", body: "Deep discovery of lifestyle, workflow and business needs." },
-  { Icon: PenTool, title: "Design", body: "Usability-led design with refined aesthetics and clear intent." },
-  { Icon: ClipboardList, title: "Plan", body: "Detailed drawings, material strategy and execution planning." },
-  { Icon: Hammer, title: "Execute", body: "Precision on-site delivery with disciplined quality checks." },
-  { Icon: PackageCheck, title: "Deliver", body: "On-time handover, snag-free, ready to live and work in." },
-];
-
 const spaces = CATEGORY_ORDER.map(name => ({
   Icon: CATEGORY_ICONS[name],
   label: name,
 }));
 
-const materialPillars = [
-  { title: "Contemporary Materials", body: "Modern engineered surfaces engineered for performance and longevity." },
-  { title: "Standardized Components", body: "Repeatable, tested systems that keep quality and cost predictable." },
-  { title: "Efficient Sourcing", body: "Direct vendor relationships, transparent margins, no hidden markups." },
-  { title: "Low-Maintenance Finishes", body: "Wear-resistant, easy-clean surfaces built for daily use." },
-  { title: "Structural Durability", body: "Joinery and carcasses built to last well beyond the warranty." },
-  { title: "Balanced Premium", body: "Investment placed where it changes daily experience the most." },
-];
-
-const trustStats = [
-  { k: "100%", v: "Single-point accountability" },
-  { k: "On-time", v: "Disciplined delivery" },
-  { k: "Pan-India", v: "Turnkey execution" },
-  { k: "Concept → Keys", v: "Fully in-house workflow" },
-];
-
-const trustPoints = [
-  "Accountability at every stage",
-  "Disciplined, on-site execution",
-  "Realistic timelines, honestly communicated",
-  "Transparent pricing and material choices",
-  "Balanced aesthetics and cost",
-  "Quality control systems, not promises",
-  "Precision detailing and finishing",
-  "Long-term durability, built-in",
-];
-
 function AboutPage() {
   const { data: s = {} as any } = useQuery(settingsQuery);
-  const heroBg = s.about_image_url ?? heroImg;
-  const aboutHeroTitle: string[] = (s.about_hero_title ?? "Design That Performs\nBeyond Appearance.")
+  const heroBg = s.about_image_url || heroImg;
+  const heroEyebrow = s.about_hero_eyebrow || "ABOUT — ELITE NEST INTERIORS";
+  const aboutHeroTitle: string[] = (s.about_hero_title || "Design That Performs\nBeyond Appearance.")
     .split("\n")
     .map((l: string) => l.trim())
     .filter(Boolean);
   const aboutHeroSubtitle: string =
-    s.about_hero_subtitle ??
+    s.about_hero_subtitle ||
     "We create spaces that are functional, durable, aesthetically refined, and intelligently planned — thoughtfully built from concept to completion, at Indian prices.";
-  const aboutPositioning: string[] = (s.about_positioning ?? "World-Class Interiors.\nThoughtfully Built.")
+  const aboutPositioning: string[] = (s.about_positioning || "World-Class Interiors.\nThoughtfully Built.")
     .split("\n")
     .map((l: string) => l.trim())
     .filter(Boolean);
+
+  // Why We Exist
+  const whyEyebrow = s.about_why_eyebrow || "Why we exist";
+  const whyTitle = s.about_why_title || "A function-first interior company.";
+  const whyContent = s.about_why_content || "Elite Nest Architects & Interiors is a premier design and execution firm dedicated to creating elegant, functional, and inspiring spaces. We specialize in residential, commercial, and turnkey interior solutions that reflect our clients’ lifestyle, vision, and aspirations.\n\nWith a passion for innovation and attention to detail, we transform ordinary spaces into extraordinary environments through thoughtful planning, modern design concepts, and high-quality craftsmanship.";
+
+  // Philosophy
+  const philosophyEyebrow = s.about_philosophy_eyebrow || "Philosophy";
+  const philosophyTitle = s.about_philosophy_title || "Good design should work hard.";
+  const philosophySubtitle = s.about_philosophy_subtitle || "Smart design works better than simply attractive design. Every decision is guided by usability, storage efficiency, hygiene, workflow, ease of cleaning and structural integrity.";
+  const philosophyItems = [
+    { Icon: Compass, title: s.about_phil1_title || "Function Before Decoration", body: s.about_phil1_desc || "Every element earns its place through daily usefulness — not just visual appeal." },
+    { Icon: Timer, title: s.about_phil2_title || "Timeless Over Trendy", body: s.about_phil2_desc || "We design for a decade of relevance, not a season of applause." },
+    { Icon: Sparkles, title: s.about_phil3_title || "Smart Cost Optimization", body: s.about_phil3_desc || "Premium where it matters, disciplined everywhere else." },
+    { Icon: Ruler, title: s.about_phil4_title || "Precision in Execution", body: s.about_phil4_desc || "Millimetre-level detailing, dimensionally accurate joinery, consistent finishes." },
+    { Icon: ShieldCheck, title: s.about_phil5_title || "Durability Matters", body: s.about_phil5_desc || "Materials and construction chosen to withstand real, everyday use." },
+    { Icon: Wrench, title: s.about_phil6_title || "Maintenance-Friendly", body: s.about_phil6_desc || "Surfaces, hardware, and layouts that are easy to clean, service, and live with." },
+  ];
+
+  // The Difference (Comparison)
+  const diffEyebrow = s.about_diff_eyebrow || "The difference";
+  const diffTitle = s.about_diff_title || "Traditional interior firms vs. the Elite Nest approach.";
+  const diffTradTitle = s.about_diff_trad_title || "Traditional firms";
+  const diffTradSubtitle = s.about_diff_trad_subtitle || "Where projects usually fail";
+  const tradPoints = (s.about_diff_trad_points ? s.about_diff_trad_points.split("\n") : defaultTraditional).map((x: string) => x.trim()).filter(Boolean);
+  const diffEliteTitle = s.about_diff_elite_title || "Elite Nest";
+  const diffEliteSubtitle = s.about_diff_elite_subtitle || "How we deliver differently";
+  const elitePoints = (s.about_diff_elite_points ? s.about_diff_elite_points.split("\n") : defaultAntigravity).map((x: string) => x.trim()).filter(Boolean);
+
+  // Process
+  const processSteps = [
+    { Icon: Compass, title: s.process_step1_title || "Understand", body: s.process_step1_desc || "Deep discovery of lifestyle, workflow and business needs." },
+    { Icon: PenTool, title: s.process_step2_title || "Design", body: s.process_step2_desc || "Usability-led design with refined aesthetics and clear intent." },
+    { Icon: ClipboardList, title: s.process_step3_title || "Plan", body: s.process_step3_desc || "Detailed drawings, material strategy and execution planning." },
+    { Icon: Hammer, title: s.process_step4_title || "Execute", body: s.process_step4_desc || "Precision on-site delivery with disciplined quality checks." },
+    { Icon: PackageCheck, title: s.process_step5_title || "Deliver", body: s.process_step5_desc || "On-time handover, snag-free, ready to live and work in." },
+  ];
+
+  // Spaces We Build
+  const spacesEyebrow = s.about_spaces_eyebrow || "Spaces we build";
+  const spacesTitle = s.about_spaces_title || "Transforming Residential & Commercial Spaces";
+  const spacesDesc = s.about_spaces_desc || "From residences to commercial spaces, Elite Nest delivers end-to-end interior solutions—from concept and design to execution and handover, ensuring a seamless experience at every stage.";
+
+  // Material & Build
+  const matEyebrow = s.about_mat_eyebrow || "Material & build";
+  const matTitle = s.about_mat_title || "Intelligent materials. Honest craftsmanship.";
+  const matDesc = s.about_mat_desc || "We invest in premium materials where they change daily experience, and optimize elsewhere to protect your budget without compromising longevity.";
+  const materialPillars = [
+    { title: s.about_mat1_title || "Contemporary Materials", body: s.about_mat1_desc || "Modern engineered surfaces engineered for performance and longevity." },
+    { title: s.about_mat2_title || "Standardized Components", body: s.about_mat2_desc || "Repeatable, tested systems that keep quality and cost predictable." },
+    { title: s.about_mat3_title || "Efficient Sourcing", body: s.about_mat3_desc || "Direct vendor relationships, transparent margins, no hidden markups." },
+    { title: s.about_mat4_title || "Low-Maintenance Finishes", body: s.about_mat4_desc || "Wear-resistant, easy-clean surfaces built for daily use." },
+    { title: s.about_mat5_title || "Structural Durability", body: s.about_mat5_desc || "Joinery and carcasses built to last well beyond the warranty." },
+    { title: s.about_mat6_title || "Balanced Premium", body: s.about_mat6_desc || "Investment placed where it changes daily experience the most." },
+  ];
+
+  // Trust
+  const trustEyebrow = s.about_trust_eyebrow || "Trust";
+  const trustTitle = s.about_trust_title || "Why clients choose Elite Nest.";
+  const dynamicTrustStats = [
+    { k: s.about_stat1_val || "100%", v: s.about_stat1_label || "Single-point accountability" },
+    { k: s.about_stat2_val || "On-time", v: s.about_stat2_label || "Disciplined delivery" },
+    { k: s.about_stat3_val || "Pan-India", v: s.about_stat3_label || "Turnkey execution" },
+    { k: s.about_stat4_val || "Concept → Keys", v: s.about_stat4_label || "Fully in-house workflow" },
+  ];
+  const dynamicTrustPoints = (s.about_trust_points ? s.about_trust_points.split("\n") : [
+    "Accountability at every stage",
+    "Disciplined, on-site execution",
+    "Realistic timelines, honestly communicated",
+    "Transparent pricing and material choices",
+    "Balanced aesthetics and cost",
+    "Quality control systems, not promises",
+    "Precision detailing and finishing",
+    "Long-term durability, built-in",
+  ]).map((p: string) => p.trim()).filter(Boolean);
+
+  // Closing CTA
+  const ctaEyebrow = s.about_cta_eyebrow || "Built for real life";
+  const ctaTitle = s.about_cta_title || "Interiors that work better, last longer, and improve every day.";
+  const ctaDesc = s.about_cta_desc || "Beautiful in photographs is easy. Beautiful to live and work in — for years — is the standard we build to.";
+  const ctaButton = s.about_cta_button || "Book a Consultation";
 
   return (
     <SiteLayout>
@@ -153,7 +191,7 @@ function AboutPage() {
           <div className="md:col-span-8">
             <Reveal>
               <p className="text-[11px] uppercase tracking-[0.32em] text-ivory/60">
-                ABOUT — ELITE NEST INTERIORS
+                {heroEyebrow}
               </p>
             </Reveal>
             <Reveal delay={1}>
@@ -203,23 +241,15 @@ function AboutPage() {
         <div className="grid gap-16 md:grid-cols-12">
           <Reveal as="div" className="md:col-span-4">
             <p className="text-[11px] uppercase tracking-[0.28em] text-muted-foreground">
-              Why we exist
+              {whyEyebrow}
             </p>
             <h2 className="mt-6 font-serif text-3xl leading-tight text-foreground md:text-5xl">
-              A function-first interior company.
+              {whyTitle}
             </h2>
           </Reveal>
           <Reveal delay={1} as="div" className="md:col-span-8 md:pt-3">
-            <p className="text-base leading-relaxed text-foreground/80 md:text-lg">
-              Elite Nest Architects & Interiors is a premier design and execution firm
-              dedicated to creating elegant, functional, and inspiring spaces. We specialize
-              in residential, commercial, and turnkey interior solutions that reflect our
-              clients’ lifestyle, vision, and aspirations.
-              <br />
-              <br />
-              With a passion for innovation and attention to detail, we transform ordinary
-              spaces into extraordinary environments through thoughtful planning, modern
-              design concepts, and high-quality craftsmanship.
+            <p className="text-base leading-relaxed text-foreground/80 md:text-lg whitespace-pre-line">
+              {whyContent}
             </p>
           </Reveal>
         </div>
@@ -232,18 +262,16 @@ function AboutPage() {
       <section className="border-y border-border bg-bone">
         <div className="container-prose py-24 md:py-32">
           <Reveal>
-            <p className="text-[11px] uppercase tracking-[0.28em] text-muted-foreground">Philosophy</p>
+            <p className="text-[11px] uppercase tracking-[0.28em] text-muted-foreground">{philosophyEyebrow}</p>
             <h2 className="mt-6 max-w-2xl font-serif text-3xl leading-tight text-foreground md:text-5xl">
-              Good design should work hard.
+              {philosophyTitle}
             </h2>
             <p className="mt-6 max-w-2xl text-foreground/75 md:text-lg">
-              Smart design works better than simply attractive design. Every decision is
-              guided by usability, storage efficiency, hygiene, workflow, ease of cleaning
-              and structural integrity.
+              {philosophySubtitle}
             </p>
           </Reveal>
           <div className="mt-14 grid gap-6 md:grid-cols-3">
-            {philosophy.map(({ Icon, title, body }, i) => (
+            {philosophyItems.map(({ Icon, title, body }, i) => (
               <Reveal key={title} delay={(((i % 3) + 1) as 1 | 2 | 3)}>
                 <article className="group relative flex h-full flex-col justify-between overflow-hidden rounded-2xl border border-[#B88745]/20 bg-[#FFFDF9] p-7 sm:p-8 shadow-[0_4px_20px_rgba(45,32,20,0.03)] transition-all duration-500 ease-out hover:-translate-y-2 hover:border-[#B88745]/60 hover:shadow-[0_20px_40px_-15px_rgba(184,135,69,0.22)]">
                   {/* Top Animated Gold Gradient Line */}
@@ -292,20 +320,20 @@ function AboutPage() {
       {/* COMPARISON */}
       <section className="container-prose py-24 md:py-32">
         <Reveal>
-          <p className="text-[11px] uppercase tracking-[0.28em] text-muted-foreground">The difference</p>
+          <p className="text-[11px] uppercase tracking-[0.28em] text-muted-foreground">{diffEyebrow}</p>
           <h2 className="mt-6 max-w-2xl font-serif text-3xl leading-tight text-foreground md:text-5xl">
-            Traditional interior firms vs. the Elite Nest approach.
+            {diffTitle}
           </h2>
         </Reveal>
         <div className="mt-14 grid gap-6 md:grid-cols-2">
           <Reveal delay={1}>
             <article className="h-full rounded-2xl border border-border bg-card p-8">
               <p className="text-[11px] uppercase tracking-[0.28em] text-muted-foreground">
-                Traditional firms
+                {diffTradTitle}
               </p>
-              <h3 className="mt-3 font-serif text-2xl text-foreground">Where projects usually fail</h3>
+              <h3 className="mt-3 font-serif text-2xl text-foreground">{diffTradSubtitle}</h3>
               <ul className="mt-8 space-y-4">
-                {traditional.map((t) => (
+                {tradPoints.map((t) => (
                   <li key={t} className="flex items-start gap-3 text-sm text-foreground/80">
                     <XCircle className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
                     {t}
@@ -320,11 +348,11 @@ function AboutPage() {
               style={{ background: "#1a1815", borderColor: "color-mix(in oklab, var(--bronze) 40%, transparent)" }}
             >
               <p className="text-[11px] uppercase tracking-[0.28em]" style={{ color: "var(--gold)" }}>
-                Elite Nest
+                {diffEliteTitle}
               </p>
-              <h3 className="mt-3 font-serif text-2xl">How we deliver differently</h3>
+              <h3 className="mt-3 font-serif text-2xl">{diffEliteSubtitle}</h3>
               <ul className="mt-8 space-y-4">
-                {antigravity.map((t) => (
+                {elitePoints.map((t) => (
                   <li key={t} className="flex items-start gap-3 text-sm text-ivory/85">
                     <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" style={{ color: "var(--gold)" }} />
                     {t}
@@ -340,13 +368,13 @@ function AboutPage() {
       <section className="border-y border-border bg-bone">
         <div className="container-prose py-24 md:py-32">
           <Reveal>
-            <p className="text-[11px] uppercase tracking-[0.28em] text-muted-foreground">Process</p>
+            <p className="text-[11px] uppercase tracking-[0.28em] text-muted-foreground">{s.process_eyebrow || "Process"}</p>
             <h2 className="mt-6 max-w-2xl font-serif text-3xl leading-tight text-foreground md:text-5xl">
-              Understand. Design. Plan. Execute. Deliver.
+              {s.process_title || "Understand. Design. Plan. Execute. Deliver."}
             </h2>
           </Reveal>
           <ol className="mt-14 grid gap-6 md:grid-cols-5">
-            {process.map(({ Icon, title, body }, i) => (
+            {processSteps.map(({ Icon, title, body }, i) => (
               <Reveal key={title} delay={(((i % 3) + 1) as 1 | 2 | 3)} as="li">
                 <div className="relative h-full rounded-xl border border-border bg-card p-6">
                   <span className="text-[11px] uppercase tracking-[0.28em] text-muted-foreground">
@@ -367,12 +395,12 @@ function AboutPage() {
         <div className="grid gap-10 md:grid-cols-12 md:items-center">
           {/* Static Left Section */}
           <div className="md:col-span-5">
-            <p className="text-[11px] uppercase tracking-[0.28em] text-muted-foreground">Spaces we build</p>
+            <p className="text-[11px] uppercase tracking-[0.28em] text-muted-foreground">{spacesEyebrow}</p>
             <h2 className="mt-6 font-serif text-3xl leading-tight text-foreground md:text-5xl">
-              Transforming Residential &amp; Commercial Spaces
+              {spacesTitle}
             </h2>
             <p className="mt-6 text-foreground/75 md:text-lg">
-              From residences to commercial spaces, Elite Nest delivers end-to-end interior solutions—from concept and design to execution and handover, ensuring a seamless experience at every stage.
+              {spacesDesc}
             </p>
           </div>
 
@@ -430,13 +458,12 @@ function AboutPage() {
       <section className="border-y border-border bg-[#f4f0ea]">
         <div className="container-prose grid gap-14 py-24 md:grid-cols-12 md:py-32">
           <Reveal as="div" className="md:col-span-5">
-            <p className="text-[11px] uppercase tracking-[0.28em] text-muted-foreground">Material & build</p>
+            <p className="text-[11px] uppercase tracking-[0.28em] text-muted-foreground">{matEyebrow}</p>
             <h2 className="mt-6 font-serif text-3xl leading-tight text-foreground md:text-5xl">
-              Intelligent materials. Honest craftsmanship.
+              {matTitle}
             </h2>
             <p className="mt-6 text-foreground/75 md:text-lg">
-              We invest in premium materials where they change daily experience, and optimize
-              elsewhere to protect your budget without compromising longevity.
+              {matDesc}
             </p>
           </Reveal>
           <div className="md:col-span-7">
@@ -460,12 +487,12 @@ function AboutPage() {
         <div className="container-prose py-24 md:py-32">
           <div className="grid gap-14 md:grid-cols-12">
             <Reveal as="div" className="md:col-span-5">
-              <p className="text-[11px] uppercase tracking-[0.28em] text-ivory/60">Trust</p>
+              <p className="text-[11px] uppercase tracking-[0.28em] text-ivory/60">{trustEyebrow}</p>
               <h2 className="mt-6 font-serif text-3xl leading-tight text-balance md:text-5xl">
-                Why clients choose Elite Nest.
+                {trustTitle}
               </h2>
               <div className="mt-10 grid grid-cols-2 gap-6">
-                {trustStats.map(({ k, v }) => (
+                {dynamicTrustStats.map(({ k, v }) => (
                   <div key={v} className="border-t border-ivory/15 pt-4">
                     <p className="font-serif text-2xl" style={{ color: "var(--gold)" }}>{k}</p>
                     <p className="mt-2 text-xs uppercase tracking-[0.22em] text-ivory/60">{v}</p>
@@ -475,7 +502,7 @@ function AboutPage() {
             </Reveal>
             <Reveal delay={1} className="md:col-span-7">
               <ul className="grid gap-3 sm:grid-cols-2">
-                {trustPoints.map((p) => (
+                {dynamicTrustPoints.map((p) => (
                   <li key={p} className="flex items-start gap-3 rounded-xl border border-ivory/10 bg-ivory/[0.03] p-5 text-sm text-ivory/85">
                     <Handshake className="mt-0.5 h-4 w-4 shrink-0" style={{ color: "var(--gold)" }} />
                     {p}
@@ -496,20 +523,20 @@ function AboutPage() {
 
             <div className="mx-auto max-w-3xl">
               <span className="inline-block rounded-full border border-[#B98232]/30 bg-[#B98232]/10 px-4 py-1.5 text-[10.5px] font-semibold uppercase tracking-[0.32em] text-[#B98232]">
-                Built for real life
+                {ctaEyebrow}
               </span>
               <h2 className="mt-6 font-serif text-3xl md:text-5xl lg:text-6xl leading-[1.1] text-[#2B211B]">
-                Interiors that work better, <span className="text-[#B98232] italic">last longer</span>, and improve every day.
+                {ctaTitle}
               </h2>
               <p className="mt-6 text-sm md:text-base lg:text-lg leading-relaxed text-[#6F6258] max-w-2xl mx-auto">
-                Beautiful in photographs is easy. Beautiful to live and work in — for years — is the standard we build to.
+                {ctaDesc}
               </p>
               <div className="mt-8 flex justify-center">
                 <Link
                   to="/contact-us"
                   className="inline-flex items-center gap-2 rounded-full bg-[#B98232] px-8 py-3.5 text-xs font-semibold uppercase tracking-[0.2em] text-white shadow-[0_8px_25px_rgba(185,130,50,0.3)] transition-all duration-300 hover:bg-[#8A6338] hover:shadow-[0_12px_30px_rgba(185,130,50,0.4)] hover:scale-105"
                 >
-                  Book a Consultation <ArrowRight className="h-4 w-4" />
+                  {ctaButton} <ArrowRight className="h-4 w-4" />
                 </Link>
               </div>
             </div>

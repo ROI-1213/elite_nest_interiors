@@ -46,6 +46,7 @@ export const Route = createFileRoute("/_authenticated/admin")({
 const TABS = [
   "Enquiries",
   "Homepage Content",
+  "About Us Page",
   "Categories",
   "Services",
   "Gallery",
@@ -113,6 +114,7 @@ function AdminPage() {
 
         {tab === "Enquiries" && <EnquiriesTab />}
         {tab === "Homepage Content" && <HomepageContentTab />}
+        {tab === "About Us Page" && <AboutPageContentTab />}
         {tab === "Categories" && <CategoriesTab />}
         {tab === "Services" && <ServicesTab />}
         {tab === "Gallery" && <GalleryTab />}
@@ -421,6 +423,318 @@ function HomepageContentTab() {
       <div className="flex justify-end pb-8">
         <button onClick={save} className="rounded-md bg-primary px-6 py-2.5 text-sm font-medium text-primary-foreground hover:opacity-90 transition">
           Save homepage changes
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/* -------------------- ABOUT US PAGE CONTENT TAB -------------------- */
+function AboutPageContentTab() {
+  const qc = useQueryClient();
+  const { data } = useQuery(settingsQuery);
+  const [draft, setDraft] = useState<SiteSettings | null>(null);
+  const [uploadingHero, setUploadingHero] = useState(false);
+
+  useEffect(() => {
+    if (data && !draft) setDraft(data);
+  }, [data, draft]);
+
+  async function save() {
+    if (!draft) return;
+    const { id: _id, ...rest } = draft;
+    try {
+      await updateSiteSettingsServerFn({ data: rest });
+      toast.success("About Us page settings saved successfully!");
+      qc.invalidateQueries({ queryKey: ["site_settings"] });
+    } catch (e: any) {
+      toast.error(e.message || "Failed to save About Us settings.");
+    }
+  }
+
+  async function handleHeroUpload(file?: File) {
+    if (!file || !draft) return;
+    setUploadingHero(true);
+    try {
+      const url = await uploadToStorage(file, "about");
+      if (url) {
+        setDraft({ ...draft, about_image_url: url });
+        toast.success("About Us hero image uploaded to database.");
+      }
+    } catch (err: any) {
+      toast.error("Upload failed: " + err.message);
+    } finally {
+      setUploadingHero(false);
+    }
+  }
+
+  if (!draft) return <p className="text-sm text-muted-foreground">Loading About Us settings…</p>;
+
+  const upd = (k: keyof SiteSettings) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
+    setDraft({ ...draft, [k]: e.target.value });
+
+  return (
+    <div className="space-y-8">
+      <SectionHead
+        title="About Us Page Content"
+        subtitle="Manage hero headline, brand story, 6 philosophy pillars, difference matrix, materials, trust stats, and closing CTA."
+        action={
+          <button
+            onClick={save}
+            className="rounded-md bg-primary px-5 py-2 text-sm font-medium text-primary-foreground hover:opacity-90 transition"
+          >
+            Save About Us changes
+          </button>
+        }
+      />
+
+      {/* 1. Hero Section */}
+      <Card title="1. Hero Section (Above the Fold)">
+        <Grid>
+          <Field label="Hero Eyebrow">
+            <input className={inp} value={draft.about_hero_eyebrow ?? ""} onChange={upd("about_hero_eyebrow")} />
+          </Field>
+          <Field label="Hero Main Title (Use \n for a line break)" full>
+            <textarea rows={2} className={inp} value={draft.about_hero_title ?? ""} onChange={upd("about_hero_title")} />
+          </Field>
+          <Field label="Hero Subtitle" full>
+            <textarea rows={3} className={inp} value={draft.about_hero_subtitle ?? ""} onChange={upd("about_hero_subtitle")} />
+          </Field>
+          <Field label="Positioning Card (Right Side, Use \n for a line break)" full>
+            <textarea rows={2} className={inp} value={draft.about_positioning ?? ""} onChange={upd("about_positioning")} />
+          </Field>
+          <Field label="Hero Background Image" full>
+            <div className="flex flex-wrap items-center gap-3">
+              {draft.about_image_url && (
+                <img src={draft.about_image_url} alt="About Hero" className="h-16 w-28 rounded object-cover border border-border" />
+              )}
+              <label className="inline-flex cursor-pointer items-center gap-2 rounded-md border border-border px-3 py-1.5 text-sm hover:border-accent">
+                <Upload className="h-4 w-4" />
+                {uploadingHero ? "Uploading…" : "Upload new image"}
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => {
+                    handleHeroUpload(e.target.files?.[0]);
+                    e.target.value = "";
+                  }}
+                />
+              </label>
+            </div>
+            <input
+              className={`${inp} mt-2`}
+              placeholder="…or paste image URL"
+              value={draft.about_image_url ?? ""}
+              onChange={upd("about_image_url")}
+            />
+          </Field>
+        </Grid>
+      </Card>
+
+      {/* 2. Why We Exist */}
+      <Card title="2. Why We Exist Section">
+        <Grid>
+          <Field label="Eyebrow">
+            <input className={inp} value={draft.about_why_eyebrow ?? ""} onChange={upd("about_why_eyebrow")} />
+          </Field>
+          <Field label="Main Heading">
+            <input className={inp} value={draft.about_why_title ?? ""} onChange={upd("about_why_title")} />
+          </Field>
+          <Field label="Company Story / Content" full>
+            <textarea rows={6} className={inp} value={draft.about_why_content ?? ""} onChange={upd("about_why_content")} />
+          </Field>
+        </Grid>
+      </Card>
+
+      {/* 3. Philosophy */}
+      <Card title="3. Design Philosophy Section (6 Principles)">
+        <Grid>
+          <Field label="Philosophy Eyebrow">
+            <input className={inp} value={draft.about_philosophy_eyebrow ?? ""} onChange={upd("about_philosophy_eyebrow")} />
+          </Field>
+          <Field label="Philosophy Heading">
+            <input className={inp} value={draft.about_philosophy_title ?? ""} onChange={upd("about_philosophy_title")} />
+          </Field>
+          <Field label="Philosophy Subtitle" full>
+            <textarea rows={2} className={inp} value={draft.about_philosophy_subtitle ?? ""} onChange={upd("about_philosophy_subtitle")} />
+          </Field>
+
+          {/* Principle 1 */}
+          <div className="rounded-lg border border-border/80 bg-background/50 p-4 sm:col-span-2">
+            <p className="text-xs font-semibold uppercase tracking-wider text-accent mb-2">01 Principle</p>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <Field label="Title"><input className={inp} value={draft.about_phil1_title ?? ""} onChange={upd("about_phil1_title")} /></Field>
+              <Field label="Description"><textarea rows={2} className={inp} value={draft.about_phil1_desc ?? ""} onChange={upd("about_phil1_desc")} /></Field>
+            </div>
+          </div>
+
+          {/* Principle 2 */}
+          <div className="rounded-lg border border-border/80 bg-background/50 p-4 sm:col-span-2">
+            <p className="text-xs font-semibold uppercase tracking-wider text-accent mb-2">02 Principle</p>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <Field label="Title"><input className={inp} value={draft.about_phil2_title ?? ""} onChange={upd("about_phil2_title")} /></Field>
+              <Field label="Description"><textarea rows={2} className={inp} value={draft.about_phil2_desc ?? ""} onChange={upd("about_phil2_desc")} /></Field>
+            </div>
+          </div>
+
+          {/* Principle 3 */}
+          <div className="rounded-lg border border-border/80 bg-background/50 p-4 sm:col-span-2">
+            <p className="text-xs font-semibold uppercase tracking-wider text-accent mb-2">03 Principle</p>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <Field label="Title"><input className={inp} value={draft.about_phil3_title ?? ""} onChange={upd("about_phil3_title")} /></Field>
+              <Field label="Description"><textarea rows={2} className={inp} value={draft.about_phil3_desc ?? ""} onChange={upd("about_phil3_desc")} /></Field>
+            </div>
+          </div>
+
+          {/* Principle 4 */}
+          <div className="rounded-lg border border-border/80 bg-background/50 p-4 sm:col-span-2">
+            <p className="text-xs font-semibold uppercase tracking-wider text-accent mb-2">04 Principle</p>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <Field label="Title"><input className={inp} value={draft.about_phil4_title ?? ""} onChange={upd("about_phil4_title")} /></Field>
+              <Field label="Description"><textarea rows={2} className={inp} value={draft.about_phil4_desc ?? ""} onChange={upd("about_phil4_desc")} /></Field>
+            </div>
+          </div>
+
+          {/* Principle 5 */}
+          <div className="rounded-lg border border-border/80 bg-background/50 p-4 sm:col-span-2">
+            <p className="text-xs font-semibold uppercase tracking-wider text-accent mb-2">05 Principle</p>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <Field label="Title"><input className={inp} value={draft.about_phil5_title ?? ""} onChange={upd("about_phil5_title")} /></Field>
+              <Field label="Description"><textarea rows={2} className={inp} value={draft.about_phil5_desc ?? ""} onChange={upd("about_phil5_desc")} /></Field>
+            </div>
+          </div>
+
+          {/* Principle 6 */}
+          <div className="rounded-lg border border-border/80 bg-background/50 p-4 sm:col-span-2">
+            <p className="text-xs font-semibold uppercase tracking-wider text-accent mb-2">06 Principle</p>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <Field label="Title"><input className={inp} value={draft.about_phil6_title ?? ""} onChange={upd("about_phil6_title")} /></Field>
+              <Field label="Description"><textarea rows={2} className={inp} value={draft.about_phil6_desc ?? ""} onChange={upd("about_phil6_desc")} /></Field>
+            </div>
+          </div>
+        </Grid>
+      </Card>
+
+      {/* 4. The Difference Comparison */}
+      <Card title="4. The Difference (Comparison Matrix)">
+        <Grid>
+          <Field label="Section Eyebrow"><input className={inp} value={draft.about_diff_eyebrow ?? ""} onChange={upd("about_diff_eyebrow")} /></Field>
+          <Field label="Section Main Title"><input className={inp} value={draft.about_diff_title ?? ""} onChange={upd("about_diff_title")} /></Field>
+          <Field label="Traditional Firm Title"><input className={inp} value={draft.about_diff_trad_title ?? ""} onChange={upd("about_diff_trad_title")} /></Field>
+          <Field label="Traditional Firm Subtitle"><input className={inp} value={draft.about_diff_trad_subtitle ?? ""} onChange={upd("about_diff_trad_subtitle")} /></Field>
+          <Field label="Traditional Firm Points (one per line)" full>
+            <textarea rows={6} className={inp} value={draft.about_diff_trad_points ?? ""} onChange={upd("about_diff_trad_points")} />
+          </Field>
+          <Field label="Elite Nest Title"><input className={inp} value={draft.about_diff_elite_title ?? ""} onChange={upd("about_diff_elite_title")} /></Field>
+          <Field label="Elite Nest Subtitle"><input className={inp} value={draft.about_diff_elite_subtitle ?? ""} onChange={upd("about_diff_elite_subtitle")} /></Field>
+          <Field label="Elite Nest Points (one per line)" full>
+            <textarea rows={6} className={inp} value={draft.about_diff_elite_points ?? ""} onChange={upd("about_diff_elite_points")} />
+          </Field>
+        </Grid>
+      </Card>
+
+      {/* 5. Spaces We Build */}
+      <Card title="5. Spaces We Build Section">
+        <Grid>
+          <Field label="Section Eyebrow"><input className={inp} value={draft.about_spaces_eyebrow ?? ""} onChange={upd("about_spaces_eyebrow")} /></Field>
+          <Field label="Section Heading"><input className={inp} value={draft.about_spaces_title ?? ""} onChange={upd("about_spaces_title")} /></Field>
+          <Field label="Description" full>
+            <textarea rows={3} className={inp} value={draft.about_spaces_desc ?? ""} onChange={upd("about_spaces_desc")} />
+          </Field>
+        </Grid>
+      </Card>
+
+      {/* 6. Material & Build */}
+      <Card title="6. Material & Build (6 Engineering Pillars)">
+        <Grid>
+          <Field label="Eyebrow"><input className={inp} value={draft.about_mat_eyebrow ?? ""} onChange={upd("about_mat_eyebrow")} /></Field>
+          <Field label="Heading"><input className={inp} value={draft.about_mat_title ?? ""} onChange={upd("about_mat_title")} /></Field>
+          <Field label="Description" full>
+            <textarea rows={2} className={inp} value={draft.about_mat_desc ?? ""} onChange={upd("about_mat_desc")} />
+          </Field>
+
+          {/* Pillar 1 */}
+          <div className="rounded-lg border border-border/80 bg-background/50 p-4 sm:col-span-2">
+            <div className="grid gap-3 sm:grid-cols-2">
+              <Field label="Pillar 1 Title"><input className={inp} value={draft.about_mat1_title ?? ""} onChange={upd("about_mat1_title")} /></Field>
+              <Field label="Pillar 1 Description"><textarea rows={2} className={inp} value={draft.about_mat1_desc ?? ""} onChange={upd("about_mat1_desc")} /></Field>
+            </div>
+          </div>
+          {/* Pillar 2 */}
+          <div className="rounded-lg border border-border/80 bg-background/50 p-4 sm:col-span-2">
+            <div className="grid gap-3 sm:grid-cols-2">
+              <Field label="Pillar 2 Title"><input className={inp} value={draft.about_mat2_title ?? ""} onChange={upd("about_mat2_title")} /></Field>
+              <Field label="Pillar 2 Description"><textarea rows={2} className={inp} value={draft.about_mat2_desc ?? ""} onChange={upd("about_mat2_desc")} /></Field>
+            </div>
+          </div>
+          {/* Pillar 3 */}
+          <div className="rounded-lg border border-border/80 bg-background/50 p-4 sm:col-span-2">
+            <div className="grid gap-3 sm:grid-cols-2">
+              <Field label="Pillar 3 Title"><input className={inp} value={draft.about_mat3_title ?? ""} onChange={upd("about_mat3_title")} /></Field>
+              <Field label="Pillar 3 Description"><textarea rows={2} className={inp} value={draft.about_mat3_desc ?? ""} onChange={upd("about_mat3_desc")} /></Field>
+            </div>
+          </div>
+          {/* Pillar 4 */}
+          <div className="rounded-lg border border-border/80 bg-background/50 p-4 sm:col-span-2">
+            <div className="grid gap-3 sm:grid-cols-2">
+              <Field label="Pillar 4 Title"><input className={inp} value={draft.about_mat4_title ?? ""} onChange={upd("about_mat4_title")} /></Field>
+              <Field label="Pillar 4 Description"><textarea rows={2} className={inp} value={draft.about_mat4_desc ?? ""} onChange={upd("about_mat4_desc")} /></Field>
+            </div>
+          </div>
+          {/* Pillar 5 */}
+          <div className="rounded-lg border border-border/80 bg-background/50 p-4 sm:col-span-2">
+            <div className="grid gap-3 sm:grid-cols-2">
+              <Field label="Pillar 5 Title"><input className={inp} value={draft.about_mat5_title ?? ""} onChange={upd("about_mat5_title")} /></Field>
+              <Field label="Pillar 5 Description"><textarea rows={2} className={inp} value={draft.about_mat5_desc ?? ""} onChange={upd("about_mat5_desc")} /></Field>
+            </div>
+          </div>
+          {/* Pillar 6 */}
+          <div className="rounded-lg border border-border/80 bg-background/50 p-4 sm:col-span-2">
+            <div className="grid gap-3 sm:grid-cols-2">
+              <Field label="Pillar 6 Title"><input className={inp} value={draft.about_mat6_title ?? ""} onChange={upd("about_mat6_title")} /></Field>
+              <Field label="Pillar 6 Description"><textarea rows={2} className={inp} value={draft.about_mat6_desc ?? ""} onChange={upd("about_mat6_desc")} /></Field>
+            </div>
+          </div>
+        </Grid>
+      </Card>
+
+      {/* 7. Trust & Stats */}
+      <Card title="7. Trust Metrics & Commitments">
+        <Grid>
+          <Field label="Eyebrow"><input className={inp} value={draft.about_trust_eyebrow ?? ""} onChange={upd("about_trust_eyebrow")} /></Field>
+          <Field label="Main Heading"><input className={inp} value={draft.about_trust_title ?? ""} onChange={upd("about_trust_title")} /></Field>
+
+          {/* Stats 1 & 2 */}
+          <Field label="Stat 1 Value (e.g. 100%)"><input className={inp} value={draft.about_stat1_val ?? ""} onChange={upd("about_stat1_val")} /></Field>
+          <Field label="Stat 1 Label"><input className={inp} value={draft.about_stat1_label ?? ""} onChange={upd("about_stat1_label")} /></Field>
+          <Field label="Stat 2 Value (e.g. On-time)"><input className={inp} value={draft.about_stat2_val ?? ""} onChange={upd("about_stat2_val")} /></Field>
+          <Field label="Stat 2 Label"><input className={inp} value={draft.about_stat2_label ?? ""} onChange={upd("about_stat2_label")} /></Field>
+          {/* Stats 3 & 4 */}
+          <Field label="Stat 3 Value (e.g. Pan-India)"><input className={inp} value={draft.about_stat3_val ?? ""} onChange={upd("about_stat3_val")} /></Field>
+          <Field label="Stat 3 Label"><input className={inp} value={draft.about_stat3_label ?? ""} onChange={upd("about_stat3_label")} /></Field>
+          <Field label="Stat 4 Value (e.g. Concept → Keys)"><input className={inp} value={draft.about_stat4_val ?? ""} onChange={upd("about_stat4_val")} /></Field>
+          <Field label="Stat 4 Label"><input className={inp} value={draft.about_stat4_label ?? ""} onChange={upd("about_stat4_label")} /></Field>
+
+          <Field label="Commitments / Trust Points (one per line)" full>
+            <textarea rows={6} className={inp} value={draft.about_trust_points ?? ""} onChange={upd("about_trust_points")} />
+          </Field>
+        </Grid>
+      </Card>
+
+      {/* 8. Closing CTA */}
+      <Card title="8. Closing Consultation CTA Banner">
+        <Grid>
+          <Field label="Eyebrow"><input className={inp} value={draft.about_cta_eyebrow ?? ""} onChange={upd("about_cta_eyebrow")} /></Field>
+          <Field label="Headline" full><input className={inp} value={draft.about_cta_title ?? ""} onChange={upd("about_cta_title")} /></Field>
+          <Field label="Subtitle / Description" full><textarea rows={3} className={inp} value={draft.about_cta_desc ?? ""} onChange={upd("about_cta_desc")} /></Field>
+          <Field label="Button Text"><input className={inp} value={draft.about_cta_button ?? ""} onChange={upd("about_cta_button")} /></Field>
+        </Grid>
+      </Card>
+
+      <div className="flex justify-end pb-8">
+        <button onClick={save} className="rounded-md bg-primary px-6 py-2.5 text-sm font-medium text-primary-foreground hover:opacity-90 transition">
+          Save About Us changes
         </button>
       </div>
     </div>
@@ -1106,7 +1420,7 @@ function SiteSettingsTab() {
     <div className="space-y-8">
       <SectionHead
         title="Site Settings & Business Details"
-        subtitle="Contact information, social profiles, About page, Vision & Mission, and footer content."
+        subtitle="Contact information, social profiles, Vision & Mission, and footer content."
         action={<button onClick={save} className="rounded-md bg-primary px-4 py-2 text-sm text-primary-foreground">Save changes</button>}
       />
 
@@ -1136,17 +1450,6 @@ function SiteSettingsTab() {
           <Field label="LinkedIn"><input className={inp} value={draft.linkedin_url ?? ""} onChange={upd("linkedin_url")} /></Field>
           <Field label="Twitter / X"><input className={inp} value={draft.twitter_url ?? ""} onChange={upd("twitter_url")} /></Field>
           <Field label="Pinterest"><input className={inp} value={draft.pinterest_url ?? ""} onChange={upd("pinterest_url")} /></Field>
-        </Grid>
-      </Card>
-
-      <Card title="About Page Content">
-        <Grid>
-          <Field label="About title"><input className={inp} value={draft.about_title ?? ""} onChange={upd("about_title")} /></Field>
-          <Field label="About image URL"><input className={inp} value={draft.about_image_url ?? ""} onChange={upd("about_image_url")} /></Field>
-          <Field label="About content" full><textarea rows={5} className={inp} value={draft.about_content ?? ""} onChange={upd("about_content")} /></Field>
-          <Field label="About page hero title (use \n for a line break)" full><textarea rows={2} className={inp} value={draft.about_hero_title ?? ""} onChange={upd("about_hero_title")} /></Field>
-          <Field label="About page hero subtitle" full><textarea rows={4} className={inp} value={draft.about_hero_subtitle ?? ""} onChange={upd("about_hero_subtitle")} /></Field>
-          <Field label="About positioning (use \n for a line break)" full><textarea rows={2} className={inp} value={draft.about_positioning ?? ""} onChange={upd("about_positioning")} /></Field>
         </Grid>
       </Card>
 

@@ -165,6 +165,66 @@ export type SiteSettings = {
   testimonials_title?: string | null;
   video_section_eyebrow?: string | null;
   video_section_title?: string | null;
+  about_hero_eyebrow?: string | null;
+  about_why_eyebrow?: string | null;
+  about_why_title?: string | null;
+  about_why_content?: string | null;
+  about_philosophy_eyebrow?: string | null;
+  about_philosophy_title?: string | null;
+  about_philosophy_subtitle?: string | null;
+  about_phil1_title?: string | null;
+  about_phil1_desc?: string | null;
+  about_phil2_title?: string | null;
+  about_phil2_desc?: string | null;
+  about_phil3_title?: string | null;
+  about_phil3_desc?: string | null;
+  about_phil4_title?: string | null;
+  about_phil4_desc?: string | null;
+  about_phil5_title?: string | null;
+  about_phil5_desc?: string | null;
+  about_phil6_title?: string | null;
+  about_phil6_desc?: string | null;
+  about_diff_eyebrow?: string | null;
+  about_diff_title?: string | null;
+  about_diff_trad_title?: string | null;
+  about_diff_trad_subtitle?: string | null;
+  about_diff_trad_points?: string | null;
+  about_diff_elite_title?: string | null;
+  about_diff_elite_subtitle?: string | null;
+  about_diff_elite_points?: string | null;
+  about_spaces_eyebrow?: string | null;
+  about_spaces_title?: string | null;
+  about_spaces_desc?: string | null;
+  about_mat_eyebrow?: string | null;
+  about_mat_title?: string | null;
+  about_mat_desc?: string | null;
+  about_mat1_title?: string | null;
+  about_mat1_desc?: string | null;
+  about_mat2_title?: string | null;
+  about_mat2_desc?: string | null;
+  about_mat3_title?: string | null;
+  about_mat3_desc?: string | null;
+  about_mat4_title?: string | null;
+  about_mat4_desc?: string | null;
+  about_mat5_title?: string | null;
+  about_mat5_desc?: string | null;
+  about_mat6_title?: string | null;
+  about_mat6_desc?: string | null;
+  about_trust_eyebrow?: string | null;
+  about_trust_title?: string | null;
+  about_stat1_val?: string | null;
+  about_stat1_label?: string | null;
+  about_stat2_val?: string | null;
+  about_stat2_label?: string | null;
+  about_stat3_val?: string | null;
+  about_stat3_label?: string | null;
+  about_stat4_val?: string | null;
+  about_stat4_label?: string | null;
+  about_trust_points?: string | null;
+  about_cta_eyebrow?: string | null;
+  about_cta_title?: string | null;
+  about_cta_desc?: string | null;
+  about_cta_button?: string | null;
 };
 
 export type GalleryItem = {
@@ -250,6 +310,66 @@ export const DEFAULT_SITE_SETTINGS: SiteSettings = {
   footer_copyright: SITE_SETTINGS_DEFAULTS.footer_copyright ?? "© 2026 Elite Nest Interiors. All rights reserved.",
   video_section_eyebrow: "Hear it firsthand",
   video_section_title: "Video testimonials",
+  about_hero_eyebrow: "ABOUT — ELITE NEST INTERIORS",
+  about_why_eyebrow: "Why we exist",
+  about_why_title: "A function-first interior company.",
+  about_why_content: "Elite Nest Architects & Interiors is a premier design and execution firm dedicated to creating elegant, functional, and inspiring spaces. We specialize in residential, commercial, and turnkey interior solutions that reflect our clients’ lifestyle, vision, and aspirations.\n\nWith a passion for innovation and attention to detail, we transform ordinary spaces into extraordinary environments through thoughtful planning, modern design concepts, and high-quality craftsmanship.",
+  about_philosophy_eyebrow: "Philosophy",
+  about_philosophy_title: "Good design should work hard.",
+  about_philosophy_subtitle: "Smart design works better than simply attractive design. Every decision is guided by usability, storage efficiency, hygiene, workflow, ease of cleaning and structural integrity.",
+  about_phil1_title: "Function Before Decoration",
+  about_phil1_desc: "Every element earns its place through daily usefulness — not just visual appeal.",
+  about_phil2_title: "Timeless Over Trendy",
+  about_phil2_desc: "We design for a decade of relevance, not a season of applause.",
+  about_phil3_title: "Smart Cost Optimization",
+  about_phil3_desc: "Premium where it matters, disciplined everywhere else.",
+  about_phil4_title: "Precision in Execution",
+  about_phil4_desc: "Millimetre-level detailing, dimensionally accurate joinery, consistent finishes.",
+  about_phil5_title: "Durability Matters",
+  about_phil5_desc: "Materials and construction chosen to withstand real, everyday use.",
+  about_phil6_title: "Maintenance-Friendly",
+  about_phil6_desc: "Surfaces, hardware, and layouts that are easy to clean, service, and live with.",
+  about_diff_eyebrow: "The difference",
+  about_diff_title: "Traditional interior firms vs. the Elite Nest approach.",
+  about_diff_trad_title: "Traditional firms",
+  about_diff_trad_subtitle: "Where projects usually fail",
+  about_diff_trad_points: "Beautiful designs that lack practicality\nHidden costs and budget overruns\nMultiple vendors, multiple headaches\nDelays and inconsistent execution\nNo clear ownership or accountability\nSpaces designed for looks, not everyday living",
+  about_diff_elite_title: "Elite Nest",
+  about_diff_elite_subtitle: "How we deliver differently",
+  about_diff_elite_points: "Function-led designs with timeless aesthetics\nTransparent budgets with no hidden surprises\nSingle-point accountability from start to finish\nStructured execution with on-time delivery\nSmart sourcing for quality and value\nSpaces crafted for real-life comfort and performance",
+  about_spaces_eyebrow: "Spaces we build",
+  about_spaces_title: "Transforming Residential & Commercial Spaces",
+  about_spaces_desc: "From residences to commercial spaces, Elite Nest delivers end-to-end interior solutions—from concept and design to execution and handover, ensuring a seamless experience at every stage.",
+  about_mat_eyebrow: "Material & build",
+  about_mat_title: "Intelligent materials. Honest craftsmanship.",
+  about_mat_desc: "We invest in premium materials where they change daily experience, and optimize elsewhere to protect your budget without compromising longevity.",
+  about_mat1_title: "Contemporary Materials",
+  about_mat1_desc: "Modern engineered surfaces engineered for performance and longevity.",
+  about_mat2_title: "Standardized Components",
+  about_mat2_desc: "Repeatable, tested systems that keep quality and cost predictable.",
+  about_mat3_title: "Efficient Sourcing",
+  about_mat3_desc: "Direct vendor relationships, transparent margins, no hidden markups.",
+  about_mat4_title: "Low-Maintenance Finishes",
+  about_mat4_desc: "Wear-resistant, easy-clean surfaces built for daily use.",
+  about_mat5_title: "Structural Durability",
+  about_mat5_desc: "Joinery and carcasses built to last well beyond the warranty.",
+  about_mat6_title: "Balanced Premium",
+  about_mat6_desc: "Investment placed where it changes daily experience the most.",
+  about_trust_eyebrow: "Trust",
+  about_trust_title: "Why clients choose Elite Nest.",
+  about_stat1_val: "100%",
+  about_stat1_label: "Single-point accountability",
+  about_stat2_val: "On-time",
+  about_stat2_label: "Disciplined delivery",
+  about_stat3_val: "Pan-India",
+  about_stat3_label: "Turnkey execution",
+  about_stat4_val: "Concept → Keys",
+  about_stat4_label: "Fully in-house workflow",
+  about_trust_points: "Accountability at every stage\nDisciplined, on-site execution\nRealistic timelines, honestly communicated\nTransparent pricing and material choices\nBalanced aesthetics and cost\nQuality control systems, not promises\nPrecision detailing and finishing\nLong-term durability, built-in",
+  about_cta_eyebrow: "Built for real life",
+  about_cta_title: "Interiors that work better, last longer, and improve every day.",
+  about_cta_desc: "Beautiful in photographs is easy. Beautiful to live and work in — for years — is the standard we build to.",
+  about_cta_button: "Book a Consultation",
 };
 
 export const DEFAULT_GALLERY_ITEMS: GalleryItem[] = CURATED_GALLERY.map((c, i) => ({
