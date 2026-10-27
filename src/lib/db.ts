@@ -7,25 +7,42 @@ declare global {
 }
 
 function createPool(): Pool {
-  const connectionString =
+  let connectionString =
     process.env.DATABASE_URL ||
     process.env.POSTGRES_URL ||
     process.env.POSTGRESQL_URL;
+
+  // When running on Vercel, cloud serverless, or production, route to the live PostgreSQL server
+  const isCloudServerless = Boolean(
+    process.env.VERCEL ||
+    process.env.NOW_REGION ||
+    process.env.AWS_REGION ||
+    process.env.NETLIFY ||
+    process.env.CF_PAGES ||
+    process.env.NODE_ENV === "production"
+  );
+
+  if (connectionString && isCloudServerless) {
+    connectionString = connectionString
+      .replace("@localhost:", "@168.119.64.101:")
+      .replace("@127.0.0.1:", "@168.119.64.101:");
+  }
+
+  const defaultHost = isCloudServerless
+    ? "168.119.64.101"
+    : (process.env.PGHOST || "localhost");
+
+  const configuredHost = process.env.DB_HOST;
+  const host = configuredHost
+    ? (isCloudServerless && (configuredHost === "localhost" || configuredHost === "127.0.0.1")
+        ? "168.119.64.101"
+        : configuredHost)
+    : defaultHost;
 
   const sslEnabled =
     process.env.DB_SSL === "true" ||
     process.env.PGSSL === "true" ||
     (connectionString ? connectionString.includes("sslmode=require") : false);
-
-  // When running on Vercel or cloud serverless, fallback to remote database IP if DB_HOST not explicitly set
-  const isCloudServerless = Boolean(
-    process.env.VERCEL ||
-    process.env.NOW_REGION ||
-    process.env.AWS_REGION
-  );
-  const defaultHost = isCloudServerless
-    ? "168.119.64.101"
-    : (process.env.PGHOST || "localhost");
 
   const poolConfig: PoolConfig = connectionString
     ? {
@@ -36,7 +53,7 @@ function createPool(): Pool {
         connectionTimeoutMillis: 10000,
       }
     : {
-        host: process.env.DB_HOST || defaultHost,
+        host,
         port: parseInt(process.env.DB_PORT || process.env.PGPORT || "5432", 10),
         database: process.env.DB_NAME || process.env.PGDATABASE || "elite47",
         user: process.env.DB_USER || process.env.PGUSER || "elite47",
