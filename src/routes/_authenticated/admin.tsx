@@ -2,13 +2,15 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { LogOut, Plus, Pencil, Trash2, RefreshCcw, ArrowUp, ArrowDown, Upload } from "lucide-react";
+import { LogOut, Plus, Pencil, Trash2, ArrowUp, ArrowDown, Upload, Video } from "lucide-react";
 import { resolveGalleryImageUrl } from "@/lib/gallery.config";
 import {
   saveGalleryItemServerFn,
   deleteGalleryItemServerFn,
   saveTestimonialServerFn,
   deleteTestimonialServerFn,
+  saveVideoTestimonialServerFn,
+  deleteVideoTestimonialServerFn,
   uploadStorageFileServerFn,
   updateSiteSettingsServerFn,
   saveServiceServerFn,
@@ -26,12 +28,14 @@ import {
   servicesQuery,
   settingsQuery,
   testimonialsQuery,
+  videoTestimonialsQuery,
   type Category,
   type Enquiry,
   type GalleryItem,
   type Service,
   type SiteSettings,
   type Testimonial,
+  type VideoTestimonial,
 } from "@/lib/queries";
 
 export const Route = createFileRoute("/_authenticated/admin")({
@@ -41,10 +45,12 @@ export const Route = createFileRoute("/_authenticated/admin")({
 
 const TABS = [
   "Enquiries",
+  "Homepage Content",
   "Categories",
   "Services",
   "Gallery",
   "Testimonials",
+  "Video Testimonials",
   "Site Settings",
 ] as const;
 type Tab = (typeof TABS)[number];
@@ -77,12 +83,8 @@ function AdminPage() {
             <h1 className="font-serif text-2xl text-foreground">Access pending</h1>
             <p className="mt-2 text-sm text-muted-foreground">
               Your account ({ctx.user.email}) is signed in but doesn't yet have admin access.
-              Ask the studio owner to run this once in the database:
+              Ask the studio owner to grant the admin role.
             </p>
-            <pre className="mt-4 overflow-x-auto rounded-lg bg-secondary p-4 text-xs">
-{`INSERT INTO public.user_roles (user_id, role)
-VALUES ('${ctx.user.id}', 'admin');`}
-            </pre>
           </div>
         </div>
       </div>
@@ -98,8 +100,10 @@ VALUES ('${ctx.user.id}', 'admin');`}
             <button
               key={t}
               onClick={() => setTab(t)}
-              className={`rounded-t-md px-4 py-2 text-sm transition ${
-                tab === t ? "bg-card font-medium text-foreground" : "text-muted-foreground hover:text-foreground"
+              className={`rounded-t-md px-4 py-2 text-sm font-medium transition ${
+                tab === t
+                  ? "bg-card text-foreground border-b-2 border-accent"
+                  : "text-muted-foreground hover:text-foreground"
               }`}
             >
               {t}
@@ -108,10 +112,12 @@ VALUES ('${ctx.user.id}', 'admin');`}
         </div>
 
         {tab === "Enquiries" && <EnquiriesTab />}
+        {tab === "Homepage Content" && <HomepageContentTab />}
         {tab === "Categories" && <CategoriesTab />}
         {tab === "Services" && <ServicesTab />}
         {tab === "Gallery" && <GalleryTab />}
         {tab === "Testimonials" && <TestimonialsTab />}
+        {tab === "Video Testimonials" && <VideoTestimonialsTab />}
         {tab === "Site Settings" && <SiteSettingsTab />}
       </div>
     </div>
@@ -123,7 +129,7 @@ function TopBar({ email, onSignOut }: { email: string; onSignOut: () => void }) 
     <div className="border-b border-border bg-card">
       <div className="container-prose flex h-16 items-center justify-between">
         <div>
-          <p className="eyebrow">Admin</p>
+          <p className="eyebrow">Admin Panel</p>
           <p className="text-sm font-medium text-foreground">Elite Nest Interior</p>
         </div>
         <div className="flex items-center gap-3 text-sm">
@@ -136,6 +142,522 @@ function TopBar({ email, onSignOut }: { email: string; onSignOut: () => void }) 
           </button>
         </div>
       </div>
+    </div>
+  );
+}
+
+/* -------------------- UPLOAD HELPER -------------------- */
+async function uploadToStorage(file: File, bucket = "general"): Promise<string | null> {
+  const ext = file.name.split(".").pop() ?? "jpg";
+  const filename = `${crypto.randomUUID()}.${ext}`;
+  const mimeType = file.type || "image/jpeg";
+
+  const base64Data = await new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const res = reader.result as string;
+      const base64 = res.split(",")[1] || "";
+      resolve(base64);
+    };
+    reader.onerror = () => reject(new Error("Failed to read image file"));
+    reader.readAsDataURL(file);
+  });
+
+  const res = await uploadStorageFileServerFn({
+    data: {
+      bucket,
+      filename,
+      mimeType,
+      base64Data,
+    },
+  });
+
+  return res?.publicUrl ?? null;
+}
+
+/* -------------------- HOMEPAGE CONTENT TAB -------------------- */
+function HomepageContentTab() {
+  const qc = useQueryClient();
+  const { data } = useQuery(settingsQuery);
+  const [draft, setDraft] = useState<SiteSettings | null>(null);
+  const [uploadingHero, setUploadingHero] = useState(false);
+
+  useEffect(() => {
+    if (data && !draft) setDraft(data);
+  }, [data, draft]);
+
+  async function save() {
+    if (!draft) return;
+    const { id: _id, ...rest } = draft;
+    try {
+      await updateSiteSettingsServerFn({ data: rest });
+      toast.success("Homepage content saved successfully!");
+      qc.invalidateQueries({ queryKey: ["site_settings"] });
+    } catch (e: any) {
+      toast.error(e.message || "Failed to save homepage content.");
+    }
+  }
+
+  async function handleHeroUpload(file?: File) {
+    if (!file || !draft) return;
+    setUploadingHero(true);
+    try {
+      const url = await uploadToStorage(file, "hero");
+      if (url) {
+        setDraft({ ...draft, hero_image_url: url });
+        toast.success("Hero image uploaded to database.");
+      }
+    } catch (err: any) {
+      toast.error("Upload failed: " + err.message);
+    } finally {
+      setUploadingHero(false);
+    }
+  }
+
+  if (!draft) return <p className="text-sm text-muted-foreground">Loading homepage settings…</p>;
+
+  const upd = (k: keyof SiteSettings) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
+    setDraft({ ...draft, [k]: e.target.value });
+
+  return (
+    <div className="space-y-8">
+      <SectionHead
+        title="Homepage Content"
+        subtitle="Manage all text, images, 5 process steps, why choose us comparison, and section titles for the home page."
+        action={
+          <button
+            onClick={save}
+            className="rounded-md bg-primary px-5 py-2 text-sm font-medium text-primary-foreground hover:opacity-90 transition"
+          >
+            Save homepage changes
+          </button>
+        }
+      />
+
+      {/* 1. Hero Section */}
+      <Card title="1. Hero Section (Above the Fold)">
+        <Grid>
+          <Field label="Hero Eyebrow (Small top badge)">
+            <input className={inp} placeholder="e.g. Crafting Spaces" value={draft.hero_eyebrow ?? ""} onChange={upd("hero_eyebrow")} />
+          </Field>
+          <Field label="Hero Button (CTA) Label">
+            <input className={inp} placeholder="e.g. Explore Our Work" value={draft.hero_cta_label ?? ""} onChange={upd("hero_cta_label")} />
+          </Field>
+          <Field label="Hero Main Title (Use \n for a line break)" full>
+            <textarea rows={2} className={inp} placeholder="Where Design Meets\nTimeless Living" value={draft.hero_title ?? ""} onChange={upd("hero_title")} />
+          </Field>
+          <Field label="Hero Subtitle" full>
+            <textarea rows={3} className={inp} placeholder="Subtitle description..." value={draft.hero_subtitle ?? ""} onChange={upd("hero_subtitle")} />
+          </Field>
+          <Field label="Hero Background Image" full>
+            <div className="flex flex-wrap items-center gap-3">
+              {draft.hero_image_url && (
+                <img src={draft.hero_image_url} alt="Hero" className="h-16 w-28 rounded object-cover border border-border" />
+              )}
+              <label className="inline-flex cursor-pointer items-center gap-2 rounded-md border border-border px-3 py-1.5 text-sm hover:border-accent">
+                <Upload className="h-4 w-4" />
+                {uploadingHero ? "Uploading…" : "Upload new image"}
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => {
+                    handleHeroUpload(e.target.files?.[0]);
+                    e.target.value = "";
+                  }}
+                />
+              </label>
+            </div>
+            <input
+              className={`${inp} mt-2`}
+              placeholder="…or paste direct hero image URL"
+              value={draft.hero_image_url ?? ""}
+              onChange={upd("hero_image_url")}
+            />
+          </Field>
+        </Grid>
+      </Card>
+
+      {/* 2. Process Section */}
+      <Card title="2. Our Process Section (5 Execution Steps)">
+        <Grid>
+          <Field label="Process Eyebrow">
+            <input className={inp} placeholder="Our process" value={draft.process_eyebrow ?? ""} onChange={upd("process_eyebrow")} />
+          </Field>
+          <Field label="Process Main Heading">
+            <input className={inp} placeholder="Five steps. Zero surprises." value={draft.process_title ?? ""} onChange={upd("process_title")} />
+          </Field>
+
+          {/* Step 1 */}
+          <div className="rounded-lg border border-border/80 bg-background/50 p-4 sm:col-span-2">
+            <p className="text-xs font-semibold uppercase tracking-wider text-accent mb-2">Step 01</p>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <Field label="Step 1 Title">
+                <input className={inp} placeholder="Understand" value={draft.process_step1_title ?? ""} onChange={upd("process_step1_title")} />
+              </Field>
+              <Field label="Step 1 Description">
+                <textarea rows={2} className={inp} placeholder="Description..." value={draft.process_step1_desc ?? ""} onChange={upd("process_step1_desc")} />
+              </Field>
+            </div>
+          </div>
+
+          {/* Step 2 */}
+          <div className="rounded-lg border border-border/80 bg-background/50 p-4 sm:col-span-2">
+            <p className="text-xs font-semibold uppercase tracking-wider text-accent mb-2">Step 02</p>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <Field label="Step 2 Title">
+                <input className={inp} placeholder="Design" value={draft.process_step2_title ?? ""} onChange={upd("process_step2_title")} />
+              </Field>
+              <Field label="Step 2 Description">
+                <textarea rows={2} className={inp} placeholder="Description..." value={draft.process_step2_desc ?? ""} onChange={upd("process_step2_desc")} />
+              </Field>
+            </div>
+          </div>
+
+          {/* Step 3 */}
+          <div className="rounded-lg border border-border/80 bg-background/50 p-4 sm:col-span-2">
+            <p className="text-xs font-semibold uppercase tracking-wider text-accent mb-2">Step 03</p>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <Field label="Step 3 Title">
+                <input className={inp} placeholder="Plan" value={draft.process_step3_title ?? ""} onChange={upd("process_step3_title")} />
+              </Field>
+              <Field label="Step 3 Description">
+                <textarea rows={2} className={inp} placeholder="Description..." value={draft.process_step3_desc ?? ""} onChange={upd("process_step3_desc")} />
+              </Field>
+            </div>
+          </div>
+
+          {/* Step 4 */}
+          <div className="rounded-lg border border-border/80 bg-background/50 p-4 sm:col-span-2">
+            <p className="text-xs font-semibold uppercase tracking-wider text-accent mb-2">Step 04</p>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <Field label="Step 4 Title">
+                <input className={inp} placeholder="Execute" value={draft.process_step4_title ?? ""} onChange={upd("process_step4_title")} />
+              </Field>
+              <Field label="Step 4 Description">
+                <textarea rows={2} className={inp} placeholder="Description..." value={draft.process_step4_desc ?? ""} onChange={upd("process_step4_desc")} />
+              </Field>
+            </div>
+          </div>
+
+          {/* Step 5 */}
+          <div className="rounded-lg border border-border/80 bg-background/50 p-4 sm:col-span-2">
+            <p className="text-xs font-semibold uppercase tracking-wider text-accent mb-2">Step 05</p>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <Field label="Step 5 Title">
+                <input className={inp} placeholder="Deliver" value={draft.process_step5_title ?? ""} onChange={upd("process_step5_title")} />
+              </Field>
+              <Field label="Step 5 Description">
+                <textarea rows={2} className={inp} placeholder="Description..." value={draft.process_step5_desc ?? ""} onChange={upd("process_step5_desc")} />
+              </Field>
+            </div>
+          </div>
+        </Grid>
+      </Card>
+
+      {/* 3. Why Choose Elite Nest */}
+      <Card title="3. Why Choose Elite Nest (Comparison Matrix)">
+        <Grid>
+          <Field label="Section Title" full>
+            <input className={inp} value={draft.why_us_title ?? ""} onChange={upd("why_us_title")} />
+          </Field>
+          <Field label="Traditional Firm Column Title">
+            <input className={inp} value={draft.traditional_firm_title ?? ""} onChange={upd("traditional_firm_title")} />
+          </Field>
+          <Field label="Elite Nest Column Title">
+            <input className={inp} value={draft.elitenest_title ?? ""} onChange={upd("elitenest_title")} />
+          </Field>
+          <Field label="Traditional Firm Points (one per line)" full>
+            <textarea rows={6} className={inp} value={draft.traditional_firm_points ?? ""} onChange={upd("traditional_firm_points")} />
+          </Field>
+          <Field label="Elite Nest Points (one per line)" full>
+            <textarea rows={6} className={inp} value={draft.elitenest_points ?? ""} onChange={upd("elitenest_points")} />
+          </Field>
+        </Grid>
+      </Card>
+
+      {/* 4. Section Headings */}
+      <Card title="4. Section Titles & Subtitles">
+        <Grid>
+          <Field label="Categories Section Title">
+            <input className={inp} value={draft.categories_section_title ?? ""} onChange={upd("categories_section_title")} />
+          </Field>
+          <Field label="Categories Section Subtitle">
+            <input className={inp} value={draft.categories_section_subtitle ?? ""} onChange={upd("categories_section_subtitle")} />
+          </Field>
+          <Field label="Services Section Title">
+            <input className={inp} value={draft.services_section_title ?? ""} onChange={upd("services_section_title")} />
+          </Field>
+          <Field label="Services Section Subtitle">
+            <input className={inp} value={draft.services_section_subtitle ?? ""} onChange={upd("services_section_subtitle")} />
+          </Field>
+          <Field label="Written Testimonials Eyebrow">
+            <input className={inp} value={draft.testimonials_eyebrow ?? ""} onChange={upd("testimonials_eyebrow")} />
+          </Field>
+          <Field label="Written Testimonials Title">
+            <input className={inp} value={draft.testimonials_title ?? ""} onChange={upd("testimonials_title")} />
+          </Field>
+          <Field label="Video Testimonials Eyebrow">
+            <input className={inp} value={draft.video_section_eyebrow ?? ""} onChange={upd("video_section_eyebrow")} />
+          </Field>
+          <Field label="Video Testimonials Title">
+            <input className={inp} value={draft.video_section_title ?? ""} onChange={upd("video_section_title")} />
+          </Field>
+        </Grid>
+      </Card>
+
+      {/* 5. Consultation CTA */}
+      <Card title="5. Free Consultation CTA Banner">
+        <Grid>
+          <Field label="CTA Title" full>
+            <input className={inp} value={draft.cta_title ?? ""} onChange={upd("cta_title")} />
+          </Field>
+          <Field label="CTA Subtitle" full>
+            <textarea rows={3} className={inp} value={draft.cta_subtitle ?? ""} onChange={upd("cta_subtitle")} />
+          </Field>
+        </Grid>
+      </Card>
+
+      <div className="flex justify-end pb-8">
+        <button onClick={save} className="rounded-md bg-primary px-6 py-2.5 text-sm font-medium text-primary-foreground hover:opacity-90 transition">
+          Save homepage changes
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/* -------------------- VIDEO TESTIMONIALS TAB -------------------- */
+function VideoTestimonialsTab() {
+  const qc = useQueryClient();
+  const { data } = useQuery(videoTestimonialsQuery({ onlyActive: false }));
+  const [editing, setEditing] = useState<Partial<VideoTestimonial> | null>(null);
+  const [uploadingThumb, setUploadingThumb] = useState(false);
+
+  async function save(v: Partial<VideoTestimonial>) {
+    if (!v.title?.trim() || !v.video_url?.trim()) {
+      return toast.error("Title and video URL are required.");
+    }
+    const payload = {
+      id: v.id,
+      title: v.title.trim(),
+      author_name: v.author_name?.trim() || null,
+      video_url: v.video_url.trim(),
+      thumbnail_url: v.thumbnail_url?.trim() || null,
+      display_order: v.display_order ?? 0,
+      is_active: v.is_active ?? true,
+    };
+    try {
+      await saveVideoTestimonialServerFn({ data: payload });
+      toast.success("Video testimonial saved.");
+      setEditing(null);
+      qc.invalidateQueries({ queryKey: ["video_testimonials"] });
+    } catch (e: any) {
+      toast.error(e.message || "Failed to save video testimonial.");
+    }
+  }
+
+  async function remove(id: string) {
+    if (!confirm("Delete video testimonial?")) return;
+    try {
+      await deleteVideoTestimonialServerFn({ data: { id } });
+      toast.success("Deleted");
+      qc.invalidateQueries({ queryKey: ["video_testimonials"] });
+    } catch (e: any) {
+      toast.error(e.message || "Failed to delete video testimonial.");
+    }
+  }
+
+  async function handleThumbUpload(file?: File) {
+    if (!file || !editing) return;
+    setUploadingThumb(true);
+    try {
+      const url = await uploadToStorage(file, "video-thumbs");
+      if (url) {
+        setEditing({ ...editing, thumbnail_url: url });
+        toast.success("Thumbnail uploaded.");
+      }
+    } catch (err: any) {
+      toast.error("Upload failed: " + err.message);
+    } finally {
+      setUploadingThumb(false);
+    }
+  }
+
+  async function swap(a: VideoTestimonial, b: VideoTestimonial) {
+    try {
+      await Promise.all([
+        saveVideoTestimonialServerFn({ data: { ...a, display_order: b.display_order } }),
+        saveVideoTestimonialServerFn({ data: { ...b, display_order: a.display_order } }),
+      ]);
+      qc.invalidateQueries({ queryKey: ["video_testimonials"] });
+    } catch (e: any) {
+      toast.error("Failed to reorder: " + e.message);
+    }
+  }
+
+  const items = [...(data ?? [])].sort((a, b) => a.display_order - b.display_order);
+
+  return (
+    <div>
+      <SectionHead
+        title="Video Testimonials"
+        subtitle="Customer video walkthroughs and client stories shown on the homepage."
+        action={
+          <button
+            onClick={() =>
+              setEditing({
+                display_order: items.length + 1,
+                is_active: true,
+              })
+            }
+            className="inline-flex items-center gap-2 rounded-md bg-primary px-3 py-1.5 text-sm text-primary-foreground hover:opacity-90 transition"
+          >
+            <Plus className="h-4 w-4" /> New Video
+          </button>
+        }
+      />
+      {items.length === 0 && <Empty label="No video testimonials yet." />}
+      <div className="grid gap-3">
+        {items.map((v, i) => (
+          <div
+            key={v.id}
+            className="flex items-center gap-3 rounded-lg border border-border bg-card p-3"
+          >
+            {v.thumbnail_url ? (
+              <img
+                src={v.thumbnail_url}
+                alt={v.title}
+                className="h-14 w-20 flex-none rounded object-cover"
+              />
+            ) : (
+              <div className="flex h-14 w-20 flex-none items-center justify-center rounded bg-secondary text-xs text-muted-foreground">
+                <Video className="h-6 w-6 text-muted-foreground" />
+              </div>
+            )}
+            <div className="min-w-0 flex-1">
+              <p className="truncate font-medium text-foreground">{v.title}</p>
+              <p className="truncate text-xs text-muted-foreground">
+                {v.author_name ? `${v.author_name} · ` : ""}
+                <a href={v.video_url} target="_blank" rel="noreferrer" className="text-accent hover:underline">
+                  {v.video_url}
+                </a>
+              </p>
+            </div>
+            <div className="flex items-center gap-1">
+              {!v.is_active && (
+                <span className="rounded-full bg-secondary px-2 py-0.5 text-[10px] uppercase tracking-wider text-muted-foreground">
+                  Inactive
+                </span>
+              )}
+              <button
+                disabled={i === 0}
+                onClick={() => swap(v, items[i - 1])}
+                className="rounded-md border border-border p-1.5 hover:border-accent disabled:opacity-30"
+              >
+                <ArrowUp className="h-4 w-4" />
+              </button>
+              <button
+                disabled={i === items.length - 1}
+                onClick={() => swap(v, items[i + 1])}
+                className="rounded-md border border-border p-1.5 hover:border-accent disabled:opacity-30"
+              >
+                <ArrowDown className="h-4 w-4" />
+              </button>
+              <button
+                onClick={() => setEditing(v)}
+                className="rounded-md border border-border p-1.5 hover:border-accent"
+              >
+                <Pencil className="h-4 w-4" />
+              </button>
+              <button
+                onClick={() => remove(v.id)}
+                className="rounded-md border border-border p-1.5 text-destructive hover:border-destructive"
+              >
+                <Trash2 className="h-4 w-4" />
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {editing && (
+        <Modal
+          title={editing.id ? "Edit video testimonial" : "New video testimonial"}
+          onClose={() => setEditing(null)}
+          onSave={() => save(editing)}
+        >
+          <Field label="Video Title" full>
+            <input
+              className={inp}
+              placeholder="e.g. Modern Minimalist 4BHK Villa Walkthrough"
+              value={editing.title ?? ""}
+              onChange={(e) => setEditing({ ...editing, title: e.target.value })}
+            />
+          </Field>
+          <Field label="Author / Client Name">
+            <input
+              className={inp}
+              placeholder="e.g. Rahul & Priya Sharma"
+              value={editing.author_name ?? ""}
+              onChange={(e) => setEditing({ ...editing, author_name: e.target.value })}
+            />
+          </Field>
+          <Field label="Display Order">
+            <input
+              type="number"
+              className={inp}
+              value={editing.display_order ?? 0}
+              onChange={(e) =>
+                setEditing({ ...editing, display_order: Number(e.target.value) })
+              }
+            />
+          </Field>
+          <Field label="Video URL (YouTube, Vimeo, MP4)" full>
+            <input
+              className={inp}
+              placeholder="https://www.youtube.com/watch?v=..."
+              value={editing.video_url ?? ""}
+              onChange={(e) => setEditing({ ...editing, video_url: e.target.value })}
+            />
+          </Field>
+          <Field label="Thumbnail Cover Image" full>
+            <div className="flex items-center gap-3">
+              {editing.thumbnail_url && (
+                <img
+                  src={editing.thumbnail_url}
+                  alt=""
+                  className="h-16 w-24 flex-none rounded object-cover"
+                />
+              )}
+              <label className="inline-flex cursor-pointer items-center gap-2 rounded-md border border-border px-3 py-1.5 text-sm hover:border-accent">
+                <Upload className="h-4 w-4" />
+                {uploadingThumb ? "Uploading…" : "Upload cover image"}
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => {
+                    handleThumbUpload(e.target.files?.[0]);
+                    e.target.value = "";
+                  }}
+                />
+              </label>
+            </div>
+            <input
+              className={`${inp} mt-2`}
+              placeholder="…or paste image URL"
+              value={editing.thumbnail_url ?? ""}
+              onChange={(e) => setEditing({ ...editing, thumbnail_url: e.target.value })}
+            />
+          </Field>
+          <Toggle
+            checked={editing.is_active ?? true}
+            onChange={(v) => setEditing({ ...editing, is_active: v })}
+            label="Active (visible on website)"
+          />
+        </Modal>
+      )}
     </div>
   );
 }
@@ -159,11 +681,11 @@ function EnquiriesTab() {
       await updateEnquiryNotesServerFn({ data: { id, admin_notes } });
       qc.invalidateQueries({ queryKey: ["enquiries"] });
     } catch (e: any) {
-      toast.error(e.message || "Failed to save notes");
+      toast.error(e.message || "Failed to update notes");
     }
   }
   async function remove(id: string) {
-    if (!confirm("Delete this enquiry?")) return;
+    if (!confirm("Delete enquiry?")) return;
     try {
       await deleteEnquiryServerFn({ data: { id } });
       toast.success("Deleted");
@@ -177,24 +699,26 @@ function EnquiriesTab() {
     <div>
       <SectionHead
         title="Enquiries"
-        subtitle="Leads submitted from the website."
+        subtitle="Manage leads submitted through contact and consultation forms."
         action={
-          <button onClick={() => refetch()} className="inline-flex items-center gap-2 rounded-md border border-border px-3 py-1.5 text-sm hover:border-accent">
-            <RefreshCcw className="h-4 w-4" /> Refresh
+          <button
+            onClick={() => refetch()}
+            className="inline-flex items-center gap-2 rounded-md border border-border px-3 py-1.5 text-sm hover:border-accent"
+          >
+            Refresh
           </button>
         }
       />
-      {isLoading && <p className="text-sm text-muted-foreground">Loading…</p>}
-      {data && data.length === 0 && <Empty label="No enquiries yet." />}
-      <div className="grid gap-4">
+      {isLoading && <p className="text-sm text-muted-foreground">Loading enquiries…</p>}
+      {data?.length === 0 && <Empty label="No enquiries received yet." />}
+      <div className="grid gap-3">
         {data?.map((e) => (
           <div key={e.id} className="rounded-xl border border-border bg-card p-5">
-            <div className="flex flex-wrap items-start justify-between gap-3">
+            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border pb-3">
               <div>
-                <p className="font-medium text-foreground">{e.name}</p>
+                <p className="font-serif text-lg text-foreground">{e.name}</p>
                 <p className="text-xs text-muted-foreground">
-                  {new Date(e.created_at).toLocaleString()}
-                  {e.source && <> · {e.source}</>}
+                  {new Date(e.created_at).toLocaleString()} · via {e.source || "website"}
                 </p>
               </div>
               <div className="flex items-center gap-2">
@@ -275,8 +799,17 @@ function CategoriesTab() {
 
   return (
     <div>
-      <SectionHead title="Service categories" subtitle="Group services for navigation."
-        action={<button onClick={() => setEditing({ display_order: 0, is_active: true })} className="inline-flex items-center gap-2 rounded-md bg-primary px-3 py-1.5 text-sm text-primary-foreground"><Plus className="h-4 w-4" /> New</button>}
+      <SectionHead
+        title="Service Categories"
+        subtitle="Group services for navigation and showcase."
+        action={
+          <button
+            onClick={() => setEditing({ display_order: (data?.length ?? 0) + 1, is_active: true })}
+            className="inline-flex items-center gap-2 rounded-md bg-primary px-3 py-1.5 text-sm text-primary-foreground"
+          >
+            <Plus className="h-4 w-4" /> New Category
+          </button>
+        }
       />
       {data?.length === 0 && <Empty label="No categories yet." />}
       <div className="grid gap-3">
@@ -345,8 +878,17 @@ function ServicesTab() {
 
   return (
     <div>
-      <SectionHead title="Services" subtitle="Individual services shown on the website."
-        action={<button onClick={() => setEditing({ display_order: 0, is_active: true, features: [], gallery: [] })} className="inline-flex items-center gap-2 rounded-md bg-primary px-3 py-1.5 text-sm text-primary-foreground"><Plus className="h-4 w-4" /> New</button>}
+      <SectionHead
+        title="Services"
+        subtitle="Individual interior design and execution services shown across the site."
+        action={
+          <button
+            onClick={() => setEditing({ display_order: (data?.length ?? 0) + 1, is_active: true, features: [], gallery: [] })}
+            className="inline-flex items-center gap-2 rounded-md bg-primary px-3 py-1.5 text-sm text-primary-foreground"
+          >
+            <Plus className="h-4 w-4" /> New Service
+          </button>
+        }
       />
       {data?.length === 0 && <Empty label="No services yet." />}
       <div className="grid gap-3">
@@ -433,8 +975,8 @@ function TestimonialsTab() {
   return (
     <div>
       <SectionHead
-        title="Testimonials"
-        subtitle="Manage client reviews shown on the website."
+        title="Written Testimonials"
+        subtitle="Manage client reviews and feedback shown on the website."
         action={
           <button
             onClick={() => setEditing({ rating: 5, display_order: (data?.length ?? 0) + 1, is_active: true })}
@@ -463,28 +1005,28 @@ function TestimonialsTab() {
           onClose={() => setEditing(null)}
           onSave={() => save(editing)}
         >
-          <Field label="Author Name">
+          <Field label="Client Name">
             <input
               className={inp}
               value={editing.author_name ?? ""}
               onChange={(e) => setEditing({ ...editing, author_name: e.target.value })}
             />
           </Field>
-          <Field label="Location (e.g. Koramangala, Bengaluru)">
+          <Field label="Location (e.g. Indiranagar, Bengaluru)">
             <input
               className={inp}
               value={editing.author_location ?? ""}
               onChange={(e) => setEditing({ ...editing, author_location: e.target.value })}
             />
           </Field>
-          <Field label="Service Type (e.g. Interior Design, Construction, Supervision, Renovation, Turnkey Solution)">
+          <Field label="Service Type (e.g. 3BHK Villa Interior)">
             <input
               className={inp}
               value={editing.service_type ?? ""}
               onChange={(e) => setEditing({ ...editing, service_type: e.target.value })}
             />
           </Field>
-          <Field label="Rating (1-5)">
+          <Field label="Rating (1 to 5)">
             <input
               type="number"
               min={1}
@@ -494,7 +1036,7 @@ function TestimonialsTab() {
               onChange={(e) => setEditing({ ...editing, rating: Number(e.target.value) })}
             />
           </Field>
-          <Field label="Avatar Image URL">
+          <Field label="Client Photo URL (optional)">
             <input
               className={inp}
               placeholder="https://..."
@@ -510,7 +1052,7 @@ function TestimonialsTab() {
               onChange={(e) => setEditing({ ...editing, project_image_url: e.target.value })}
             />
           </Field>
-          <Field label="Content">
+          <Field label="Content" full>
             <textarea
               rows={4}
               className={inp}
@@ -562,44 +1104,20 @@ function SiteSettingsTab() {
 
   return (
     <div className="space-y-8">
-      <SectionHead title="Site settings" subtitle="Contact details, social links, About, Vision and footer content."
-        action={<button onClick={save} className="rounded-md bg-primary px-4 py-2 text-sm text-primary-foreground">Save changes</button>} />
+      <SectionHead
+        title="Site Settings & Business Details"
+        subtitle="Contact information, social profiles, About page, Vision & Mission, and footer content."
+        action={<button onClick={save} className="rounded-md bg-primary px-4 py-2 text-sm text-primary-foreground">Save changes</button>}
+      />
 
-      <Card title="Brand">
+      <Card title="Brand & Identity">
         <Grid>
           <Field label="Business name"><input className={inp} value={draft.business_name ?? ""} onChange={upd("business_name")} /></Field>
           <Field label="Tagline"><input className={inp} value={draft.tagline ?? ""} onChange={upd("tagline")} /></Field>
         </Grid>
       </Card>
 
-      <Card title="Homepage hero">
-        <Grid>
-          <Field label="Eyebrow (small label)"><input className={inp} value={draft.hero_eyebrow ?? ""} onChange={upd("hero_eyebrow")} /></Field>
-          <Field label="Hero image URL"><input className={inp} value={draft.hero_image_url ?? ""} onChange={upd("hero_image_url")} /></Field>
-          <Field label="Hero title (use \n for a line break)" full><textarea rows={2} className={inp} value={draft.hero_title ?? ""} onChange={upd("hero_title")} /></Field>
-          <Field label="Hero subtitle" full><textarea rows={3} className={inp} value={draft.hero_subtitle ?? ""} onChange={upd("hero_subtitle")} /></Field>
-          <Field label="Hero button label"><input className={inp} value={draft.hero_cta_label ?? ""} onChange={upd("hero_cta_label")} /></Field>
-        </Grid>
-      </Card>
-
-      <Card title="Consultation CTA section">
-        <Grid>
-          <Field label="CTA title" full><input className={inp} value={draft.cta_title ?? ""} onChange={upd("cta_title")} /></Field>
-          <Field label="CTA subtitle" full><textarea rows={3} className={inp} value={draft.cta_subtitle ?? ""} onChange={upd("cta_subtitle")} /></Field>
-        </Grid>
-      </Card>
-
-      <Card title="Why choose us (homepage comparison)">
-        <Grid>
-          <Field label="Section title"><input className={inp} value={draft.why_us_title ?? ""} onChange={upd("why_us_title")} /></Field>
-          <Field label="Traditional firm title"><input className={inp} value={draft.traditional_firm_title ?? ""} onChange={upd("traditional_firm_title")} /></Field>
-          <Field label="Traditional firm points (one per line)" full><textarea rows={6} className={inp} value={draft.traditional_firm_points ?? ""} onChange={upd("traditional_firm_points")} /></Field>
-          <Field label="Elite Nest title"><input className={inp} value={draft.elitenest_title ?? ""} onChange={upd("elitenest_title")} /></Field>
-          <Field label="Elite Nest points (one per line)" full><textarea rows={6} className={inp} value={draft.elitenest_points ?? ""} onChange={upd("elitenest_points")} /></Field>
-        </Grid>
-      </Card>
-
-      <Card title="Contact details">
+      <Card title="Contact Details">
         <Grid>
           <Field label="Phone"><input className={inp} value={draft.phone ?? ""} onChange={upd("phone")} /></Field>
           <Field label="WhatsApp (incl. country code)"><input className={inp} value={draft.whatsapp ?? ""} onChange={upd("whatsapp")} /></Field>
@@ -610,7 +1128,7 @@ function SiteSettingsTab() {
         </Grid>
       </Card>
 
-      <Card title="Social links">
+      <Card title="Social Links">
         <Grid>
           <Field label="Instagram"><input className={inp} value={draft.instagram_url ?? ""} onChange={upd("instagram_url")} /></Field>
           <Field label="Facebook"><input className={inp} value={draft.facebook_url ?? ""} onChange={upd("facebook_url")} /></Field>
@@ -621,7 +1139,7 @@ function SiteSettingsTab() {
         </Grid>
       </Card>
 
-      <Card title="About">
+      <Card title="About Page Content">
         <Grid>
           <Field label="About title"><input className={inp} value={draft.about_title ?? ""} onChange={upd("about_title")} /></Field>
           <Field label="About image URL"><input className={inp} value={draft.about_image_url ?? ""} onChange={upd("about_image_url")} /></Field>
@@ -648,7 +1166,7 @@ function SiteSettingsTab() {
         </Grid>
       </Card>
 
-      <div className="flex justify-end">
+      <div className="flex justify-end pb-8">
         <button onClick={save} className="rounded-md bg-primary px-5 py-2.5 text-sm text-primary-foreground">Save changes</button>
       </div>
     </div>
@@ -670,35 +1188,10 @@ function GalleryTab() {
 
   async function uploadFile(file: File): Promise<string | null> {
     try {
-      const ext = file.name.split(".").pop() ?? "jpg";
-      const filename = `${crypto.randomUUID()}.${ext}`;
-      const mimeType = file.type || "image/jpeg";
-
-      // Read file as base64
-      const base64Data = await new Promise<string>((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => {
-          const res = reader.result as string;
-          const base64 = res.split(",")[1] || "";
-          resolve(base64);
-        };
-        reader.onerror = () => reject(new Error("Failed to read image file"));
-        reader.readAsDataURL(file);
-      });
-
-      // Save directly into PostgreSQL storage_objects table
-      const res = await uploadStorageFileServerFn({
-        data: {
-          bucket: GALLERY_BUCKET,
-          filename,
-          mimeType,
-          base64Data,
-        },
-      });
-
-      if (res?.publicUrl) {
+      const url = await uploadToStorage(file, GALLERY_BUCKET);
+      if (url) {
         toast.success("Image saved to database successfully.");
-        return res.publicUrl;
+        return url;
       }
     } catch (err: any) {
       console.error("Storage upload failed:", err);
@@ -760,35 +1253,37 @@ function GalleryTab() {
   }
 
   async function remove(id: string) {
-    if (!confirm("Delete this gallery item?")) return;
+    if (!confirm("Delete gallery item?")) return;
     try {
       await deleteGalleryItemServerFn({ data: { id } });
       toast.success("Deleted");
       invalidate();
     } catch (e: any) {
-      toast.error(e.message || "Failed to delete item.");
+      toast.error(e.message || "Failed to delete gallery item.");
     }
   }
 
   async function swap(a: GalleryItem, b: GalleryItem) {
     try {
-      await saveGalleryItemServerFn({ data: { ...a, display_order: b.display_order } });
-      await saveGalleryItemServerFn({ data: { ...b, display_order: a.display_order } });
+      await Promise.all([
+        saveGalleryItemServerFn({ data: { ...a, display_order: b.display_order } }),
+        saveGalleryItemServerFn({ data: { ...b, display_order: a.display_order } }),
+      ]);
       invalidate();
     } catch (e: any) {
-      toast.error(e.message || "Failed to swap items.");
+      toast.error(e.message || "Failed to reorder.");
     }
   }
 
-  const items = data ?? [];
+  const items = [...(data ?? [])].sort((a, b) => a.display_order - b.display_order);
 
   return (
     <div>
       <SectionHead
         title="Gallery"
-        subtitle="Upload, edit and reorder gallery images."
+        subtitle="Manage interior design portfolio photos shown in the curated gallery."
         action={
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex items-center gap-2">
             <label className="inline-flex cursor-pointer items-center gap-2 rounded-md border border-border px-3 py-1.5 text-sm hover:border-accent">
               <Upload className="h-4 w-4" />
               {uploading ? "Uploading…" : "Quick upload"}
@@ -796,6 +1291,7 @@ function GalleryTab() {
                 type="file"
                 accept="image/*"
                 className="hidden"
+                disabled={uploading}
                 onChange={(e) => {
                   quickUpload(e.target.files?.[0]);
                   e.target.value = "";
@@ -808,7 +1304,7 @@ function GalleryTab() {
               }
               className="inline-flex items-center gap-2 rounded-md bg-primary px-3 py-1.5 text-sm text-primary-foreground"
             >
-              <Plus className="h-4 w-4" /> New
+              <Plus className="h-4 w-4" /> New Item
             </button>
           </div>
         }
@@ -946,9 +1442,7 @@ function GalleryTab() {
   );
 }
 
-
-
-/* -------------------- shared UI -------------------- */
+/* -------------------- SHARED UI -------------------- */
 const inp = "w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent/20";
 
 function SectionHead({ title, subtitle, action }: { title: string; subtitle?: string; action?: React.ReactNode }) {
@@ -962,9 +1456,11 @@ function SectionHead({ title, subtitle, action }: { title: string; subtitle?: st
     </div>
   );
 }
+
 function Empty({ label }: { label: string }) {
   return <p className="rounded-lg border border-dashed border-border p-8 text-center text-sm text-muted-foreground">{label}</p>;
 }
+
 function Row({ title, subtitle, active, onEdit, onDelete }: { title: string; subtitle?: string; active?: boolean; onEdit: () => void; onDelete: () => void }) {
   return (
     <div className="flex items-center justify-between gap-3 rounded-lg border border-border bg-card p-4">
@@ -980,6 +1476,7 @@ function Row({ title, subtitle, active, onEdit, onDelete }: { title: string; sub
     </div>
   );
 }
+
 function Field({ label, children, full }: { label: string; children: React.ReactNode; full?: boolean }) {
   return (
     <label className={`block ${full ? "sm:col-span-2" : ""}`}>
@@ -988,6 +1485,7 @@ function Field({ label, children, full }: { label: string; children: React.React
     </label>
   );
 }
+
 function Toggle({ checked, onChange, label }: { checked: boolean; onChange: (v: boolean) => void; label: string }) {
   return (
     <label className="flex items-center gap-2 text-sm">
@@ -996,9 +1494,11 @@ function Toggle({ checked, onChange, label }: { checked: boolean; onChange: (v: 
     </label>
   );
 }
+
 function Grid({ children }: { children: React.ReactNode }) {
   return <div className="grid gap-4 sm:grid-cols-2">{children}</div>;
 }
+
 function Card({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div className="rounded-xl border border-border bg-card p-5">
@@ -1007,6 +1507,7 @@ function Card({ title, children }: { title: string; children: React.ReactNode })
     </div>
   );
 }
+
 function Modal({ title, children, onClose, onSave }: { title: string; children: React.ReactNode; onClose: () => void; onSave: () => void }) {
   return (
     <div className="fixed inset-0 z-50 grid place-items-center bg-black/40 p-4">

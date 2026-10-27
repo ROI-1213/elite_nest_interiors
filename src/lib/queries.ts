@@ -145,6 +145,26 @@ export type SiteSettings = {
   elitenest_title?: string | null;
   traditional_firm_points?: string | null;
   elitenest_points?: string | null;
+  process_eyebrow?: string | null;
+  process_title?: string | null;
+  process_step1_title?: string | null;
+  process_step1_desc?: string | null;
+  process_step2_title?: string | null;
+  process_step2_desc?: string | null;
+  process_step3_title?: string | null;
+  process_step3_desc?: string | null;
+  process_step4_title?: string | null;
+  process_step4_desc?: string | null;
+  process_step5_title?: string | null;
+  process_step5_desc?: string | null;
+  services_section_title?: string | null;
+  services_section_subtitle?: string | null;
+  categories_section_title?: string | null;
+  categories_section_subtitle?: string | null;
+  testimonials_eyebrow?: string | null;
+  testimonials_title?: string | null;
+  video_section_eyebrow?: string | null;
+  video_section_title?: string | null;
 };
 
 export type GalleryItem = {
@@ -228,6 +248,8 @@ export const DEFAULT_SITE_SETTINGS: SiteSettings = {
   mission_content: SITE_SETTINGS_DEFAULTS.mission_content ?? "To deliver unparalleled craftsmanship, meticulous attention to detail, and exceptional customer experience.",
   footer_about: SITE_SETTINGS_DEFAULTS.footer_about ?? "End-to-end construction, architecture and interior solutions.",
   footer_copyright: SITE_SETTINGS_DEFAULTS.footer_copyright ?? "© 2026 Elite Nest Interiors. All rights reserved.",
+  video_section_eyebrow: "Hear it firsthand",
+  video_section_title: "Video testimonials",
 };
 
 export const DEFAULT_GALLERY_ITEMS: GalleryItem[] = CURATED_GALLERY.map((c, i) => ({

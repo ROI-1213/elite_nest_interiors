@@ -118,6 +118,39 @@ function HomePage() {
 
   const testimonials = dbTestimonials.length > 0 ? dbTestimonials : PLACEHOLDER_TESTIMONIALS;
 
+  const processSteps = [
+    {
+      number: "01",
+      title: settings.process_step1_title || "Understand",
+      description: settings.process_step1_desc || "We understand your lifestyle, preferences, space requirements, and budget."
+    },
+    {
+      number: "02",
+      title: settings.process_step2_title || "Design",
+      description: settings.process_step2_desc || "We create functional, elegant designs tailored to your vision."
+    },
+    {
+      number: "03",
+      title: settings.process_step3_title || "Plan",
+      description: settings.process_step3_desc || "Detailed drawings, material selection, costing, and execution planning."
+    },
+    {
+      number: "04",
+      title: settings.process_step4_title || "Execute",
+      description: settings.process_step4_desc || "Expert project management with strict quality and timeline control."
+    },
+    {
+      number: "05",
+      title: settings.process_step5_title || "Deliver",
+      description: settings.process_step5_desc || "A beautifully finished space, delivered on time and ready to enjoy."
+    }
+  ];
+
+  const processEyebrow = settings.process_eyebrow || "Our process";
+  const processTitle = settings.process_title || "Five steps. Zero surprises.";
+  const testimonialsEyebrow = settings.testimonials_eyebrow || "Kind words";
+  const testimonialsTitle = settings.testimonials_title || "Trusted by homeowners and businesses who care about every detail.";
+
   const heroBg = settings.hero_image_url || heroImg;
   const heroEyebrow = settings.hero_eyebrow || SITE_SETTINGS_DEFAULTS.hero_eyebrow;
   const heroTitle = settings.hero_title || SITE_SETTINGS_DEFAULTS.hero_title;
@@ -296,9 +329,9 @@ function HomePage() {
       <section className="border-y border-border bg-bone">
         <div className="container-prose py-24 md:py-32">
           <Reveal>
-            <p className="eyebrow">Our process</p>
+            <p className="eyebrow">{processEyebrow}</p>
             <h2 className="mt-4 max-w-2xl font-serif text-4xl text-foreground md:text-5xl">
-              Five steps. <span className="bronze-text">Zero surprises.</span>
+              <AccentedLines title={processTitle} />
             </h2>
           </Reveal>
 
@@ -338,9 +371,9 @@ function HomePage() {
         >
           <div className="container-prose py-24 md:py-32">
             <Reveal>
-              <p className="eyebrow" style={{ color: "#FFE2B0" }}>Kind words</p>
+              <p className="eyebrow" style={{ color: "#FFE2B0" }}>{testimonialsEyebrow}</p>
               <h2 className="mt-4 max-w-3xl font-serif text-4xl md:text-5xl" style={{ color: "#FFFFFF" }}>
-                Trusted by homeowners and businesses who care about every detail.
+                {testimonialsTitle}
               </h2>
             </Reveal>
             <div
@@ -388,8 +421,10 @@ function HomePage() {
       {videos.length > 0 && (
         <section className="container-prose py-24 md:py-32">
           <Reveal>
-            <p className="eyebrow">Hear it firsthand</p>
-            <h2 className="mt-4 font-serif text-4xl text-foreground md:text-5xl">Video testimonials</h2>
+            <p className="eyebrow">{settings.video_section_eyebrow || "Hear it firsthand"}</p>
+            <h2 className="mt-4 font-serif text-4xl text-foreground md:text-5xl">
+              {settings.video_section_title || "Video testimonials"}
+            </h2>
           </Reveal>
           <div className="mt-12 grid gap-5 md:grid-cols-3">
             {videos.slice(0, 3).map((v, i) => (
