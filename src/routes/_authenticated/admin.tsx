@@ -322,8 +322,6 @@ function TopBar({ email, onSignOut }: { email: string; onSignOut: () => void }) 
 
 /* -------------------- UPLOAD HELPER -------------------- */
 async function uploadToStorage(file: File, bucket = "general"): Promise<string | null> {
-  const ext = file.name.split(".").pop() ?? "jpg";
-  const filename = `${crypto.randomUUID()}.${ext}`;
   const mimeType = file.type || "image/jpeg";
 
   const base64Data = await new Promise<string>((resolve, reject) => {
@@ -340,7 +338,7 @@ async function uploadToStorage(file: File, bucket = "general"): Promise<string |
   const res = await uploadStorageFileServerFn({
     data: {
       bucket,
-      filename,
+      filename: file.name,
       mimeType,
       base64Data,
     },

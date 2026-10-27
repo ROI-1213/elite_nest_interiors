@@ -72,7 +72,14 @@ export function resolveGalleryImageUrl(g: { title?: string; image_url?: string }
   if (!url || url.includes("unsplash.com")) {
     return CURATED_GALLERY.find((c) => c.title === g.title)?.url || CURATED_GALLERY[0].url;
   }
-  if (url.startsWith("data:") || url.includes("/uploads/") || url.includes("/api/storage/") || /^https?:\/\//i.test(url)) {
+  if (
+    url.startsWith("data:") ||
+    url.startsWith("/") ||
+    url.includes("/uploads/") ||
+    url.includes("/api/storage/") ||
+    url.includes("/assets/") ||
+    /^https?:\/\//i.test(url)
+  ) {
     return url;
   }
   return CURATED_GALLERY.find((c) => c.title === g.title)?.url || url;

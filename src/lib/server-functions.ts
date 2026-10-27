@@ -606,13 +606,13 @@ export const deleteEnquiryServerFn = createServerFn({ method: "POST" })
     return { success: true };
   });
 
-/* ==================== STORAGE BUCKETS IN POSTGRESQL ==================== */
+/* ==================== STORAGE BUCKETS IN POSTGRESQL & VITE ASSETS ==================== */
 
 export const uploadStorageFileServerFn = createServerFn({ method: "POST" })
   .validator((data: Record<string, any>) => data)
   .handler(async ({ data }) => {
-    const bucket = data.bucket || "site-assets";
-    const filename = data.filename || data.path || `${Date.now()}-upload.jpg`;
+    const rawBucket = data.bucket || "assets";
+    const rawFilename = data.filename || data.path || "asset.jpg";
     const mimeType = data.mimeType || data.contentType || "image/jpeg";
     const base64Data = data.base64Data;
 
@@ -620,25 +620,121 @@ export const uploadStorageFileServerFn = createServerFn({ method: "POST" })
       throw new Error("Missing base64 file data");
     }
 
-    // Ensure bucket exists in storage_buckets table
-    await queryDb(
-      `INSERT INTO public.storage_buckets (id, name, public)
-       VALUES ($1, $1, true)
-       ON CONFLICT (id) DO NOTHING`,
-      [bucket]
-    );
+    // Extract file extension
+    const extMatch = rawFilename.match(/\.([a-zA-Z0-9]+)(?:\?.*)?$/);
+    let ext = (extMatch ? extMatch[1] : "jpg").toLowerCase();
+    if (ext === "jpeg") ext = "jpg";
 
+    // Clean and sanitize base name
+    let cleanBase = rawFilename
+      .replace(/\.[^.]+$/, "") // strip extension
+      .replace(/^.*[\\/]/, "") // strip directories
+      .toLowerCase()
+      .replace(/[^a-z0-9_-]/g, "-") // replace non-alphanumeric with -
+      .replace(/-+/g, "-") // collapse consecutive hyphens
+      .replace(/^-|-$/g, ""); // trim leading/trailing hyphens
+
+    // If cleanBase is empty, generic, or looks like a long UUID, generate a descriptive base using bucket
+    const isGeneric =
+      !cleanBase ||
+      cleanBase === "blob" ||
+      cleanBase === "image" ||
+      cleanBase === "upload" ||
+      cleanBase === "file" ||
+      /^[0-9a-f-]{25,}$/i.test(cleanBase);
+
+    if (isGeneric) {
+      const bucketClean = rawBucket.toLowerCase().replace(/[^a-z0-9_-]/g, "-").replace(/-+/g, "-");
+      cleanBase =
+        bucketClean && bucketClean !== "general" && bucketClean !== "site-assets"
+          ? `${bucketClean}-asset`
+          : "service-asset";
+    }
+
+    // Normalize prefix length to standard Vite asset naming
+    cleanBase = cleanBase.slice(0, 32);
+
+    // Generate 8-character Vite / Rollup style alphanumeric hash (e.g. "Bc8JUf1r")
+    const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+    let hash = "";
+    try {
+      const crypto = await import("node:crypto");
+      const bytes = crypto.randomBytes(8);
+      for (let i = 0; i < 8; i++) {
+        hash += chars[bytes[i] % chars.length];
+      }
+    } catch {
+      for (let i = 0; i < 8; i++) {
+        hash += chars.charAt(Math.floor(Math.random() * chars.length));
+      }
+    }
+
+    const formattedFilename = `${cleanBase}-${hash}.${ext}`;
+    const publicUrl = `/assets/${formattedFilename}`;
     const buffer = Buffer.from(base64Data, "base64");
+
+    // 1. Ensure bucket 'assets' and original bucket exist in storage_buckets
+    try {
+      await queryDb(
+        `INSERT INTO public.storage_buckets (id, name, public)
+         VALUES ('assets', 'assets', true)
+         ON CONFLICT (id) DO NOTHING`
+      );
+      if (rawBucket && rawBucket !== "assets") {
+        await queryDb(
+          `INSERT INTO public.storage_buckets (id, name, public)
+           VALUES ($1, $1, true)
+           ON CONFLICT (id) DO NOTHING`,
+          [rawBucket]
+        );
+      }
+    } catch (e) {
+      console.warn("[uploadStorageFileServerFn] Note on storage_buckets:", e);
+    }
+
+    // 2. Persist in public.storage_objects (primary under 'assets')
     await queryDb(
       `INSERT INTO public.storage_objects (bucket_id, filename, mime_type, file_data)
-       VALUES ($1, $2, $3, $4)
+       VALUES ('assets', $1, $2, $3)
        ON CONFLICT (bucket_id, filename)
        DO UPDATE SET mime_type = EXCLUDED.mime_type, file_data = EXCLUDED.file_data, created_at = NOW()`,
-      [bucket, filename, mimeType, buffer]
+      [formattedFilename, mimeType, buffer]
     );
 
-    // Return the PostgreSQL storage endpoint URL
+    // Also persist under original bucket if different for backward compatibility
+    if (rawBucket && rawBucket !== "assets") {
+      try {
+        await queryDb(
+          `INSERT INTO public.storage_objects (bucket_id, filename, mime_type, file_data)
+           VALUES ($1, $2, $3, $4)
+           ON CONFLICT (bucket_id, filename)
+           DO UPDATE SET mime_type = EXCLUDED.mime_type, file_data = EXCLUDED.file_data, created_at = NOW()`,
+          [rawBucket, formattedFilename, mimeType, buffer]
+        );
+      } catch (err) {
+        console.warn("[uploadStorageFileServerFn] Secondary bucket insert note:", err);
+      }
+    }
+
+    // 3. Persist to filesystem in public/assets and .output/public/assets
+    try {
+      const fs = await import("node:fs/promises");
+      const path = await import("node:path");
+
+      const publicDir = path.resolve(process.cwd(), "public", "assets");
+      await fs.mkdir(publicDir, { recursive: true });
+      await fs.writeFile(path.join(publicDir, formattedFilename), buffer);
+
+      const outputDir = path.resolve(process.cwd(), ".output", "public", "assets");
+      await fs.mkdir(outputDir, { recursive: true });
+      await fs.writeFile(path.join(outputDir, formattedFilename), buffer);
+    } catch (diskErr) {
+      console.warn("[uploadStorageFileServerFn] Disk write note (DB is source of truth):", diskErr);
+    }
+
+    // Return the formatted /assets/... publicUrl and filename
     return {
-      publicUrl: `/api/storage/${bucket}/${encodeURIComponent(filename)}`,
+      publicUrl,
+      filename: formattedFilename,
     };
   });

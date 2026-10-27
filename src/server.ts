@@ -70,6 +70,65 @@ export default {
       }
     }
 
+    // Direct /assets/:filename serving (Static disk & PostgreSQL fallback)
+    if (url.pathname.startsWith("/assets/")) {
+      const filename = decodeURIComponent(url.pathname.replace(/^\/assets\//, ""));
+      try {
+        // 1. Check disk in .output/public/assets or public/assets for lightning-fast delivery
+        const fs = await import("node:fs/promises");
+        const path = await import("node:path");
+        for (const dir of [
+          path.resolve(process.cwd(), ".output", "public", "assets"),
+          path.resolve(process.cwd(), "public", "assets"),
+        ]) {
+          try {
+            const diskBuf = await fs.readFile(path.join(dir, filename));
+            const ext = filename.split(".").pop()?.toLowerCase();
+            const mime =
+              ext === "png"
+                ? "image/png"
+                : ext === "webp"
+                ? "image/webp"
+                : ext === "svg"
+                ? "image/svg+xml"
+                : ext === "gif"
+                ? "image/gif"
+                : ext === "js"
+                ? "text/javascript"
+                : ext === "css"
+                ? "text/css"
+                : "image/jpeg";
+            return new Response(diskBuf, {
+              status: 200,
+              headers: {
+                "content-type": mime,
+                "cache-control": "public, max-age=31536000, immutable",
+              },
+            });
+          } catch {
+            // Check next directory
+          }
+        }
+
+        // 2. Query PostgreSQL storage_objects (if not found on disk or deployed across servers)
+        const row = await queryOneDb<{ mime_type: string; file_data: Buffer }>(
+          "SELECT mime_type, file_data FROM public.storage_objects WHERE filename = $1 LIMIT 1",
+          [filename]
+        );
+        if (row && row.file_data) {
+          return new Response(new Uint8Array(row.file_data), {
+            status: 200,
+            headers: {
+              "content-type": row.mime_type || "image/jpeg",
+              "cache-control": "public, max-age=31536000, immutable",
+            },
+          });
+        }
+      } catch (assetErr) {
+        console.error("Error serving /assets/ file:", assetErr);
+      }
+    }
+
     try {
       const handler = await getServerEntry();
       const response = await handler.fetch(request, env, ctx);
