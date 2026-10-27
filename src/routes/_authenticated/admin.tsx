@@ -22,6 +22,7 @@ import {
   ExternalLink,
   Menu,
   X,
+  Layers,
 } from "lucide-react";
 import { resolveGalleryImageUrl } from "@/lib/gallery.config";
 import { resolveServiceImageUrl } from "@/lib/services.config";
@@ -77,6 +78,7 @@ const TABS = [
   "About Us Page",
   "Contact Page",
   "Services",
+  "Service Categories",
   "Gallery",
   "Testimonials",
   "Video Testimonials",
@@ -90,6 +92,7 @@ const TAB_ITEMS: { id: Tab; label: string; icon: any }[] = [
   { id: "About Us Page", label: "About Us Page", icon: Info },
   { id: "Contact Page", label: "Contact Page", icon: PhoneCall },
   { id: "Services", label: "Services", icon: Briefcase },
+  { id: "Service Categories", label: "Service Categories", icon: Layers },
   { id: "Gallery", label: "Gallery", icon: Images },
   { id: "Testimonials", label: "Testimonials", icon: Star },
   { id: "Video Testimonials", label: "Video Testimonials", icon: Video },
@@ -284,6 +287,7 @@ function AdminPage() {
           {tab === "About Us Page" && <AboutPageContentTab />}
           {tab === "Contact Page" && <ContactPageContentTab />}
           {tab === "Services" && <ServicesTab />}
+          {tab === "Service Categories" && <CategoriesTab />}
           {tab === "Gallery" && <GalleryTab />}
           {tab === "Testimonials" && <TestimonialsTab />}
           {tab === "Video Testimonials" && <VideoTestimonialsTab />}
@@ -1975,7 +1979,38 @@ function CategoriesTab() {
           <Field label="Name"><input className={inp} value={editing.name ?? ""} onChange={(e) => setEditing({ ...editing, name: e.target.value })} /></Field>
           <Field label="Slug"><input className={inp} value={editing.slug ?? ""} onChange={(e) => setEditing({ ...editing, slug: e.target.value })} /></Field>
           <Field label="Description"><textarea rows={3} className={inp} value={editing.description ?? ""} onChange={(e) => setEditing({ ...editing, description: e.target.value })} /></Field>
-          <Field label="Image URL"><input className={inp} value={editing.image_url ?? ""} onChange={(e) => setEditing({ ...editing, image_url: e.target.value })} /></Field>
+          <Field label="Image URL">
+            <div className="flex gap-2">
+              <input
+                className={inp}
+                value={editing.image_url ?? ""}
+                onChange={(e) => setEditing({ ...editing, image_url: e.target.value })}
+                placeholder="https://... or upload photo"
+              />
+              <label className="flex-none inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[#E5D4BD] bg-[#FAF6F0] hover:bg-[#F0E6D8] text-xs font-medium text-[#6F6257] cursor-pointer transition">
+                <Upload className="h-3.5 w-3.5" />
+                <span>Upload</span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    try {
+                      const url = await uploadToStorage(file, "categories");
+                      if (url) {
+                        setEditing({ ...editing, image_url: url });
+                        toast.success("Category image uploaded!");
+                      }
+                    } catch (err: any) {
+                      toast.error("Upload failed: " + err.message);
+                    }
+                  }}
+                />
+              </label>
+            </div>
+          </Field>
           <Field label="Display order"><input type="number" className={inp} value={editing.display_order ?? 0} onChange={(e) => setEditing({ ...editing, display_order: Number(e.target.value) })} /></Field>
           <Toggle checked={editing.is_active ?? true} onChange={(v) => setEditing({ ...editing, is_active: v })} label="Active" />
         </Modal>
@@ -2061,7 +2096,38 @@ function ServicesTab() {
           </Field>
           <Field label="Short description"><textarea rows={2} className={inp} value={editing.short_description ?? ""} onChange={(e) => setEditing({ ...editing, short_description: e.target.value })} /></Field>
           <Field label="Full description"><textarea rows={5} className={inp} value={editing.description ?? ""} onChange={(e) => setEditing({ ...editing, description: e.target.value })} /></Field>
-          <Field label="Image URL"><input className={inp} value={editing.image_url ?? ""} onChange={(e) => setEditing({ ...editing, image_url: e.target.value })} /></Field>
+          <Field label="Image URL">
+            <div className="flex gap-2">
+              <input
+                className={inp}
+                value={editing.image_url ?? ""}
+                onChange={(e) => setEditing({ ...editing, image_url: e.target.value })}
+                placeholder="https://... or upload photo"
+              />
+              <label className="flex-none inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[#E5D4BD] bg-[#FAF6F0] hover:bg-[#F0E6D8] text-xs font-medium text-[#6F6257] cursor-pointer transition">
+                <Upload className="h-3.5 w-3.5" />
+                <span>Upload</span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    try {
+                      const url = await uploadToStorage(file, "services");
+                      if (url) {
+                        setEditing({ ...editing, image_url: url });
+                        toast.success("Service image uploaded!");
+                      }
+                    } catch (err: any) {
+                      toast.error("Upload failed: " + err.message);
+                    }
+                  }}
+                />
+              </label>
+            </div>
+          </Field>
           <Field label="Features (one per line)">
             <textarea rows={4} className={inp}
               value={(editing.features ?? []).join("\n")}
@@ -2190,20 +2256,68 @@ function TestimonialsTab() {
             />
           </Field>
           <Field label="Client Photo URL (optional)">
-            <input
-              className={inp}
-              placeholder="https://..."
-              value={editing.author_avatar_url ?? ""}
-              onChange={(e) => setEditing({ ...editing, author_avatar_url: e.target.value })}
-            />
+            <div className="flex gap-2">
+              <input
+                className={inp}
+                placeholder="https://... or upload photo"
+                value={editing.author_avatar_url ?? ""}
+                onChange={(e) => setEditing({ ...editing, author_avatar_url: e.target.value })}
+              />
+              <label className="flex-none inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[#E5D4BD] bg-[#FAF6F0] hover:bg-[#F0E6D8] text-xs font-medium text-[#6F6257] cursor-pointer transition">
+                <Upload className="h-3.5 w-3.5" />
+                <span>Upload</span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    try {
+                      const url = await uploadToStorage(file, "testimonials");
+                      if (url) {
+                        setEditing({ ...editing, author_avatar_url: url });
+                        toast.success("Client photo uploaded!");
+                      }
+                    } catch (err: any) {
+                      toast.error("Upload failed: " + err.message);
+                    }
+                  }}
+                />
+              </label>
+            </div>
           </Field>
           <Field label="Project Photo URL (optional)">
-            <input
-              className={inp}
-              placeholder="https://..."
-              value={editing.project_image_url ?? ""}
-              onChange={(e) => setEditing({ ...editing, project_image_url: e.target.value })}
-            />
+            <div className="flex gap-2">
+              <input
+                className={inp}
+                placeholder="https://... or upload photo"
+                value={editing.project_image_url ?? ""}
+                onChange={(e) => setEditing({ ...editing, project_image_url: e.target.value })}
+              />
+              <label className="flex-none inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[#E5D4BD] bg-[#FAF6F0] hover:bg-[#F0E6D8] text-xs font-medium text-[#6F6257] cursor-pointer transition">
+                <Upload className="h-3.5 w-3.5" />
+                <span>Upload</span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    try {
+                      const url = await uploadToStorage(file, "testimonials");
+                      if (url) {
+                        setEditing({ ...editing, project_image_url: url });
+                        toast.success("Project photo uploaded!");
+                      }
+                    } catch (err: any) {
+                      toast.error("Upload failed: " + err.message);
+                    }
+                  }}
+                />
+              </label>
+            </div>
           </Field>
           <Field label="Content" full>
             <textarea

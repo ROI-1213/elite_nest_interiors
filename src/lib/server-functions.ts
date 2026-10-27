@@ -171,14 +171,33 @@ export const getSiteSettingsServerFn = createServerFn({ method: "GET" })
 export const updateSiteSettingsServerFn = createServerFn({ method: "POST" })
   .validator((data: Record<string, any>) => data)
   .handler(async ({ data }) => {
-    // Ensure newly added columns exist in PostgreSQL
+    const rawFields = Object.keys(data).filter((k) => k !== "id" && k !== "updated_at");
+    if (rawFields.length === 0) return { success: true };
+
+    // Query existing columns in site_settings
+    let existingCols: Set<string>;
     try {
-      await queryDb("ALTER TABLE public.site_settings ADD COLUMN IF NOT EXISTS featured_listings_cards TEXT;");
+      const colsRes = await queryDb<{ column_name: string }>(
+        "SELECT column_name FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'site_settings'"
+      );
+      existingCols = new Set(colsRes.map((r) => r.column_name));
     } catch {
-      // ignore
+      existingCols = new Set();
     }
 
-    const fields = Object.keys(data).filter((k) => k !== "id" && k !== "updated_at");
+    // Auto-create any missing columns safely
+    for (const f of rawFields) {
+      if (!existingCols.has(f) && /^[a-zA-Z0-9_]+$/.test(f)) {
+        try {
+          await queryDb(`ALTER TABLE public.site_settings ADD COLUMN IF NOT EXISTS "${f}" TEXT;`);
+          existingCols.add(f);
+        } catch {
+          // ignore
+        }
+      }
+    }
+
+    const fields = rawFields.filter((f) => existingCols.has(f));
     if (fields.length === 0) return { success: true };
 
     const existing = await queryOneDb("SELECT id FROM public.site_settings WHERE id = 1");
