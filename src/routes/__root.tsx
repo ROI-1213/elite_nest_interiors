@@ -6,9 +6,8 @@ import {
   useRouter,
   HeadContent,
   Scripts,
-  ScrollRestoration,
 } from "@tanstack/react-router";
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useRef, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
@@ -129,6 +128,28 @@ function RootShell({ children }: { children: ReactNode }) {
   );
 }
 
+function ScrollToTopOnRouteChange() {
+  const router = useRouter();
+  const lastPath = useRef<string | null>(null);
+
+  useEffect(() => {
+    // Record current path on initial mount without scrolling so initial user scrolling is never reset
+    lastPath.current = window.location.pathname;
+
+    return router.subscribe("onResolved", ({ toLocation }) => {
+      // Only scroll to top if user navigated to a different page/route
+      if (lastPath.current && toLocation.pathname !== lastPath.current) {
+        lastPath.current = toLocation.pathname;
+        window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+      } else {
+        lastPath.current = toLocation.pathname;
+      }
+    });
+  }, [router]);
+
+  return null;
+}
+
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
 
@@ -151,11 +172,10 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <ScrollRestoration />
+      <ScrollToTopOnRouteChange />
       <Outlet />
       <FloatingActions />
       <Toaster richColors position="top-center" />
-      
     </QueryClientProvider>
   );
 }

@@ -6,11 +6,11 @@ export const getRouter = () => {
   const queryClient = new QueryClient({
     defaultOptions: {
       queries: {
-        staleTime: 0,                // Always fetch fresh content so admin updates appear immediately across all browsers
-        gcTime: 5 * 60_000,          // Keep cached data in memory during tab session
+        staleTime: 5000,             // 5 seconds freshness avoids micro-thrashing on initial hydration while keeping content fresh
+        gcTime: 10 * 60_000,         // Keep cache in memory
         retry: 1,
-        refetchOnWindowFocus: true,  // Automatically refetch whenever user focuses tab/browser
-        refetchOnMount: true,        // Automatically refetch when any page component mounts
+        refetchOnWindowFocus: true,  // Automatically refetch whenever user refocuses tab/browser
+        refetchOnMount: true,        // Automatically refetch on component mount
         refetchOnReconnect: true,    // Automatically refetch on network reconnect
       },
     },
@@ -19,8 +19,8 @@ export const getRouter = () => {
   const router = createRouter({
     routeTree,
     context: { queryClient },
-    scrollRestoration: true,     // enable auto scroll-to-top and position restoration
-    defaultPreloadStaleTime: 0,
+    scrollRestoration: false,        // Controlled by ScrollToTopOnRouteChange to avoid jumping on initial load
+    defaultPreloadStaleTime: 30_000, // 30s link preload freshness to prevent loader thrashing
   });
 
   return router;

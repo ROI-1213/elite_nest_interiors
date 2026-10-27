@@ -46,14 +46,16 @@ export function ServicesWeOffer({
   const touchStartX = useRef<number | null>(null);
   const touchEndX = useRef<number | null>(null);
 
-  // Scroll active tab into view on mobile when active changes
+  // Scroll active tab into view horizontally inside container only (never scroll the window)
   useEffect(() => {
     const activeBtn = buttonRefs.current[active];
-    if (activeBtn && navContainerRef.current) {
-      activeBtn.scrollIntoView({
+    const nav = navContainerRef.current;
+    if (activeBtn && nav) {
+      const targetLeft =
+        activeBtn.offsetLeft - nav.clientWidth / 2 + activeBtn.clientWidth / 2;
+      nav.scrollTo({
+        left: Math.max(0, targetLeft),
         behavior: "smooth",
-        inline: "center",
-        block: "nearest",
       });
     }
   }, [active]);
