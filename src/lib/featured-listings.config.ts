@@ -7,6 +7,8 @@ import imgResidential from "@/assets/service-residential.jpg";
 import imgCommercial from "@/assets/service-commercial.jpg";
 import imgTurnkey from "@/assets/service-turnkey.png";
 import imgWalkthroughs from "@/assets/service-walkthroughs.jpg";
+import imgIndependentHouse from "@/assets/service-independent-house.jpg";
+
 import blrBedroom from "@/assets/blr-bedroom.jpg";
 import blrKitchen from "@/assets/blr-kitchen.jpg";
 import blrDining from "@/assets/blr-dining.jpg";
@@ -19,6 +21,30 @@ import blrWardrobe from "@/assets/blr-wardrobe.jpg";
 import blrCeiling from "@/assets/blr-ceiling.jpg";
 import blrRccFrame from "@/assets/blr-rcc-frame.jpg";
 import blrColumnBeam from "@/assets/blr-column-beam.jpg";
+
+import archElevation from "@/assets/arch-elevation.jpg";
+import archFloorplan from "@/assets/arch-floorplan.jpg";
+import archMaterial from "@/assets/arch-material.jpg";
+import archSection from "@/assets/arch-section.jpg";
+
+import commercialOffice from "@/assets/commercial-office.jpg";
+import commercialShowroom from "@/assets/commercial-showroom.jpg";
+import commercialCafe from "@/assets/commercial-cafe.jpg";
+
+import structuralRcc from "@/assets/structural-rcc.jpg";
+import structuralCoord from "@/assets/structural-coordination.jpg";
+import structuralDesk from "@/assets/structural-desk.jpg";
+
+import supervisionHero from "@/assets/supervision-hero.jpg";
+import constructionsSupervision from "@/assets/constructions-supervision.jpg";
+
+import renoBefore from "@/assets/reno-before.jpg";
+import renoAfter from "@/assets/reno-after.jpg";
+import renoHero from "@/assets/reno-hero.jpg";
+
+import walkthroughRender1 from "@/assets/walkthrough-render1.jpg";
+import walkthroughRender2 from "@/assets/walkthrough-render2.jpg";
+import walkthroughCinematic from "@/assets/walkthrough-cinematic.jpg";
 
 export type FeaturedCard = {
   title: string;
@@ -64,10 +90,10 @@ export const DEFAULT_FEATURED_CATEGORIES: FeaturedCategory[] = [
     label: "Commercial",
     to: "/services/commercial-interior-design",
     cards: [
-      { title: "Bengaluru Office Interior", description: "Focused, elegant workspace design.", tag: "Office", image: imgCommercial },
+      { title: "Bengaluru Office Interior", description: "Focused, elegant workspace design.", tag: "Office", image: commercialOffice },
       { title: "Premium Reception Space", description: "Warm-toned welcome zone for premium brands.", tag: "Reception", image: blrReception },
-      { title: "Modern Showroom Design", description: "Clean lines, curated lighting, brand-first.", tag: "Showroom", image: blrShowroom },
-      { title: "Café Interior Concept", description: "Cozy Bengaluru café with warm wood accents.", tag: "Café", image: blrCafe },
+      { title: "Modern Showroom Design", description: "Clean lines, curated lighting, brand-first.", tag: "Showroom", image: commercialShowroom },
+      { title: "Café Interior Concept", description: "Cozy Bengaluru café with warm wood accents.", tag: "Café", image: commercialCafe },
       { title: "Executive Boardroom Studio", description: "High-end corporate meeting environment.", tag: "Executive", image: imgCommercial },
     ],
   },
@@ -76,11 +102,11 @@ export const DEFAULT_FEATURED_CATEGORIES: FeaturedCategory[] = [
     label: "Renovation",
     to: "/services/renovation-remodeling",
     cards: [
-      { title: "Apartment Makeover", description: "Refreshed layout, lighting and finishes.", tag: "Makeover", image: imgRenovation },
+      { title: "Apartment Makeover", description: "Refreshed layout, lighting and finishes.", tag: "Makeover", image: renoBefore },
       { title: "Kitchen Renovation", description: "Reworked kitchen with modern modularity.", tag: "Kitchen", image: blrKitchen },
       { title: "Bathroom Upgrade", description: "Spa-like premium bathroom rebuild.", tag: "Bathroom", image: blrBathroom },
-      { title: "Living Room Refresh", description: "Reimagined living zone with new furniture.", tag: "Living", image: blrLivingDining },
-      { title: "Villa Facade Restoration", description: "Exterior & civil structural facelift.", tag: "Restore", image: imgConstructions },
+      { title: "Living Room Refresh", description: "Reimagined living zone with new furniture.", tag: "Living", image: renoAfter },
+      { title: "Villa Facade Restoration", description: "Exterior & civil structural facelift.", tag: "Restore", image: renoHero },
     ],
   },
   {
@@ -89,7 +115,7 @@ export const DEFAULT_FEATURED_CATEGORIES: FeaturedCategory[] = [
     to: "/services/construction-services",
     cards: [
       { title: "Bengaluru Villa Build", description: "Ground-up premium villa construction.", tag: "Villa", image: imgConstructions },
-      { title: "Independent House Build", description: "Custom independent home execution.", tag: "House", image: imgConstructions },
+      { title: "Independent House Build", description: "Custom independent home execution.", tag: "House", image: imgIndependentHouse },
       { title: "Residential Structure Work", description: "RCC and structural residential builds.", tag: "Structure", image: imgStructural },
       { title: "Site Execution & Finish", description: "Quality-first site execution and finish.", tag: "Site", image: imgSupervision },
       { title: "RCC Core Construction", description: "Heavy structural core execution.", tag: "RCC", image: blrRccFrame },
@@ -100,10 +126,10 @@ export const DEFAULT_FEATURED_CATEGORIES: FeaturedCategory[] = [
     label: "Architectural Details",
     to: "/services/architectural-design-planning",
     cards: [
-      { title: "Floor Plan Detailing", description: "Precise, buildable floor plan sets.", tag: "Plans", image: imgArchitectural },
-      { title: "Elevation Planning", description: "Refined elevation studies and options.", tag: "Elevation", image: imgArchitectural },
-      { title: "Working Drawings", description: "Contractor-ready working drawing sets.", tag: "Drawings", image: imgStructural },
-      { title: "Material Specification", description: "Curated material and finish schedules.", tag: "Materials", image: blrKitchen },
+      { title: "Floor Plan Detailing", description: "Precise, buildable floor plan sets.", tag: "Plans", image: archFloorplan },
+      { title: "Elevation Planning", description: "Refined elevation studies and options.", tag: "Elevation", image: archElevation },
+      { title: "Working Drawings", description: "Contractor-ready working drawing sets.", tag: "Drawings", image: archSection },
+      { title: "Material Specification", description: "Curated material and finish schedules.", tag: "Materials", image: archMaterial },
       { title: "3D Layout Blueprint", description: "Comprehensive architectural blueprints.", tag: "Blueprint", image: imgArchitectural },
     ],
   },
@@ -112,10 +138,10 @@ export const DEFAULT_FEATURED_CATEGORIES: FeaturedCategory[] = [
     label: "Structural Design",
     to: "/services/structural-design",
     cards: [
-      { title: "RCC Frame Planning", description: "RCC framing designed for durability.", tag: "RCC", image: blrRccFrame },
+      { title: "RCC Frame Planning", description: "RCC framing designed for durability.", tag: "RCC", image: structuralRcc },
       { title: "Column Beam Layout", description: "Optimized column-beam grids.", tag: "Layout", image: blrColumnBeam },
-      { title: "Foundation Detailing", description: "Foundation design coordination.", tag: "Foundation", image: imgConstructions },
-      { title: "Structural Review", description: "Peer review of structural drawings.", tag: "Review", image: imgArchitectural },
+      { title: "Foundation Detailing", description: "Foundation design coordination.", tag: "Foundation", image: structuralCoord },
+      { title: "Structural Review", description: "Peer review of structural drawings.", tag: "Review", image: structuralDesk },
       { title: "Structural Calculation", description: "Load calculations & safety checks.", tag: "Analysis", image: imgStructural },
     ],
   },
@@ -124,9 +150,9 @@ export const DEFAULT_FEATURED_CATEGORIES: FeaturedCategory[] = [
     label: "Building Supervision",
     to: "/services/building-supervision",
     cards: [
-      { title: "Site Quality Inspection", description: "On-site quality checks at every stage.", tag: "QA", image: imgSupervision },
+      { title: "Site Quality Inspection", description: "On-site quality checks at every stage.", tag: "QA", image: supervisionHero },
       { title: "Drawing Review On Site", description: "Live drawing review with contractors.", tag: "Review", image: imgArchitectural },
-      { title: "Contractor Supervision", description: "Coordination between site teams.", tag: "Site", image: imgConstructions },
+      { title: "Contractor Supervision", description: "Coordination between site teams.", tag: "Site", image: constructionsSupervision },
       { title: "Pre-Handover Audit", description: "Pre-handover audits and walkthroughs.", tag: "Audit", image: imgSupervision },
       { title: "Material Testing Check", description: "Rigorous material strength testing.", tag: "Testing", image: blrColumnBeam },
     ],
@@ -137,9 +163,9 @@ export const DEFAULT_FEATURED_CATEGORIES: FeaturedCategory[] = [
     to: "/services/3d-walkthrough-gallery",
     cards: [
       { title: "3D Home Walkthrough", description: "Cinematic 3D home walkthrough render.", tag: "3D", image: imgWalkthroughs },
-      { title: "Interior Render Preview", description: "Photorealistic interior preview.", tag: "Render", image: blrLivingDining },
-      { title: "Commercial Walkthrough", description: "Immersive commercial space preview.", tag: "Commercial", image: blrReception },
-      { title: "Cinematic Space Tour", description: "Story-driven interior visualisation.", tag: "Preview", image: blrCeiling },
+      { title: "Interior Render Preview", description: "Photorealistic interior preview.", tag: "Render", image: walkthroughRender1 },
+      { title: "Commercial Walkthrough", description: "Immersive commercial space preview.", tag: "Commercial", image: walkthroughRender2 },
+      { title: "Cinematic Space Tour", description: "Story-driven interior visualisation.", tag: "Preview", image: walkthroughCinematic },
       { title: "VR Apartment Experience", description: "360-degree virtual tour experience.", tag: "VR", image: blrBedroom },
     ],
   },
