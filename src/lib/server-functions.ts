@@ -555,27 +555,36 @@ export const deleteEnquiryServerFn = createServerFn({ method: "POST" })
 /* ==================== STORAGE BUCKETS IN POSTGRESQL ==================== */
 
 export const uploadStorageFileServerFn = createServerFn({ method: "POST" })
-  .validator((data: { bucket: string; filename: string; mimeType: string; base64Data: string }) => data)
+  .validator((data: Record<string, any>) => data)
   .handler(async ({ data }) => {
+    const bucket = data.bucket || "site-assets";
+    const filename = data.filename || data.path || `${Date.now()}-upload.jpg`;
+    const mimeType = data.mimeType || data.contentType || "image/jpeg";
+    const base64Data = data.base64Data;
+
+    if (!base64Data) {
+      throw new Error("Missing base64 file data");
+    }
+
     // Ensure bucket exists in storage_buckets table
     await queryDb(
       `INSERT INTO public.storage_buckets (id, name, public)
        VALUES ($1, $1, true)
        ON CONFLICT (id) DO NOTHING`,
-      [data.bucket]
+      [bucket]
     );
 
-    const buffer = Buffer.from(data.base64Data, "base64");
+    const buffer = Buffer.from(base64Data, "base64");
     await queryDb(
       `INSERT INTO public.storage_objects (bucket_id, filename, mime_type, file_data)
        VALUES ($1, $2, $3, $4)
        ON CONFLICT (bucket_id, filename)
        DO UPDATE SET mime_type = EXCLUDED.mime_type, file_data = EXCLUDED.file_data, created_at = NOW()`,
-      [data.bucket, data.filename, data.mimeType, buffer]
+      [bucket, filename, mimeType, buffer]
     );
 
     // Return the PostgreSQL storage endpoint URL
     return {
-      publicUrl: `/api/storage/${data.bucket}/${encodeURIComponent(data.filename)}`,
+      publicUrl: `/api/storage/${bucket}/${encodeURIComponent(filename)}`,
     };
   });

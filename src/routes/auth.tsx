@@ -51,6 +51,8 @@ function AuthPage() {
       if (res?.token && res?.isAdmin) {
         if (typeof window !== "undefined") {
           localStorage.setItem("elite_admin_token", res.token);
+          // Set cookie for 7 days matching JWT expiration to ensure cross-request persistence
+          document.cookie = `elite_admin_token=${encodeURIComponent(res.token)}; path=/; max-age=604800; SameSite=Lax;`;
         }
         toast.success("Welcome back, Administrator!");
         window.location.replace("/admin");

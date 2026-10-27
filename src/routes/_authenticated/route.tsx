@@ -6,20 +6,33 @@ export function getStoredAuth(): {
 } | null {
   if (typeof window === "undefined") return null;
   try {
-    const token = localStorage.getItem("elite_admin_token");
+    let token = localStorage.getItem("elite_admin_token");
+    if (!token) {
+      // Check cookie fallback if localStorage was cleared or partitioned
+      const match = document.cookie.match(/(?:^|;\s*)elite_admin_token=([^;]+)/);
+      if (match && match[1]) {
+        token = decodeURIComponent(match[1]);
+        try {
+          localStorage.setItem("elite_admin_token", token);
+        } catch {}
+      }
+    }
     if (!token) return null;
     const parts = token.split(".");
     if (parts.length !== 3) {
       localStorage.removeItem("elite_admin_token");
+      document.cookie = "elite_admin_token=; path=/; max-age=0; SameSite=Lax;";
       return null;
     }
     const payload = JSON.parse(atob(parts[1]));
     if (!payload || !payload.userId || !payload.email) {
       localStorage.removeItem("elite_admin_token");
+      document.cookie = "elite_admin_token=; path=/; max-age=0; SameSite=Lax;";
       return null;
     }
     if (payload.exp && payload.exp * 1000 < Date.now()) {
       localStorage.removeItem("elite_admin_token");
+      document.cookie = "elite_admin_token=; path=/; max-age=0; SameSite=Lax;";
       return null;
     }
     return {
@@ -27,7 +40,10 @@ export function getStoredAuth(): {
       isAdmin: Boolean(payload.isAdmin),
     };
   } catch {
-    localStorage.removeItem("elite_admin_token");
+    try {
+      localStorage.removeItem("elite_admin_token");
+      document.cookie = "elite_admin_token=; path=/; max-age=0; SameSite=Lax;";
+    } catch {}
     return null;
   }
 }

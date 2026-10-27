@@ -64,6 +64,7 @@ import {
   type Testimonial,
   type VideoTestimonial,
 } from "@/lib/queries";
+import { getStoredAuth } from "./route";
 
 export const Route = createFileRoute("/_authenticated/admin")({
   head: () => ({ meta: [{ title: "Admin — Elite Nest Interior" }] }),
@@ -100,32 +101,45 @@ function AdminPage() {
   const [tab, setTab] = useState<Tab>("Enquiries");
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  useEffect(() => {
-    if (!ctx.isAdmin) {
-      toast.error("You need admin access. Ask the owner to grant your account the admin role.");
+  // Client-side authentication state to prevent SSR false negatives
+  const [auth, setAuth] = useState<{ user: { id: string; email: string }; isAdmin: boolean } | null>(() => {
+    if (typeof window !== "undefined") {
+      return getStoredAuth();
     }
-  }, [ctx.isAdmin]);
+    return null;
+  });
+  const [isVerifying, setIsVerifying] = useState(!auth?.isAdmin && !ctx.isAdmin);
+
+  useEffect(() => {
+    const current = getStoredAuth();
+    if (!current || !current.isAdmin) {
+      window.location.replace("/auth");
+      return;
+    }
+    setAuth(current);
+    setIsVerifying(false);
+  }, []);
 
   async function signOut() {
     if (typeof window !== "undefined") {
       localStorage.removeItem("elite_admin_token");
+      document.cookie = "elite_admin_token=; path=/; max-age=0; SameSite=Lax;";
       toast.success("Signed out successfully.");
       window.location.replace("/auth");
     }
   }
 
-  if (!ctx.isAdmin) {
+  const effectiveEmail = auth?.user?.email || ctx.user?.email || "elitenestinteriors@gmail.com";
+  const hasAdmin = Boolean(auth?.isAdmin || ctx.isAdmin);
+
+  if (isVerifying && !hasAdmin) {
     return (
-      <div className="min-h-screen bg-background">
-        <TopBar email={ctx.user?.email ?? ""} onSignOut={signOut} />
-        <div className="container-prose py-16">
-          <div className="rounded-2xl border border-border bg-card p-8">
-            <h1 className="font-serif text-2xl text-foreground">Access pending</h1>
-            <p className="mt-2 text-sm text-muted-foreground">
-              Your account ({ctx.user?.email ?? "User"}) is signed in but doesn't yet have admin access.
-              Ask the studio owner to grant the admin role.
-            </p>
-          </div>
+      <div className="min-h-screen bg-[#FAF6F0] flex flex-col items-center justify-center p-6">
+        <div className="flex flex-col items-center gap-3">
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#B8894D] border-t-transparent" />
+          <p className="text-xs uppercase tracking-widest text-[#8F8173] font-medium">
+            Verifying Administrator Access...
+          </p>
         </div>
       </div>
     );
@@ -216,8 +230,8 @@ function AdminPage() {
         <div className="p-4 border-t border-[#F0E6D8] bg-[#FAF6F0]/70 space-y-2.5">
           <div className="px-1">
             <p className="text-[10px] uppercase tracking-wider text-[#A89C91] font-semibold">Logged in as</p>
-            <p className="text-xs font-medium text-[#221912] truncate mt-0.5" title={ctx.user?.email ?? ""}>
-              {ctx.user?.email ?? ""}
+            <p className="text-xs font-medium text-[#221912] truncate mt-0.5" title={effectiveEmail}>
+              {effectiveEmail}
             </p>
           </div>
           <div className="flex gap-2 pt-1">

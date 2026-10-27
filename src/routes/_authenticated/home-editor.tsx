@@ -31,6 +31,7 @@ import {
   parseOverrides,
   type CardOverride,
 } from "@/lib/featured-listings.config";
+import { getStoredAuth } from "./route";
 
 export const Route = createFileRoute("/_authenticated/home-editor")({
   head: () => ({ meta: [{ title: "Home Page Editor — Elite Nest Interiors" }] }),
@@ -55,6 +56,10 @@ const inp =
   "w-full rounded-lg border border-border/80 bg-background px-3.5 py-2.5 text-sm text-foreground placeholder:text-muted-foreground/60 focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent transition";
 
 async function uploadToStorage(file: File, folder: string): Promise<string | null> {
+  const ext = file.name.split(".").pop() ?? "jpg";
+  const filename = `${folder}/${Date.now()}-${crypto.randomUUID().slice(0, 8)}.${ext}`;
+  const mimeType = file.type || "image/jpeg";
+
   const reader = new FileReader();
   const base64Promise = new Promise<string>((resolve, reject) => {
     reader.onload = () => resolve((reader.result as string).split(",")[1]);
@@ -66,8 +71,8 @@ async function uploadToStorage(file: File, folder: string): Promise<string | nul
   const res = await uploadStorageFileServerFn({
     data: {
       bucket: "site-assets",
-      path: `${folder}/${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.-]/g, "_")}`,
-      contentType: file.type || "image/jpeg",
+      filename,
+      mimeType,
       base64Data,
     },
   });
@@ -79,6 +84,25 @@ function HomePageEditorPage() {
   const qc = useQueryClient();
   const { data, isLoading } = useQuery(settingsQuery);
   const { data: services = [] } = useQuery(servicesQuery({ onlyActive: false }));
+
+  // Client-side authentication guard
+  const [auth, setAuth] = useState<{ user: { id: string; email: string }; isAdmin: boolean } | null>(() => {
+    if (typeof window !== "undefined") {
+      return getStoredAuth();
+    }
+    return null;
+  });
+  const [isVerifying, setIsVerifying] = useState(!auth?.isAdmin);
+
+  useEffect(() => {
+    const current = getStoredAuth();
+    if (!current || !current.isAdmin) {
+      window.location.replace("/auth");
+      return;
+    }
+    setAuth(current);
+    setIsVerifying(false);
+  }, []);
 
   const [draft, setDraft] = useState<SiteSettings | null>(null);
   const [isSaving, setIsSaving] = useState(false);
