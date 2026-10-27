@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -78,7 +78,7 @@ type Tab = (typeof TABS)[number];
 
 const TAB_ITEMS: { id: Tab; label: string; icon: any }[] = [
   { id: "Enquiries", label: "Enquiries", icon: MessageSquare },
-  { id: "Homepage Content", label: "Homepage Content", icon: Home },
+  { id: "Homepage Content", label: "Home Page Editor", icon: Home },
   { id: "About Us Page", label: "About Us Page", icon: Info },
   { id: "Contact Page", label: "Contact Page", icon: PhoneCall },
   { id: "Services", label: "Services", icon: Briefcase },
@@ -370,18 +370,43 @@ function HomepageContentTab() {
 
   return (
     <div className="space-y-8">
-      <SectionHead
-        title="Homepage Content"
-        subtitle="Manage all 11 homepage sections in their exact visual display order from top to bottom."
-        action={
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-border pb-5">
+        <div>
+          <div className="flex items-center gap-2">
+            <h2 className="font-serif text-2xl text-foreground">Home Page Editor</h2>
+            <span className="rounded-full bg-accent/15 px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wider text-accent">
+              Complete Suite
+            </span>
+          </div>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Manage all 11 homepage sections in their exact visual display order.
+          </p>
+        </div>
+        <div className="flex flex-wrap items-center gap-2.5">
+          <Link
+            to="/home-editor"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-accent/40 bg-accent/10 px-3.5 py-2 text-xs sm:text-sm font-medium text-accent hover:bg-accent/20 transition"
+          >
+            <span>Open Dedicated Full-Page Editor</span>
+            <ExternalLink className="h-3.5 w-3.5" />
+          </Link>
+          <a
+            href="/"
+            target="_blank"
+            rel="noreferrer noopener"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3.5 py-2 text-xs sm:text-sm font-medium text-foreground hover:bg-muted/50 transition"
+          >
+            <span>View Live Site</span>
+            <ExternalLink className="h-3.5 w-3.5" />
+          </a>
           <button
             onClick={save}
-            className="rounded-md bg-primary px-5 py-2 text-sm font-medium text-primary-foreground hover:opacity-90 transition"
+            className="rounded-lg bg-primary px-5 py-2 text-xs sm:text-sm font-medium text-primary-foreground hover:opacity-90 transition shadow-sm"
           >
             Save homepage changes
           </button>
-        }
-      />
+        </div>
+      </div>
 
       {/* 1. Hero Section */}
       <Card title="1. Hero Section (Above the Fold)">

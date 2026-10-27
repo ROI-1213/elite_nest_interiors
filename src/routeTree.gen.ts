@@ -20,6 +20,7 @@ import { Route as GalleryRouteImport } from './routes/gallery'
 import { Route as ServicesRouteImport } from './routes/services'
 import { Route as TestimonialsRouteImport } from './routes/testimonials'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
+import { Route as AuthenticatedHomeEditorRouteImport } from './routes/_authenticated/home-editor'
 import { Route as ServicesIndexRouteImport } from './routes/services.index'
 import { Route as ServicesSlugRouteImport } from './routes/services.$slug'
 import { Route as Services3dWalkthroughGalleryRouteImport } from './routes/services.3d-walkthrough-gallery'
@@ -84,6 +85,11 @@ const TestimonialsRoute = TestimonialsRouteImport.update({
 const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
   id: '/admin',
   path: '/admin',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedHomeEditorRoute = AuthenticatedHomeEditorRouteImport.update({
+  id: '/home-editor',
+  path: '/home-editor',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const ServicesIndexRoute = ServicesIndexRouteImport.update({
@@ -162,6 +168,7 @@ export interface FileRoutesByFullPath {
   '/services': typeof ServicesRouteWithChildren
   '/testimonials': typeof TestimonialsRoute
   '/admin': typeof AuthenticatedAdminRoute
+  '/home-editor': typeof AuthenticatedHomeEditorRoute
   '/services/$slug': typeof ServicesSlugRoute
   '/services/3d-walkthrough-gallery': typeof Services3dWalkthroughGalleryRoute
   '/services/architectural-design-planning': typeof ServicesArchitecturalDesignPlanningRoute
@@ -184,6 +191,7 @@ export interface FileRoutesByTo {
   '/gallery': typeof GalleryRoute
   '/testimonials': typeof TestimonialsRoute
   '/admin': typeof AuthenticatedAdminRoute
+  '/home-editor': typeof AuthenticatedHomeEditorRoute
   '/services/$slug': typeof ServicesSlugRoute
   '/services/3d-walkthrough-gallery': typeof Services3dWalkthroughGalleryRoute
   '/services/architectural-design-planning': typeof ServicesArchitecturalDesignPlanningRoute
@@ -209,6 +217,7 @@ export interface FileRoutesById {
   '/services': typeof ServicesRouteWithChildren
   '/testimonials': typeof TestimonialsRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
+  '/_authenticated/home-editor': typeof AuthenticatedHomeEditorRoute
   '/services/$slug': typeof ServicesSlugRoute
   '/services/3d-walkthrough-gallery': typeof Services3dWalkthroughGalleryRoute
   '/services/architectural-design-planning': typeof ServicesArchitecturalDesignPlanningRoute
@@ -234,6 +243,7 @@ export interface FileRouteTypes {
     | '/services'
     | '/testimonials'
     | '/admin'
+    | '/home-editor'
     | '/services/$slug'
     | '/services/3d-walkthrough-gallery'
     | '/services/architectural-design-planning'
@@ -256,6 +266,7 @@ export interface FileRouteTypes {
     | '/gallery'
     | '/testimonials'
     | '/admin'
+    | '/home-editor'
     | '/services/$slug'
     | '/services/3d-walkthrough-gallery'
     | '/services/architectural-design-planning'
@@ -280,6 +291,7 @@ export interface FileRouteTypes {
     | '/services'
     | '/testimonials'
     | '/_authenticated/admin'
+    | '/_authenticated/home-editor'
     | '/services/$slug'
     | '/services/3d-walkthrough-gallery'
     | '/services/architectural-design-planning'
@@ -385,6 +397,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/home-editor': {
+      id: '/_authenticated/home-editor'
+      path: '/home-editor'
+      fullPath: '/home-editor'
+      preLoaderRoute: typeof AuthenticatedHomeEditorRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/services/': {
       id: '/services/'
       path: '/'
@@ -467,10 +486,12 @@ declare module '@tanstack/react-router' {
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminRoute: typeof AuthenticatedAdminRoute
+  AuthenticatedHomeEditorRoute: typeof AuthenticatedHomeEditorRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdminRoute: AuthenticatedAdminRoute,
+  AuthenticatedHomeEditorRoute: AuthenticatedHomeEditorRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
