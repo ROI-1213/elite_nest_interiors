@@ -71,20 +71,20 @@ function AdminPage() {
   async function signOut() {
     if (typeof window !== "undefined") {
       localStorage.removeItem("elite_admin_token");
+      toast.success("Signed out successfully.");
+      window.location.replace("/auth");
     }
-    toast.success("Signed out successfully.");
-    navigate({ to: "/auth" });
   }
 
   if (!ctx.isAdmin) {
     return (
       <div className="min-h-screen bg-background">
-        <TopBar email={ctx.user.email ?? ""} onSignOut={signOut} />
+        <TopBar email={ctx.user?.email ?? ""} onSignOut={signOut} />
         <div className="container-prose py-16">
           <div className="rounded-2xl border border-border bg-card p-8">
             <h1 className="font-serif text-2xl text-foreground">Access pending</h1>
             <p className="mt-2 text-sm text-muted-foreground">
-              Your account ({ctx.user.email}) is signed in but doesn't yet have admin access.
+              Your account ({ctx.user?.email ?? "User"}) is signed in but doesn't yet have admin access.
               Ask the studio owner to grant the admin role.
             </p>
           </div>
@@ -95,7 +95,7 @@ function AdminPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <TopBar email={ctx.user.email ?? ""} onSignOut={signOut} />
+      <TopBar email={ctx.user?.email ?? ""} onSignOut={signOut} />
       <div className="container-prose py-8">
         <div className="mb-6 flex flex-wrap gap-2 border-b border-border pb-2">
           {TABS.map((t) => (

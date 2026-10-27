@@ -1,8 +1,9 @@
-import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Mail, Lock, Eye, EyeOff, Loader2, ShieldCheck, ArrowLeft } from "lucide-react";
-import { signInServerFn, verifyTokenServerFn } from "@/lib/server-functions";
+import { signInServerFn } from "@/lib/server-functions";
+import { getStoredAuth } from "./_authenticated/route";
 import logo from "@/assets/logo.png";
 
 export const Route = createFileRoute("/auth")({
@@ -11,7 +12,6 @@ export const Route = createFileRoute("/auth")({
 });
 
 function AuthPage() {
-  const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -20,32 +20,15 @@ function AuthPage() {
 
   // If already logged in, redirect straight to /admin
   useEffect(() => {
-    let isMounted = true;
-
-    async function checkExistingAuth() {
-      if (typeof window !== "undefined") {
-        const token = localStorage.getItem("elite_admin_token");
-        if (token) {
-          try {
-            const verified = await verifyTokenServerFn({ data: { token } });
-            if (verified?.isAdmin && isMounted) {
-              navigate({ to: "/admin" });
-              return;
-            }
-          } catch (_) {
-            localStorage.removeItem("elite_admin_token");
-          }
-        }
+    if (typeof window !== "undefined") {
+      const auth = getStoredAuth();
+      if (auth && auth.isAdmin) {
+        window.location.replace("/admin");
+        return;
       }
-
-      if (isMounted) setCheckingSession(false);
     }
-
-    checkExistingAuth();
-    return () => {
-      isMounted = false;
-    };
-  }, [navigate]);
+    setCheckingSession(false);
+  }, []);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -70,17 +53,20 @@ function AuthPage() {
           localStorage.setItem("elite_admin_token", res.token);
         }
         toast.success("Welcome back, Administrator!");
-        navigate({ to: "/admin" });
+        window.location.replace("/admin");
         return;
       } else if (res && !res.isAdmin) {
         toast.error("Account does not have administrator privileges.");
+        setBusy(false);
+        return;
+      } else {
+        toast.error("Invalid email or password. Please try again.");
         setBusy(false);
         return;
       }
     } catch (err: any) {
       const msg = err?.message || "Invalid email or password. Please try again.";
       toast.error(msg);
-    } finally {
       setBusy(false);
     }
   }

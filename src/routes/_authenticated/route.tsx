@@ -1,33 +1,65 @@
 import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
-import { verifyTokenServerFn } from "@/lib/server-functions";
+
+export function getStoredAuth(): {
+  user: { id: string; email: string };
+  isAdmin: boolean;
+} | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const token = localStorage.getItem("elite_admin_token");
+    if (!token) return null;
+    const parts = token.split(".");
+    if (parts.length !== 3) {
+      localStorage.removeItem("elite_admin_token");
+      return null;
+    }
+    const payload = JSON.parse(atob(parts[1]));
+    if (!payload || !payload.userId || !payload.email) {
+      localStorage.removeItem("elite_admin_token");
+      return null;
+    }
+    if (payload.exp && payload.exp * 1000 < Date.now()) {
+      localStorage.removeItem("elite_admin_token");
+      return null;
+    }
+    return {
+      user: { id: payload.userId, email: payload.email },
+      isAdmin: Boolean(payload.isAdmin),
+    };
+  } catch {
+    localStorage.removeItem("elite_admin_token");
+    return null;
+  }
+}
 
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
-  beforeLoad: async () => {
-    // Check local JWT token verified directly with PostgreSQL database
-    if (typeof window !== "undefined") {
-      const token = localStorage.getItem("elite_admin_token");
-      if (token) {
-        try {
-          const verified = await verifyTokenServerFn({ data: { token } });
-          if (verified && verified.isAdmin) {
-            return {
-              user: verified.user,
-              isAdmin: true,
-            };
-          }
-        } catch (err) {
-          console.warn("PostgreSQL token verification error:", err);
-          localStorage.removeItem("elite_admin_token");
-        }
-      }
+  beforeLoad: ({ location }) => {
+    // During SSR or outside browser, return safe default without throwing redirect
+    if (typeof window === "undefined") {
+      return {
+        user: { id: "", email: "" },
+        isAdmin: false,
+      };
     }
 
-    // Not authenticated -> redirect to admin login
-    if (typeof window !== "undefined") {
-      localStorage.removeItem("elite_admin_token");
+    const auth = getStoredAuth();
+    if (auth && auth.isAdmin) {
+      return {
+        user: auth.user,
+        isAdmin: true,
+      };
     }
-    throw redirect({ to: "/auth" });
+
+    // Never redirect to /auth if already on /auth
+    if (location.pathname !== "/auth") {
+      throw redirect({ to: "/auth" });
+    }
+
+    return {
+      user: { id: "", email: "" },
+      isAdmin: false,
+    };
   },
   component: () => <Outlet />,
 });
