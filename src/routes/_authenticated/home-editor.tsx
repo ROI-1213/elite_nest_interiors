@@ -25,13 +25,7 @@ import {
   type Service,
 } from "@/lib/queries";
 import { SERVICE_IMAGES, SERVICE_ORDER, resolveServiceImageUrl } from "@/lib/services.config";
-
-import bedroomImg from "@/assets/cat-bedroom.jpg";
-import kitchenImg from "@/assets/cat-kitchen.jpg";
-import livingImg from "@/assets/cat-living.jpg";
-import diningImg from "@/assets/cat-dining.jpg";
-import wardrobeImg from "@/assets/cat-wardrobe.jpg";
-import foyerImg from "@/assets/cat-foyer.jpg";
+import { DEFAULT_SPACE_IMAGES, resolveSpaceImageUrl } from "@/lib/spaces.config";
 
 export const Route = createFileRoute("/_authenticated/home-editor")({
   head: () => ({ meta: [{ title: "Home Page Editor — Elite Nest Interiors" }] }),
@@ -51,15 +45,6 @@ const SECTIONS = [
   { id: "sec-videos", num: "10", name: "Video Reviews" },
   { id: "sec-accordion", num: "11", name: "Services Accordion" },
 ];
-
-const DEFAULT_SPACE_IMAGES: Record<string, string> = {
-  bedroom: bedroomImg,
-  kitchen: kitchenImg,
-  living: livingImg,
-  dining: diningImg,
-  wardrobe: wardrobeImg,
-  foyer: foyerImg,
-};
 
 const inp =
   "w-full rounded-lg border border-border/80 bg-background px-3.5 py-2.5 text-sm text-foreground placeholder:text-muted-foreground/60 focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent transition";
@@ -732,14 +717,14 @@ function HomePageEditorPage() {
 
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {[
-                  { key: "space_bedroom_img", label: "Bedroom Space", defaultImg: DEFAULT_SPACE_IMAGES.bedroom },
-                  { key: "space_kitchen_img", label: "Modular Kitchen", defaultImg: DEFAULT_SPACE_IMAGES.kitchen },
-                  { key: "space_living_img", label: "Living Room", defaultImg: DEFAULT_SPACE_IMAGES.living },
-                  { key: "space_dining_img", label: "Dining Space", defaultImg: DEFAULT_SPACE_IMAGES.dining },
-                  { key: "space_wardrobe_img", label: "Wardrobe & Storage", defaultImg: DEFAULT_SPACE_IMAGES.wardrobe },
-                  { key: "space_foyer_img", label: "Entrance Foyer", defaultImg: DEFAULT_SPACE_IMAGES.foyer },
+                  { key: "space_bedroom_img", label: "Bedroom Space" },
+                  { key: "space_kitchen_img", label: "Modular Kitchen" },
+                  { key: "space_living_img", label: "Living Room" },
+                  { key: "space_dining_img", label: "Dining Space" },
+                  { key: "space_wardrobe_img", label: "Wardrobe & Storage" },
+                  { key: "space_foyer_img", label: "Entrance Foyer" },
                 ].map((sp) => {
-                  const currentVal = (draft as any)[sp.key] || sp.defaultImg;
+                  const currentVal = resolveSpaceImageUrl(sp.key, (draft as any)[sp.key]);
                   const isUploading = uploadingSpaceKey === sp.key;
 
                   return (
@@ -769,7 +754,7 @@ function HomePageEditorPage() {
                         <input
                           className="w-full rounded-lg border border-[#DECDB3] bg-white px-2.5 py-1 text-xs text-foreground placeholder:text-muted-foreground/60 focus:border-accent focus:outline-none"
                           placeholder="…or paste image URL"
-                          value={(draft as any)[sp.key] ?? ""}
+                          value={((draft as any)[sp.key]?.includes("unsplash.com") ? "" : (draft as any)[sp.key]) ?? ""}
                           onChange={upd(sp.key as any)}
                         />
                       </div>

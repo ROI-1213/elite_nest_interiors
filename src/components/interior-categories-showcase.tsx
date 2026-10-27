@@ -1,12 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import bedroomImg from "@/assets/cat-bedroom.jpg";
-import kitchenImg from "@/assets/cat-kitchen.jpg";
-import livingImg from "@/assets/cat-living.jpg";
-import diningImg from "@/assets/cat-dining.jpg";
-import wardrobeImg from "@/assets/cat-wardrobe.jpg";
-import foyerImg from "@/assets/cat-foyer.jpg";
+import { resolveSpaceImageUrl } from "@/lib/spaces.config";
 
 type Cat = { key: string; title: string; description: string; image: string };
 
@@ -32,12 +27,12 @@ export function InteriorCategoriesShowcase({
   foyerImage?: string | null;
 } = {}) {
   const CATS: Cat[] = [
-    { key: "bedroom", title: "Bedroom", description: "Calm and elegant bedroom interiors designed for comfort and relaxation.", image: bedroomImage || bedroomImg },
-    { key: "kitchen", title: "Kitchen", description: "Smart modular kitchens with premium finishes and practical layouts.", image: kitchenImage || kitchenImg },
-    { key: "living", title: "Living", description: "Sophisticated living spaces crafted for style, warmth, and everyday living.", image: livingImage || livingImg },
-    { key: "dining", title: "Dining", description: "Refined dining interiors designed for gathering, comfort, and elegance.", image: diningImage || diningImg },
-    { key: "wardrobe", title: "Wardrobe", description: "Functional and beautiful storage solutions tailored to your lifestyle.", image: wardrobeImage || wardrobeImg },
-    { key: "foyer", title: "Foyer", description: "Stylish entrance spaces that create a welcoming first impression.", image: foyerImage || foyerImg },
+    { key: "bedroom", title: "Bedroom", description: "Calm and elegant bedroom interiors designed for comfort and relaxation.", image: resolveSpaceImageUrl("space_bedroom_img", bedroomImage) },
+    { key: "kitchen", title: "Kitchen", description: "Smart modular kitchens with premium finishes and practical layouts.", image: resolveSpaceImageUrl("space_kitchen_img", kitchenImage) },
+    { key: "living", title: "Living", description: "Sophisticated living spaces crafted for style, warmth, and everyday living.", image: resolveSpaceImageUrl("space_living_img", livingImage) },
+    { key: "dining", title: "Dining", description: "Refined dining interiors designed for gathering, comfort, and elegance.", image: resolveSpaceImageUrl("space_dining_img", diningImage) },
+    { key: "wardrobe", title: "Wardrobe", description: "Functional and beautiful storage solutions tailored to your lifestyle.", image: resolveSpaceImageUrl("space_wardrobe_img", wardrobeImage) },
+    { key: "foyer", title: "Foyer", description: "Stylish entrance spaces that create a welcoming first impression.", image: resolveSpaceImageUrl("space_foyer_img", foyerImage) },
   ];
 
   const [index, setIndex] = useState(0);

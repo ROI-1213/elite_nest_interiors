@@ -25,6 +25,7 @@ import {
 } from "lucide-react";
 import { resolveGalleryImageUrl } from "@/lib/gallery.config";
 import { resolveServiceImageUrl } from "@/lib/services.config";
+import { resolveSpaceImageUrl, DEFAULT_SPACE_IMAGES } from "@/lib/spaces.config";
 import {
   saveGalleryItemServerFn,
   deleteGalleryItemServerFn,
@@ -426,14 +427,7 @@ function HomepageContentTab() {
   const upd = (k: keyof SiteSettings) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
     setDraft({ ...draft, [k]: e.target.value });
 
-  const defaultSpaceImages: Record<string, string> = {
-    space_bedroom_img: "https://images.unsplash.com/photo-1616594039964-ae9021a400a0?auto=format&fit=crop&w=800&q=80",
-    space_kitchen_img: "https://images.unsplash.com/photo-1556911220-e15b29be8c8f?auto=format&fit=crop&w=800&q=80",
-    space_living_img: "https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?auto=format&fit=crop&w=800&q=80",
-    space_dining_img: "https://images.unsplash.com/photo-1617806118233-18e1de247200?auto=format&fit=crop&w=800&q=80",
-    space_wardrobe_img: "https://images.unsplash.com/photo-1558997519-83ea9252def8?auto=format&fit=crop&w=800&q=80",
-    space_foyer_img: "https://images.unsplash.com/photo-1513694203232-719a280e022f?auto=format&fit=crop&w=800&q=80",
-  };
+  const defaultSpaceImages: Record<string, string> = DEFAULT_SPACE_IMAGES;
 
   return (
     <div className="space-y-8">
@@ -679,7 +673,7 @@ function HomepageContentTab() {
               { key: "space_wardrobe_img", label: "Wardrobe & Storage" },
               { key: "space_foyer_img", label: "Entrance Foyer" },
             ].map((sp) => {
-              const currentVal = (draft as any)[sp.key] || defaultSpaceImages[sp.key];
+              const currentVal = resolveSpaceImageUrl(sp.key, (draft as any)[sp.key]);
               const isUploading = uploadingSpaceKey === sp.key;
 
               return (
@@ -709,7 +703,7 @@ function HomepageContentTab() {
                     <input
                       className="w-full rounded border border-border bg-background px-2 py-1 text-xs text-foreground placeholder:text-muted-foreground focus:border-accent focus:outline-none"
                       placeholder="…or paste image URL"
-                      value={(draft as any)[sp.key] ?? ""}
+                      value={((draft as any)[sp.key]?.includes("unsplash.com") ? "" : (draft as any)[sp.key]) ?? ""}
                       onChange={upd(sp.key as any)}
                     />
                   </div>
