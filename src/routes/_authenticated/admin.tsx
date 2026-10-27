@@ -15,7 +15,6 @@ import {
   Home,
   Info,
   PhoneCall,
-  FolderKanban,
   Briefcase,
   Images,
   Star,
@@ -69,7 +68,6 @@ const TABS = [
   "Homepage Content",
   "About Us Page",
   "Contact Page",
-  "Categories",
   "Services",
   "Gallery",
   "Testimonials",
@@ -83,7 +81,6 @@ const TAB_ITEMS: { id: Tab; label: string; icon: any }[] = [
   { id: "Homepage Content", label: "Homepage Content", icon: Home },
   { id: "About Us Page", label: "About Us Page", icon: Info },
   { id: "Contact Page", label: "Contact Page", icon: PhoneCall },
-  { id: "Categories", label: "Categories", icon: FolderKanban },
   { id: "Services", label: "Services", icon: Briefcase },
   { id: "Gallery", label: "Gallery", icon: Images },
   { id: "Testimonials", label: "Testimonials", icon: Star },
@@ -265,7 +262,6 @@ function AdminPage() {
           {tab === "Homepage Content" && <HomepageContentTab />}
           {tab === "About Us Page" && <AboutPageContentTab />}
           {tab === "Contact Page" && <ContactPageContentTab />}
-          {tab === "Categories" && <CategoriesTab />}
           {tab === "Services" && <ServicesTab />}
           {tab === "Gallery" && <GalleryTab />}
           {tab === "Testimonials" && <TestimonialsTab />}
