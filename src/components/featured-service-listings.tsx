@@ -139,7 +139,15 @@ const GOLD = "#B88745";
 const GOLD_LIGHT = "#E9C98A";
 const GOLD_BORDER = "rgba(184,135,69,0.4)";
 
-export function FeaturedServiceListings() {
+export function FeaturedServiceListings({
+  eyebrow = "Featured Service Listings",
+  title = "Featured Listings",
+  subtitle = "Explore our curated work across interiors, construction, supervision, and design execution.",
+}: {
+  eyebrow?: string | null;
+  title?: string | null;
+  subtitle?: string | null;
+} = {}) {
   const [activeKey, setActiveKey] = useState("turnkey");
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
@@ -195,13 +203,13 @@ export function FeaturedServiceListings() {
         {/* Heading */}
         <div>
           <span style={{ fontSize: 11, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.32em", color: GOLD }}>
-            Featured Service Listings
+            {eyebrow || "Featured Service Listings"}
           </span>
           <h2 className="mt-3 font-serif" style={{ fontSize: "clamp(2rem,4.5vw,4rem)", color: "#2B211B", lineHeight: 1.08, letterSpacing: "-0.01em" }}>
-            Featured <span style={{ color: GOLD }}>Listings</span>
+            {title || "Featured Listings"}
           </h2>
           <p style={{ marginTop: 10, fontSize: 14.5, lineHeight: 1.7, color: "#6F6258", maxWidth: 480 }}>
-            Explore our curated work across interiors, construction, supervision, and design execution.
+            {subtitle || "Explore our curated work across interiors, construction, supervision, and design execution."}
           </p>
         </div>
 

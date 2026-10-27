@@ -22,7 +22,13 @@ const GAP = 20;     // gap-5
 const STEP = CARD_W + GAP;
 const SINGLE_SET = CATEGORIES.length * STEP; // width of one full set
 
-export function EndToEndServices() {
+export function EndToEndServices({
+  eyebrow = "What we offer",
+  title = "Our End-to-End Home Interior Design Services In Bangalore",
+}: {
+  eyebrow?: string | null;
+  title?: string | null;
+} = {}) {
   const trackRef = useRef<HTMLDivElement>(null);
   const animRef = useRef<number | null>(null);
   const pausedRef = useRef(false);
@@ -122,14 +128,14 @@ export function EndToEndServices() {
             className="text-[11px] font-semibold uppercase tracking-[0.28em]"
             style={{ color: "#8A7458" }}
           >
-            What we offer
+            {eyebrow || "What we offer"}
           </span>
           <h2
             className="mx-auto mt-3 max-w-3xl font-serif leading-tight"
             style={{ color: "#221912", fontSize: "clamp(1.5rem, 3vw, 2.25rem)" }}
           >
-            Our End-to-End Home Interior Design{" "}
-            <span style={{ color: "#B8894D" }}>Services In Bangalore</span>
+            {title || "Our End-to-End Home Interior Design Services In Bangalore"}
+
           </h2>
         </div>
       </div>

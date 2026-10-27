@@ -10,7 +10,13 @@ const SERVICES: Service[] = SERVICE_ORDER.map(name => ({
   image: SERVICE_IMAGES[name],
 }));
 
-export function ServicesWeOffer() {
+export function ServicesWeOffer({
+  title = "Services We Offer",
+  subtitle = null,
+}: {
+  title?: string | null;
+  subtitle?: string | null;
+} = {}) {
   const [active, setActive] = useState(SERVICES[0].key);
   const activeIndex = SERVICES.findIndex((s) => s.key === active);
   
@@ -72,8 +78,13 @@ export function ServicesWeOffer() {
       <div className="container-prose py-10 md:py-16">
         <div className="text-center mb-6 md:mb-10">
           <h2 className="font-serif text-3xl md:text-5xl text-[#1F1A16]">
-            Services <span style={{ color: "#B8894D" }}>We Offer</span>
+            {title || "Services We Offer"}
           </h2>
+          {subtitle && (
+            <p className="mt-3 max-w-2xl mx-auto text-sm md:text-base text-muted-foreground">
+              {subtitle}
+            </p>
+          )}
         </div>
         <div className="grid gap-6 md:grid-cols-[28%_1fr] md:gap-10">
           {/* Left menu */}

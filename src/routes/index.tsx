@@ -261,10 +261,10 @@ function HomePage() {
       </section>
 
       {/* END-TO-END HOME INTERIOR SERVICES */}
-      <EndToEndServices />
+      <EndToEndServices eyebrow={settings.e2e_eyebrow} title={settings.e2e_title} />
 
       {/* SERVICES WE OFFER — split layout */}
-      <ServicesWeOffer />
+      <ServicesWeOffer title={settings.services_offer_title} subtitle={settings.services_offer_subtitle} />
 
       {/* WHY CHOOSE THE ELITENEST */}
       <section style={{ backgroundColor: "#FBF6EC" }} className="py-20 md:py-32">
@@ -313,10 +313,18 @@ function HomePage() {
 
 
       {/* INTERIOR CATEGORIES SHOWCASE */}
-      <InteriorCategoriesShowcase />
+      <InteriorCategoriesShowcase
+        eyebrow={settings.categories_section_eyebrow}
+        title={settings.categories_section_title}
+        subtitle={settings.categories_section_subtitle}
+      />
 
       {/* FEATURED SERVICE LISTINGS */}
-      <FeaturedServiceListings />
+      <FeaturedServiceListings
+        eyebrow={settings.featured_listings_eyebrow}
+        title={settings.featured_listings_title}
+        subtitle={settings.featured_listings_subtitle}
+      />
 
 
 
@@ -450,7 +458,11 @@ function HomePage() {
         </section>
       )}
 
-      <ServicesAccordionShowcase />
+      <ServicesAccordionShowcase
+        eyebrow={settings.accordion_section_eyebrow}
+        title={settings.accordion_section_title}
+        subtitle={settings.accordion_section_subtitle}
+      />
     </SiteLayout>
   );
 }

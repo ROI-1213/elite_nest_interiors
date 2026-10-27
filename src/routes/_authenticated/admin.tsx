@@ -372,7 +372,7 @@ function HomepageContentTab() {
     <div className="space-y-8">
       <SectionHead
         title="Homepage Content"
-        subtitle="Manage all text, images, 5 process steps, why choose us comparison, and section titles for the home page."
+        subtitle="Manage all 11 homepage sections in their exact visual display order from top to bottom."
         action={
           <button
             onClick={save}
@@ -385,6 +385,9 @@ function HomepageContentTab() {
 
       {/* 1. Hero Section */}
       <Card title="1. Hero Section (Above the Fold)">
+        <p className="text-xs text-muted-foreground mb-4">
+          The main welcome screen at the top of the homepage with luxury headline, background, and primary action.
+        </p>
         <Grid>
           <Field label="Hero Eyebrow (Small top badge)">
             <input className={inp} placeholder="e.g. Crafting Spaces" value={draft.hero_eyebrow ?? ""} onChange={upd("hero_eyebrow")} />
@@ -427,8 +430,116 @@ function HomepageContentTab() {
         </Grid>
       </Card>
 
-      {/* 2. Process Section */}
-      <Card title="2. Our Process Section (5 Execution Steps)">
+      {/* 2. End-to-End Home Interior Services */}
+      <Card title="2. End-to-End Home Interior Services (Infinite Carousel)">
+        <p className="text-xs text-muted-foreground mb-4">
+          The continuous auto-scrolling carousel showcasing our full spectrum of interior and construction services.
+        </p>
+        <Grid>
+          <Field label="Eyebrow Badge">
+            <input className={inp} placeholder="What we offer" value={draft.e2e_eyebrow ?? ""} onChange={upd("e2e_eyebrow")} />
+          </Field>
+          <Field label="Section Heading">
+            <input className={inp} placeholder="Our End-to-End Home Interior Design Services In Bangalore" value={draft.e2e_title ?? ""} onChange={upd("e2e_title")} />
+          </Field>
+        </Grid>
+      </Card>
+
+      {/* 3. Services We Offer */}
+      <Card title="3. Services We Offer (Interactive Split Showcase)">
+        <p className="text-xs text-muted-foreground mb-4">
+          The split interactive showcase featuring service category buttons on the left and dynamic previews on the right.
+        </p>
+        <Grid>
+          <Field label="Section Title" full>
+            <input className={inp} placeholder="Services We Offer" value={draft.services_offer_title ?? ""} onChange={upd("services_offer_title")} />
+          </Field>
+          <Field label="Section Subtitle" full>
+            <textarea rows={2} className={inp} placeholder="From initial concept sketches to turnkey handover..." value={draft.services_offer_subtitle ?? ""} onChange={upd("services_offer_subtitle")} />
+          </Field>
+        </Grid>
+      </Card>
+
+      {/* 4. Why Choose Elite Nest */}
+      <Card title="4. Why Choose Elite Nest (Comparison Matrix)">
+        <p className="text-xs text-muted-foreground mb-4">
+          Side-by-side comparison table contrasting traditional contractor firms with Elite Nest's transparent approach.
+        </p>
+        <Grid>
+          <Field label="Section Title" full>
+            <input className={inp} value={draft.why_us_title ?? ""} onChange={upd("why_us_title")} />
+          </Field>
+          <Field label="Traditional Firm Column Title">
+            <input className={inp} value={draft.traditional_firm_title ?? ""} onChange={upd("traditional_firm_title")} />
+          </Field>
+          <Field label="Elite Nest Column Title">
+            <input className={inp} value={draft.elitenest_title ?? ""} onChange={upd("elitenest_title")} />
+          </Field>
+          <Field label="Traditional Firm Points (one per line)" full>
+            <textarea rows={6} className={inp} value={draft.traditional_firm_points ?? ""} onChange={upd("traditional_firm_points")} />
+          </Field>
+          <Field label="Elite Nest Points (one per line)" full>
+            <textarea rows={6} className={inp} value={draft.elitenest_points ?? ""} onChange={upd("elitenest_points")} />
+          </Field>
+        </Grid>
+      </Card>
+
+      {/* 5. Interior Categories Showcase */}
+      <Card title="5. Interior Categories & Lifestyle Spaces (Coverflow Showcase)">
+        <p className="text-xs text-muted-foreground mb-4">
+          The 3D coverflow showcase highlighting spaces like Bedroom, Modular Kitchen, Living, Dining, Wardrobe, and Foyer.
+        </p>
+        <Grid>
+          <Field label="Eyebrow Badge">
+            <input className={inp} placeholder="Our Interior Expertise" value={draft.categories_section_eyebrow ?? ""} onChange={upd("categories_section_eyebrow")} />
+          </Field>
+          <Field label="Section Title">
+            <input className={inp} placeholder="Spaces Designed Around Your Lifestyle" value={draft.categories_section_title ?? ""} onChange={upd("categories_section_title")} />
+          </Field>
+          <Field label="Section Subtitle" full>
+            <textarea rows={2} className={inp} placeholder="Explore our curated interior solutions for every corner of your home." value={draft.categories_section_subtitle ?? ""} onChange={upd("categories_section_subtitle")} />
+          </Field>
+        </Grid>
+      </Card>
+
+      {/* 6. Featured Service Listings */}
+      <Card title="6. Featured Service Listings (Interactive Packages)">
+        <p className="text-xs text-muted-foreground mb-4">
+          The horizontal card carousel with category tabs (Turnkey, Residential, Commercial, Renovation, Structural, etc.).
+        </p>
+        <Grid>
+          <Field label="Eyebrow Badge">
+            <input className={inp} placeholder="Featured Service Listings" value={draft.featured_listings_eyebrow ?? ""} onChange={upd("featured_listings_eyebrow")} />
+          </Field>
+          <Field label="Section Title">
+            <input className={inp} placeholder="Featured Listings" value={draft.featured_listings_title ?? ""} onChange={upd("featured_listings_title")} />
+          </Field>
+          <Field label="Section Subtitle" full>
+            <textarea rows={2} className={inp} placeholder="Explore our curated work across interiors, construction, supervision, and design execution." value={draft.featured_listings_subtitle ?? ""} onChange={upd("featured_listings_subtitle")} />
+          </Field>
+        </Grid>
+      </Card>
+
+      {/* 7. Free Consultation CTA Banner */}
+      <Card title="7. Free Consultation Enquiry Banner">
+        <p className="text-xs text-muted-foreground mb-4">
+          Mid-page call to action banner driving user inquiries and project consultations.
+        </p>
+        <Grid>
+          <Field label="CTA Title" full>
+            <input className={inp} value={draft.cta_title ?? ""} onChange={upd("cta_title")} />
+          </Field>
+          <Field label="CTA Subtitle" full>
+            <textarea rows={3} className={inp} value={draft.cta_subtitle ?? ""} onChange={upd("cta_subtitle")} />
+          </Field>
+        </Grid>
+      </Card>
+
+      {/* 8. Our Process Section */}
+      <Card title="8. Our Process Section (5 Execution Steps)">
+        <p className="text-xs text-muted-foreground mb-4">
+          The 5-step numbered workflow timeline detailing your client journey from Understand to Deliver.
+        </p>
         <Grid>
           <Field label="Process Eyebrow">
             <input className={inp} placeholder="Our process" value={draft.process_eyebrow ?? ""} onChange={upd("process_eyebrow")} />
@@ -504,48 +615,27 @@ function HomepageContentTab() {
         </Grid>
       </Card>
 
-      {/* 3. Why Choose Elite Nest */}
-      <Card title="3. Why Choose Elite Nest (Comparison Matrix)">
+      {/* 9. Client Testimonials */}
+      <Card title="9. Client Testimonials (Luxury Marquee)">
+        <p className="text-xs text-muted-foreground mb-4">
+          Header text for the scrolling luxury client reviews marquee. To add, edit, or delete individual reviews, use the <strong>Testimonials</strong> tab in the sidebar.
+        </p>
         <Grid>
-          <Field label="Section Title" full>
-            <input className={inp} value={draft.why_us_title ?? ""} onChange={upd("why_us_title")} />
-          </Field>
-          <Field label="Traditional Firm Column Title">
-            <input className={inp} value={draft.traditional_firm_title ?? ""} onChange={upd("traditional_firm_title")} />
-          </Field>
-          <Field label="Elite Nest Column Title">
-            <input className={inp} value={draft.elitenest_title ?? ""} onChange={upd("elitenest_title")} />
-          </Field>
-          <Field label="Traditional Firm Points (one per line)" full>
-            <textarea rows={6} className={inp} value={draft.traditional_firm_points ?? ""} onChange={upd("traditional_firm_points")} />
-          </Field>
-          <Field label="Elite Nest Points (one per line)" full>
-            <textarea rows={6} className={inp} value={draft.elitenest_points ?? ""} onChange={upd("elitenest_points")} />
-          </Field>
-        </Grid>
-      </Card>
-
-      {/* 4. Section Headings */}
-      <Card title="4. Section Titles & Subtitles">
-        <Grid>
-          <Field label="Categories Section Title">
-            <input className={inp} value={draft.categories_section_title ?? ""} onChange={upd("categories_section_title")} />
-          </Field>
-          <Field label="Categories Section Subtitle">
-            <input className={inp} value={draft.categories_section_subtitle ?? ""} onChange={upd("categories_section_subtitle")} />
-          </Field>
-          <Field label="Services Section Title">
-            <input className={inp} value={draft.services_section_title ?? ""} onChange={upd("services_section_title")} />
-          </Field>
-          <Field label="Services Section Subtitle">
-            <input className={inp} value={draft.services_section_subtitle ?? ""} onChange={upd("services_section_subtitle")} />
-          </Field>
           <Field label="Written Testimonials Eyebrow">
             <input className={inp} value={draft.testimonials_eyebrow ?? ""} onChange={upd("testimonials_eyebrow")} />
           </Field>
           <Field label="Written Testimonials Title">
             <input className={inp} value={draft.testimonials_title ?? ""} onChange={upd("testimonials_title")} />
           </Field>
+        </Grid>
+      </Card>
+
+      {/* 10. Video Testimonials */}
+      <Card title="10. Video Testimonials Section">
+        <p className="text-xs text-muted-foreground mb-4">
+          Header text for the client video testimonials section. To add YouTube/Vimeo video links or custom thumbnails, use the <strong>Video Testimonials</strong> tab in the sidebar.
+        </p>
+        <Grid>
           <Field label="Video Testimonials Eyebrow">
             <input className={inp} value={draft.video_section_eyebrow ?? ""} onChange={upd("video_section_eyebrow")} />
           </Field>
@@ -555,14 +645,20 @@ function HomepageContentTab() {
         </Grid>
       </Card>
 
-      {/* 5. Consultation CTA */}
-      <Card title="5. Free Consultation CTA Banner">
+      {/* 11. Services Accordion Showcase */}
+      <Card title="11. Comprehensive Services Accordion (Bottom Showcase)">
+        <p className="text-xs text-muted-foreground mb-4">
+          The expandable accordion section at the bottom of the homepage detailing specialized interior and architecture disciplines.
+        </p>
         <Grid>
-          <Field label="CTA Title" full>
-            <input className={inp} value={draft.cta_title ?? ""} onChange={upd("cta_title")} />
+          <Field label="Eyebrow Badge">
+            <input className={inp} placeholder="Our Services" value={draft.accordion_section_eyebrow ?? ""} onChange={upd("accordion_section_eyebrow")} />
           </Field>
-          <Field label="CTA Subtitle" full>
-            <textarea rows={3} className={inp} value={draft.cta_subtitle ?? ""} onChange={upd("cta_subtitle")} />
+          <Field label="Section Title">
+            <input className={inp} placeholder="Crafting Bengaluru Spaces With Design, Precision & Execution" value={draft.accordion_section_title ?? ""} onChange={upd("accordion_section_title")} />
+          </Field>
+          <Field label="Section Subtitle" full>
+            <textarea rows={2} className={inp} placeholder="Explore our premium architecture, construction, supervision, and interior design services..." value={draft.accordion_section_subtitle ?? ""} onChange={upd("accordion_section_subtitle")} />
           </Field>
         </Grid>
       </Card>

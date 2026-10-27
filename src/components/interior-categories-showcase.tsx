@@ -19,7 +19,15 @@ const CATS: Cat[] = [
   { key: "foyer", title: "Foyer", description: "Stylish entrance spaces that create a welcoming first impression.", image: foyerImg },
 ];
 
-export function InteriorCategoriesShowcase() {
+export function InteriorCategoriesShowcase({
+  eyebrow = "Our Interior Expertise",
+  title = "Spaces Designed Around Your Lifestyle",
+  subtitle = "Explore our curated interior solutions for every corner of your home.",
+}: {
+  eyebrow?: string | null;
+  title?: string | null;
+  subtitle?: string | null;
+} = {}) {
   const [index, setIndex] = useState(0);
   const [paused, setPaused] = useState(false);
   const total = CATS.length;
@@ -89,13 +97,13 @@ export function InteriorCategoriesShowcase() {
         {/* Header */}
         <div className="mx-auto max-w-3xl text-center">
           <p className="text-[11px] font-medium uppercase tracking-[0.32em]" style={{ color: "#E6C892" }}>
-            Our Interior Expertise
+            {eyebrow || "Our Interior Expertise"}
           </p>
           <h2 className="mt-4 font-serif text-4xl leading-[1.1] text-white sm:text-5xl md:text-6xl">
-            Spaces Designed Around <em className="not-italic italic" style={{ color: "#E6C892" }}>Your Lifestyle</em>
+            {title || "Spaces Designed Around Your Lifestyle"}
           </h2>
           <p className="mx-auto mt-4 max-w-xl text-[15px] leading-relaxed text-white/80">
-            Explore our curated interior solutions for every corner of your home.
+            {subtitle}
           </p>
         </div>
 

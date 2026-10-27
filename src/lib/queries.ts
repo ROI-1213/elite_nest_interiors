@@ -161,6 +161,17 @@ export type SiteSettings = {
   services_section_subtitle?: string | null;
   categories_section_title?: string | null;
   categories_section_subtitle?: string | null;
+  categories_section_eyebrow?: string | null;
+  e2e_eyebrow?: string | null;
+  e2e_title?: string | null;
+  services_offer_title?: string | null;
+  services_offer_subtitle?: string | null;
+  featured_listings_eyebrow?: string | null;
+  featured_listings_title?: string | null;
+  featured_listings_subtitle?: string | null;
+  accordion_section_eyebrow?: string | null;
+  accordion_section_title?: string | null;
+  accordion_section_subtitle?: string | null;
   testimonials_eyebrow?: string | null;
   testimonials_title?: string | null;
   video_section_eyebrow?: string | null;
@@ -322,6 +333,19 @@ export const DEFAULT_SITE_SETTINGS: SiteSettings = {
   hero_subtitle: SITE_SETTINGS_DEFAULTS.hero_subtitle ?? "Beautiful interiors. Thoughtful design. Perfectly executed.",
   hero_image_url: null,
   hero_cta_label: SITE_SETTINGS_DEFAULTS.hero_cta_label ?? "Explore Our Work",
+  e2e_eyebrow: "What we offer",
+  e2e_title: "Our End-to-End Home Interior Design Services In Bangalore",
+  services_offer_title: "Services We Offer",
+  services_offer_subtitle: "From initial concept sketches to turnkey handover, we offer specialized architectural & interior design solutions tailored to your unique requirements.",
+  categories_section_eyebrow: "Our Interior Expertise",
+  categories_section_title: "Spaces Designed Around Your Lifestyle",
+  categories_section_subtitle: "Explore our curated interior solutions for every corner of your home.",
+  featured_listings_eyebrow: "Featured Service Listings",
+  featured_listings_title: "Featured Listings",
+  featured_listings_subtitle: "Explore our curated work across interiors, construction, supervision, and design execution.",
+  accordion_section_eyebrow: "Our Services",
+  accordion_section_title: "Crafting Bengaluru Spaces With Design, Precision & Execution",
+  accordion_section_subtitle: "Explore our premium architecture, construction, supervision, and interior design services tailored for modern Bengaluru living and working spaces.",
   cta_title: SITE_SETTINGS_DEFAULTS.cta_title ?? "Looking For Expert Guidance To Design Your Dream Space?",
   cta_subtitle: SITE_SETTINGS_DEFAULTS.cta_subtitle ?? "Share your requirements and our interior design team will help you plan a beautiful, functional, and personalized space.",
   why_us_title: SITE_SETTINGS_DEFAULTS.why_us_title ?? "Why choose the elitenest",

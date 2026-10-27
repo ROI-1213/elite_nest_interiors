@@ -19,7 +19,15 @@ const PANELS: Panel[] = SERVICE_ORDER.map(name => ({
   to: `/services/${SERVICE_SLUGS[name]}`,
 }));
 
-export function ServicesAccordionShowcase() {
+export function ServicesAccordionShowcase({
+  eyebrow = "Our Services",
+  title = "Crafting Bengaluru Spaces With Design, Precision & Execution",
+  subtitle = "Explore our premium architecture, construction, supervision, and interior design services tailored for modern Bengaluru living and working spaces.",
+}: {
+  eyebrow?: string | null;
+  title?: string | null;
+  subtitle?: string | null;
+} = {}) {
   const [active, setActive] = useState<string>(PANELS[0].slug);
 
   const activePanel = PANELS.find((p) => p.slug === active) || PANELS[0];
@@ -63,21 +71,21 @@ export function ServicesAccordionShowcase() {
             className="text-[11px] font-semibold uppercase tracking-[0.32em]"
             style={{ color: "#C49A5A" }}
           >
-            Our Services
+            {eyebrow || "Our Services"}
           </span>
           <h2
             className="mt-3 font-serif leading-[1.1]"
             style={{ fontSize: "clamp(1.75rem, 3.4vw, 2.75rem)", color: "#2D241F" }}
           >
-            Crafting Bengaluru Spaces With{" "}
-            <span style={{ color: "#B8894D" }}>Design, Precision &amp; Execution</span>
+            {title || "Crafting Bengaluru Spaces With Design, Precision & Execution"}
+
           </h2>
           <p
             className="mt-4 max-w-2xl text-[14.5px] leading-relaxed"
             style={{ color: "rgba(45,36,31,0.72)" }}
           >
-            Explore our premium architecture, construction, supervision, and interior
-            design services tailored for modern Bengaluru living and working spaces.
+            {subtitle}
+
           </p>
         </div>
 
