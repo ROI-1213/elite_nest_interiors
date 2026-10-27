@@ -131,8 +131,31 @@ export default {
 
     try {
       const handler = await getServerEntry();
-      const response = await handler.fetch(request, env, ctx);
-      return await normalizeCatastrophicSsrResponse(response);
+      let response = await handler.fetch(request, env, ctx);
+      response = await normalizeCatastrophicSsrResponse(response);
+
+      // Prevent CDN, proxy, and browser caching of dynamic SSR pages, server functions, and JSON APIs
+      const contentType = response.headers.get("content-type") || "";
+      if (
+        !url.pathname.startsWith("/assets/") &&
+        (contentType.includes("text/html") ||
+          contentType.includes("application/json") ||
+          url.pathname.startsWith("/_serverFn") ||
+          url.pathname.startsWith("/api/"))
+      ) {
+        const newHeaders = new Headers(response.headers);
+        newHeaders.set("Cache-Control", "no-cache, no-store, must-revalidate, max-age=0");
+        newHeaders.set("Pragma", "no-cache");
+        newHeaders.set("Expires", "0");
+        newHeaders.set("Surrogate-Control", "no-store");
+        return new Response(response.body, {
+          status: response.status,
+          statusText: response.statusText,
+          headers: newHeaders,
+        });
+      }
+
+      return response;
     } catch (error) {
       console.error(error);
       return new Response(renderErrorPage(), {

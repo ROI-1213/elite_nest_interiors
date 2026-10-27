@@ -505,8 +505,9 @@ export const settingsQuery = queryOptions({
       return DEFAULT_SITE_SETTINGS;
     }
   },
-  staleTime: 30 * 1000,
+  staleTime: 0,
   refetchOnWindowFocus: true,
+  refetchOnMount: true,
   retry: 1,
 });
 
@@ -514,7 +515,9 @@ export const categoriesQuery = (opts: { onlyActive?: boolean } = {}) =>
   queryOptions({
     queryKey: ["service_categories", opts.onlyActive ?? true],
     placeholderData: DEFAULT_CATEGORIES,
-    staleTime: 15 * 60_000,
+    staleTime: 0,
+    refetchOnWindowFocus: true,
+    refetchOnMount: true,
     retry: 1,
     queryFn: async (): Promise<Category[]> => {
       try {
@@ -529,7 +532,9 @@ export const servicesQuery = (opts: { onlyActive?: boolean } = {}) =>
   queryOptions({
     queryKey: ["services", opts.onlyActive ?? true],
     placeholderData: DEFAULT_SERVICES,
-    staleTime: 15 * 60_000,
+    staleTime: 0,
+    refetchOnWindowFocus: true,
+    refetchOnMount: true,
     retry: 1,
     queryFn: async (): Promise<Service[]> => {
       try {
@@ -548,7 +553,9 @@ export const serviceBySlugQuery = (slug: string) =>
   queryOptions({
     queryKey: ["service", slug],
     placeholderData: () => DEFAULT_SERVICES.find((s) => s.slug === slug) || DEFAULT_SERVICES[0],
-    staleTime: 15 * 60_000,
+    staleTime: 0,
+    refetchOnWindowFocus: true,
+    refetchOnMount: true,
     retry: 1,
     queryFn: async (): Promise<Service | null> => {
       try {
@@ -571,7 +578,9 @@ export const serviceBySlugQuery = (slug: string) =>
 export const enquiriesQuery = () =>
   queryOptions({
     queryKey: ["enquiries"],
-    staleTime: 30_000,
+    staleTime: 0,
+    refetchOnWindowFocus: true,
+    refetchOnMount: true,
     queryFn: async (): Promise<Enquiry[]> => {
       try {
         const data = await getEnquiriesServerFn();
@@ -584,7 +593,9 @@ export const testimonialsQuery = (opts: { onlyActive?: boolean } = {}) =>
   queryOptions({
     queryKey: ["testimonials", opts.onlyActive ?? true],
     placeholderData: PLACEHOLDER_TESTIMONIALS,
-    staleTime: 15 * 60_000,
+    staleTime: 0,
+    refetchOnWindowFocus: true,
+    refetchOnMount: true,
     retry: 1,
     queryFn: async (): Promise<Testimonial[]> => {
       try {
@@ -598,7 +609,9 @@ export const testimonialsQuery = (opts: { onlyActive?: boolean } = {}) =>
 export const videoTestimonialsQuery = (opts: { onlyActive?: boolean } = {}) =>
   queryOptions({
     queryKey: ["video_testimonials", opts.onlyActive ?? true],
-    staleTime: 15 * 60_000,
+    staleTime: 0,
+    refetchOnWindowFocus: true,
+    refetchOnMount: true,
     retry: 1,
     queryFn: async (): Promise<VideoTestimonial[]> => {
       try {
@@ -613,7 +626,9 @@ export const galleryQuery = (opts: { onlyActive?: boolean } = {}) =>
   queryOptions({
     queryKey: ["gallery_items", opts.onlyActive ?? true],
     placeholderData: DEFAULT_GALLERY_ITEMS,
-    staleTime: 15 * 60_000,
+    staleTime: 0,
+    refetchOnWindowFocus: true,
+    refetchOnMount: true,
     retry: 1,
     queryFn: async (): Promise<GalleryItem[]> => {
       try {

@@ -153,7 +153,8 @@ export const checkIsAdminServerFn = createServerFn({ method: "POST" })
 
 /* ==================== SITE SETTINGS ==================== */
 
-export const getSiteSettingsServerFn = createServerFn({ method: "GET" })
+export const getSiteSettingsServerFn = createServerFn({ method: "POST" })
+  .validator((data?: Record<string, any>) => data || {})
   .handler(async () => {
     const settings = await queryOneDb(
       "SELECT * FROM public.site_settings WHERE id = 1"
@@ -555,7 +556,8 @@ export const deleteVideoTestimonialServerFn = createServerFn({ method: "POST" })
 
 /* ==================== ENQUIRIES ==================== */
 
-export const getEnquiriesServerFn = createServerFn({ method: "GET" })
+export const getEnquiriesServerFn = createServerFn({ method: "POST" })
+  .validator((data?: Record<string, any>) => data || {})
   .handler(async () => {
     return await queryDb("SELECT * FROM public.enquiries ORDER BY created_at DESC");
   });
