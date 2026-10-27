@@ -172,6 +172,12 @@ export type SiteSettings = {
   accordion_section_eyebrow?: string | null;
   accordion_section_title?: string | null;
   accordion_section_subtitle?: string | null;
+  space_bedroom_img?: string | null;
+  space_kitchen_img?: string | null;
+  space_living_img?: string | null;
+  space_dining_img?: string | null;
+  space_wardrobe_img?: string | null;
+  space_foyer_img?: string | null;
   testimonials_eyebrow?: string | null;
   testimonials_title?: string | null;
   video_section_eyebrow?: string | null;
@@ -346,6 +352,12 @@ export const DEFAULT_SITE_SETTINGS: SiteSettings = {
   accordion_section_eyebrow: "Our Services",
   accordion_section_title: "Crafting Bengaluru Spaces With Design, Precision & Execution",
   accordion_section_subtitle: "Explore our premium architecture, construction, supervision, and interior design services tailored for modern Bengaluru living and working spaces.",
+  space_bedroom_img: null,
+  space_kitchen_img: null,
+  space_living_img: null,
+  space_dining_img: null,
+  space_wardrobe_img: null,
+  space_foyer_img: null,
   cta_title: SITE_SETTINGS_DEFAULTS.cta_title ?? "Looking For Expert Guidance To Design Your Dream Space?",
   cta_subtitle: SITE_SETTINGS_DEFAULTS.cta_subtitle ?? "Share your requirements and our interior design team will help you plan a beautiful, functional, and personalized space.",
   why_us_title: SITE_SETTINGS_DEFAULTS.why_us_title ?? "Why choose the elitenest",

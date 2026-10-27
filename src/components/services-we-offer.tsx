@@ -1,10 +1,12 @@
 import { useState, useRef, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { SERVICE_ORDER, SERVICE_SLUGS, SERVICE_IMAGES } from "@/lib/services.config";
+import { servicesQuery } from "@/lib/queries";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
-type Service = { key: string; label: string; image: string };
+type ServiceItem = { key: string; label: string; image: string };
 
-const SERVICES: Service[] = SERVICE_ORDER.map(name => ({
+const DEFAULT_SERVICES: ServiceItem[] = SERVICE_ORDER.map(name => ({
   key: SERVICE_SLUGS[name],
   label: name,
   image: SERVICE_IMAGES[name],
@@ -17,12 +19,29 @@ export function ServicesWeOffer({
   title?: string | null;
   subtitle?: string | null;
 } = {}) {
-  const [active, setActive] = useState(SERVICES[0].key);
-  const activeIndex = SERVICES.findIndex((s) => s.key === active);
-  
+  const { data: dbServices = [] } = useQuery(servicesQuery({ onlyActive: true }));
+
+  const servicesList: ServiceItem[] = dbServices && dbServices.length > 0
+    ? dbServices.map((s) => ({
+        key: s.slug,
+        label: s.title,
+        image: s.image_url || SERVICE_IMAGES[s.title] || SERVICE_IMAGES[SERVICE_ORDER[0]],
+      }))
+    : DEFAULT_SERVICES;
+
+  const [active, setActive] = useState<string>(servicesList[0]?.key || DEFAULT_SERVICES[0].key);
+  const activeIndex = Math.max(0, servicesList.findIndex((s) => s.key === active));
+
+  // Ensure active key stays valid if services change
+  useEffect(() => {
+    if (servicesList.length > 0 && !servicesList.some((s) => s.key === active)) {
+      setActive(servicesList[0].key);
+    }
+  }, [servicesList, active]);
+
   const navContainerRef = useRef<HTMLDivElement>(null);
   const buttonRefs = useRef<Record<string, HTMLButtonElement | null>>({});
-  
+
   // Touch swipe state for image
   const touchStartX = useRef<number | null>(null);
   const touchEndX = useRef<number | null>(null);
@@ -40,13 +59,13 @@ export function ServicesWeOffer({
   }, [active]);
 
   const handleNext = () => {
-    const nextIdx = (activeIndex + 1) % SERVICES.length;
-    setActive(SERVICES[nextIdx].key);
+    const nextIdx = (activeIndex + 1) % servicesList.length;
+    setActive(servicesList[nextIdx].key);
   };
 
   const handlePrev = () => {
-    const prevIdx = (activeIndex - 1 + SERVICES.length) % SERVICES.length;
-    setActive(SERVICES[prevIdx].key);
+    const prevIdx = (activeIndex - 1 + servicesList.length) % servicesList.length;
+    setActive(servicesList[prevIdx].key);
   };
 
   const handleTouchStart = (e: React.TouchEvent) => {
@@ -101,7 +120,7 @@ export function ServicesWeOffer({
                   msOverflowStyle: "none",
                 }}
               >
-                {SERVICES.map((s) => {
+                {servicesList.map((s) => {
                   const isActive = s.key === active;
                   return (
                     <button
@@ -125,7 +144,7 @@ export function ServicesWeOffer({
 
             {/* Desktop: vertical list */}
             <ul className="hidden flex-col gap-2 md:flex">
-              {SERVICES.map((s) => {
+              {servicesList.map((s) => {
                 const isActive = s.key === active;
                 return (
                   <li key={s.key}>
@@ -158,7 +177,7 @@ export function ServicesWeOffer({
               onTouchMove={handleTouchMove}
               onTouchEnd={handleTouchEnd}
             >
-              {SERVICES.map((s) => (
+              {servicesList.map((s) => (
                 <img
                   key={s.key}
                   src={s.image}
@@ -189,17 +208,17 @@ export function ServicesWeOffer({
 
             {/* Dots navigation */}
             <div className="mt-4 flex items-center justify-center gap-1.5 overflow-x-auto py-1">
-              {SERVICES.map((s) => {
+              {servicesList.map((s) => {
                 const isActive = s.key === active;
                 return (
                   <button
                     key={s.key}
+                    aria-label={`Go to ${s.label}`}
                     onClick={() => setActive(s.key)}
-                    aria-label={`Show ${s.label}`}
                     className="h-2 rounded-full transition-all duration-300"
                     style={{
                       width: isActive ? 24 : 8,
-                      backgroundColor: isActive ? "#B98545" : "#E5D4BD",
+                      backgroundColor: isActive ? "#B98545" : "#D4C5B3",
                     }}
                   />
                 );
@@ -211,4 +230,3 @@ export function ServicesWeOffer({
     </section>
   );
 }
-

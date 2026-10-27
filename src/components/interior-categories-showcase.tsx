@@ -10,24 +10,36 @@ import foyerImg from "@/assets/cat-foyer.jpg";
 
 type Cat = { key: string; title: string; description: string; image: string };
 
-const CATS: Cat[] = [
-  { key: "bedroom", title: "Bedroom", description: "Calm and elegant bedroom interiors designed for comfort and relaxation.", image: bedroomImg },
-  { key: "kitchen", title: "Kitchen", description: "Smart modular kitchens with premium finishes and practical layouts.", image: kitchenImg },
-  { key: "living", title: "Living", description: "Sophisticated living spaces crafted for style, warmth, and everyday living.", image: livingImg },
-  { key: "dining", title: "Dining", description: "Refined dining interiors designed for gathering, comfort, and elegance.", image: diningImg },
-  { key: "wardrobe", title: "Wardrobe", description: "Functional and beautiful storage solutions tailored to your lifestyle.", image: wardrobeImg },
-  { key: "foyer", title: "Foyer", description: "Stylish entrance spaces that create a welcoming first impression.", image: foyerImg },
-];
-
 export function InteriorCategoriesShowcase({
   eyebrow = "Our Interior Expertise",
   title = "Spaces Designed Around Your Lifestyle",
   subtitle = "Explore our curated interior solutions for every corner of your home.",
+  bedroomImage,
+  kitchenImage,
+  livingImage,
+  diningImage,
+  wardrobeImage,
+  foyerImage,
 }: {
   eyebrow?: string | null;
   title?: string | null;
   subtitle?: string | null;
+  bedroomImage?: string | null;
+  kitchenImage?: string | null;
+  livingImage?: string | null;
+  diningImage?: string | null;
+  wardrobeImage?: string | null;
+  foyerImage?: string | null;
 } = {}) {
+  const CATS: Cat[] = [
+    { key: "bedroom", title: "Bedroom", description: "Calm and elegant bedroom interiors designed for comfort and relaxation.", image: bedroomImage || bedroomImg },
+    { key: "kitchen", title: "Kitchen", description: "Smart modular kitchens with premium finishes and practical layouts.", image: kitchenImage || kitchenImg },
+    { key: "living", title: "Living", description: "Sophisticated living spaces crafted for style, warmth, and everyday living.", image: livingImage || livingImg },
+    { key: "dining", title: "Dining", description: "Refined dining interiors designed for gathering, comfort, and elegance.", image: diningImage || diningImg },
+    { key: "wardrobe", title: "Wardrobe", description: "Functional and beautiful storage solutions tailored to your lifestyle.", image: wardrobeImage || wardrobeImg },
+    { key: "foyer", title: "Foyer", description: "Stylish entrance spaces that create a welcoming first impression.", image: foyerImage || foyerImg },
+  ];
+
   const [index, setIndex] = useState(0);
   const [paused, setPaused] = useState(false);
   const total = CATS.length;
@@ -102,9 +114,11 @@ export function InteriorCategoriesShowcase({
           <h2 className="mt-4 font-serif text-4xl leading-[1.1] text-white sm:text-5xl md:text-6xl">
             {title || "Spaces Designed Around Your Lifestyle"}
           </h2>
-          <p className="mx-auto mt-4 max-w-xl text-[15px] leading-relaxed text-white/80">
-            {subtitle}
-          </p>
+          {subtitle && (
+            <p className="mx-auto mt-4 max-w-xl text-[15px] leading-relaxed text-white/80">
+              {subtitle}
+            </p>
+          )}
         </div>
 
         {/* Coverflow stage */}
@@ -116,96 +130,93 @@ export function InteriorCategoriesShowcase({
               if (abs > 2) return null;
               const isActive = off === 0;
               const translateX = off * 240; // px
-              const rotateY = off === 0 ? 0 : off > 0 ? -28 : 28;
-              const scale = isActive ? 1 : abs === 1 ? 0.78 : 0.6;
-              const zIndex = 20 - abs;
-              const opacity = isActive ? 1 : abs === 1 ? 0.75 : 0.4;
+              const translateZ = -abs * 160; // px depth
+              const rotateY = off * -28; // deg
+              const scale = 1 - abs * 0.12;
+              const opacity = 1 - abs * 0.28;
+
               return (
-                <button
+                <div
                   key={c.key}
                   onClick={() => (isActive ? navigate({ to: "/services" }) : setIndex(i))}
-                  aria-label={isActive ? `Go to services — ${c.title}` : c.title}
-                  className="absolute left-1/2 top-1/2 origin-center cursor-pointer overflow-hidden rounded-[24px] transition-all duration-700 ease-[cubic-bezier(0.22,1,0.36,1)]"
+                  className="absolute cursor-pointer transition-all duration-700 ease-out"
                   style={{
-                    zIndex,
+                    transform: `translateX(${translateX}px) translateZ(${translateZ}px) rotateY(${rotateY}deg) scale(${scale})`,
+                    zIndex: 20 - abs,
                     opacity,
-                    width: "clamp(240px, 34vw, 440px)",
-                    height: "clamp(320px, 46vw, 560px)",
-                    transform: `translate(-50%, -50%) translateX(${translateX}px) rotateY(${rotateY}deg) scale(${scale})`,
-                    boxShadow: isActive
-                      ? "0 50px 100px -30px rgba(0,0,0,0.65), 0 0 0 1px rgba(230,200,146,0.35)"
-                      : "0 30px 60px -30px rgba(0,0,0,0.55)",
+                    filter: isActive ? "none" : "brightness(0.75)",
                   }}
                 >
-                  <img
-                    src={c.image}
-                    alt={c.title}
-                    loading="lazy"
-                    className="h-full w-full object-cover"
-                    draggable={false}
-                  />
-                  {/* caption on active slide */}
                   <div
-                    className={`pointer-events-none absolute inset-x-0 bottom-0 p-5 text-left transition-opacity duration-500 md:p-6 ${
-                      isActive ? "opacity-100" : "opacity-0"
-                    }`}
+                    className="relative overflow-hidden rounded-3xl bg-[#2B231D] shadow-[0_25px_60px_-15px_rgba(0,0,0,0.6)] transition-all duration-500"
                     style={{
-                      background:
-                        "linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(15,10,5,0.82) 100%)",
+                      width: "clamp(260px, 44vw, 360px)",
+                      height: "clamp(340px, 58vw, 460px)",
+                      border: isActive ? "1.5px solid rgba(230,200,146,0.65)" : "1px solid rgba(255,255,255,0.12)",
+                      boxShadow: isActive ? "0 30px 70px -10px rgba(0,0,0,0.7), 0 0 40px rgba(230,200,146,0.25)" : undefined,
                     }}
                   >
-                    <p className="text-[10px] uppercase tracking-[0.28em]" style={{ color: "#E6C892" }}>
-                      Category
-                    </p>
-                    <h3 className="mt-1 font-serif text-2xl text-white md:text-3xl">{c.title}</h3>
-                    <p className="mt-2 max-w-sm text-[13px] leading-relaxed text-white/85">
-                      {c.description}
-                    </p>
+                    <img
+                      src={c.image}
+                      alt={c.title}
+                      loading="lazy"
+                      className="h-full w-full object-cover transition-transform duration-700 ease-out hover:scale-105"
+                    />
+                    <div
+                      className="absolute inset-0"
+                      style={{
+                        background:
+                          "linear-gradient(180deg, rgba(0,0,0,0) 45%, rgba(18,14,11,0.75) 75%, rgba(18,14,11,0.95) 100%)",
+                      }}
+                    />
+                    <div className="absolute inset-x-0 bottom-0 p-6 text-white">
+                      <p className="text-[11px] font-medium uppercase tracking-[0.25em]" style={{ color: "#E6C892" }}>
+                        Space
+                      </p>
+                      <h3 className="mt-1 font-serif text-2xl font-normal sm:text-3xl">{c.title}</h3>
+                      <p className="mt-2 text-xs leading-relaxed text-white/75 sm:text-sm">{c.description}</p>
+                    </div>
                   </div>
-                </button>
+                </div>
               );
             })}
           </div>
 
-          {/* Arrows */}
-          <button
-            onClick={() => go(-1)}
-            aria-label="Previous"
-            className="absolute left-2 top-1/2 z-30 grid h-11 w-11 -translate-y-1/2 place-items-center rounded-full border text-white backdrop-blur-md transition hover:scale-105 md:left-6 md:h-14 md:w-14"
-            style={{ backgroundColor: "rgba(31,26,22,0.45)", borderColor: "rgba(230,200,146,0.45)" }}
-          >
-            <ChevronLeft className="h-5 w-5 md:h-6 md:w-6" />
-          </button>
-          <button
-            onClick={() => go(1)}
-            aria-label="Next"
-            className="absolute right-2 top-1/2 z-30 grid h-11 w-11 -translate-y-1/2 place-items-center rounded-full border text-white backdrop-blur-md transition hover:scale-105 md:right-6 md:h-14 md:w-14"
-            style={{ backgroundColor: "rgba(31,26,22,0.45)", borderColor: "rgba(230,200,146,0.45)" }}
-          >
-            <ChevronRight className="h-5 w-5 md:h-6 md:w-6" />
-          </button>
-        </div>
-
-        {/* Dots */}
-        <div className="mt-8 flex items-center justify-center gap-2">
-          {CATS.map((c, i) => (
+          {/* Controls */}
+          <div className="mt-8 flex items-center justify-center gap-4">
             <button
-              key={c.key}
-              onClick={() => setIndex(i)}
-              aria-label={`Go to ${c.title}`}
-              className="h-2 rounded-full transition-all duration-300"
-              style={{
-                width: i === index ? 30 : 8,
-                backgroundColor: i === index ? "#E6C892" : "rgba(255,255,255,0.35)",
-              }}
-            />
-          ))}
+              type="button"
+              aria-label="Previous space"
+              onClick={() => go(-1)}
+              className="grid h-11 w-11 place-items-center rounded-full border border-white/25 bg-black/40 text-white backdrop-blur transition hover:scale-105 hover:bg-black/60 active:scale-95"
+            >
+              <ChevronLeft className="h-5 w-5" />
+            </button>
+            <div className="flex items-center gap-2">
+              {CATS.map((c, i) => (
+                <button
+                  key={c.key}
+                  type="button"
+                  aria-label={`Go to ${c.title}`}
+                  onClick={() => setIndex(i)}
+                  className="h-2 rounded-full transition-all duration-300"
+                  style={{
+                    width: i === index ? 28 : 8,
+                    backgroundColor: i === index ? "#E6C892" : "rgba(255,255,255,0.35)",
+                  }}
+                />
+              ))}
+            </div>
+            <button
+              type="button"
+              aria-label="Next space"
+              onClick={() => go(1)}
+              className="grid h-11 w-11 place-items-center rounded-full border border-white/25 bg-black/40 text-white backdrop-blur transition hover:scale-105 hover:bg-black/60 active:scale-95"
+            >
+              <ChevronRight className="h-5 w-5" />
+            </button>
+          </div>
         </div>
-
-        {/* Active label under carousel (mobile-friendly redundancy) */}
-        <p className="mt-6 text-center text-[11px] uppercase tracking-[0.3em] text-white/70">
-          {String(index + 1).padStart(2, "0")} / {String(total).padStart(2, "0")} — {current.title}
-        </p>
       </div>
     </section>
   );

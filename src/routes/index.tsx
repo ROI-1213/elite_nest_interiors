@@ -317,6 +317,12 @@ function HomePage() {
         eyebrow={settings.categories_section_eyebrow}
         title={settings.categories_section_title}
         subtitle={settings.categories_section_subtitle}
+        bedroomImage={settings.space_bedroom_img}
+        kitchenImage={settings.space_kitchen_img}
+        livingImage={settings.space_living_img}
+        diningImage={settings.space_dining_img}
+        wardrobeImage={settings.space_wardrobe_img}
+        foyerImage={settings.space_foyer_img}
       />
 
       {/* FEATURED SERVICE LISTINGS */}

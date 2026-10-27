@@ -328,8 +328,12 @@ async function uploadToStorage(file: File, bucket = "general"): Promise<string |
 function HomepageContentTab() {
   const qc = useQueryClient();
   const { data } = useQuery(settingsQuery);
+  const { data: services = [] } = useQuery(servicesQuery({ onlyActive: false }));
+
   const [draft, setDraft] = useState<SiteSettings | null>(null);
   const [uploadingHero, setUploadingHero] = useState(false);
+  const [uploadingSvcId, setUploadingSvcId] = useState<string | null>(null);
+  const [uploadingSpaceKey, setUploadingSpaceKey] = useState<string | null>(null);
 
   useEffect(() => {
     if (data && !draft) setDraft(data);
@@ -363,10 +367,72 @@ function HomepageContentTab() {
     }
   }
 
+  async function handleServiceUpload(service: any, file?: File) {
+    if (!file) return;
+    setUploadingSvcId(service.id);
+    try {
+      const url = await uploadToStorage(file, "services");
+      if (url) {
+        await saveServiceServerFn({
+          data: {
+            ...service,
+            image_url: url,
+          },
+        });
+        qc.invalidateQueries({ queryKey: ["services"] });
+        toast.success(`Image updated for "${service.title}"!`);
+      }
+    } catch (err: any) {
+      toast.error("Upload failed: " + err.message);
+    } finally {
+      setUploadingSvcId(null);
+    }
+  }
+
+  async function handleServiceUrlUpdate(service: any, newUrl: string) {
+    try {
+      await saveServiceServerFn({
+        data: {
+          ...service,
+          image_url: newUrl.trim() || null,
+        },
+      });
+      qc.invalidateQueries({ queryKey: ["services"] });
+      toast.success(`Image URL updated for "${service.title}"!`);
+    } catch (err: any) {
+      toast.error("Failed to update image URL: " + err.message);
+    }
+  }
+
+  async function handleSpaceUpload(field: keyof SiteSettings, spaceLabel: string, file?: File) {
+    if (!file || !draft) return;
+    setUploadingSpaceKey(String(field));
+    try {
+      const url = await uploadToStorage(file, "spaces");
+      if (url) {
+        setDraft({ ...draft, [field]: url });
+        toast.success(`Image uploaded for ${spaceLabel}!`);
+      }
+    } catch (err: any) {
+      toast.error("Upload failed: " + err.message);
+    } finally {
+      setUploadingSpaceKey(null);
+    }
+  }
+
   if (!draft) return <p className="text-sm text-muted-foreground">Loading homepage settings…</p>;
 
   const upd = (k: keyof SiteSettings) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
     setDraft({ ...draft, [k]: e.target.value });
+
+  const defaultSpaceImages: Record<string, string> = {
+    space_bedroom_img: "https://images.unsplash.com/photo-1616594039964-ae9021a400a0?auto=format&fit=crop&w=800&q=80",
+    space_kitchen_img: "https://images.unsplash.com/photo-1556911220-e15b29be8c8f?auto=format&fit=crop&w=800&q=80",
+    space_living_img: "https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?auto=format&fit=crop&w=800&q=80",
+    space_dining_img: "https://images.unsplash.com/photo-1617806118233-18e1de247200?auto=format&fit=crop&w=800&q=80",
+    space_wardrobe_img: "https://images.unsplash.com/photo-1558997519-83ea9252def8?auto=format&fit=crop&w=800&q=80",
+    space_foyer_img: "https://images.unsplash.com/photo-1513694203232-719a280e022f?auto=format&fit=crop&w=800&q=80",
+  };
 
   return (
     <div className="space-y-8">
@@ -379,7 +445,7 @@ function HomepageContentTab() {
             </span>
           </div>
           <p className="mt-1 text-sm text-muted-foreground">
-            Manage all 11 homepage sections in their exact visual display order.
+            Manage text, headlines, and all display images for all 11 homepage sections.
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2.5">
@@ -470,10 +536,10 @@ function HomepageContentTab() {
         </Grid>
       </Card>
 
-      {/* 3. Services We Offer */}
-      <Card title="3. Services We Offer (Interactive Split Showcase)">
+      {/* 3. Services We Offer (With complete images & content editing) */}
+      <Card title="3. Services We Offer (Interactive Split Showcase - Images & Content)">
         <p className="text-xs text-muted-foreground mb-4">
-          The split interactive showcase featuring service category buttons on the left and dynamic previews on the right.
+          The split interactive showcase featuring service category buttons on the left and dynamic full-width previews on the right. Edit the section headline and change the image for any of the 9 services below.
         </p>
         <Grid>
           <Field label="Section Title" full>
@@ -483,6 +549,74 @@ function HomepageContentTab() {
             <textarea rows={2} className={inp} placeholder="From initial concept sketches to turnkey handover..." value={draft.services_offer_subtitle ?? ""} onChange={upd("services_offer_subtitle")} />
           </Field>
         </Grid>
+
+        {/* 9 Services Images & Details */}
+        <div className="mt-6 border-t border-border pt-5">
+          <h4 className="font-serif text-base text-foreground mb-1">
+            Service Items & Active Display Images
+          </h4>
+          <p className="text-xs text-muted-foreground mb-4">
+            Each service is displayed in the split showcase. Click "Change Image" or paste a direct URL to update the photo shown when the user selects that service.
+          </p>
+
+          <div className="space-y-3">
+            {services.map((svc: any) => {
+              const currentImg = svc.image_url || "https://images.unsplash.com/photo-1600210491892-03d54c0aaf87?auto=format&fit=crop&w=1200&q=80";
+              const isUploading = uploadingSvcId === svc.id;
+
+              return (
+                <div
+                  key={svc.id}
+                  className="rounded-lg border border-border/80 bg-background/50 p-3.5 flex flex-col md:flex-row md:items-center justify-between gap-4"
+                >
+                  <div className="flex items-center gap-3.5">
+                    <div className="relative h-16 w-24 shrink-0 rounded-md overflow-hidden border border-border bg-muted">
+                      <img src={currentImg} alt={svc.title} className="h-full w-full object-cover" />
+                    </div>
+                    <div>
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-accent">
+                        /services/${svc.slug}
+                      </span>
+                      <h5 className="font-serif text-sm font-semibold text-foreground">
+                        {svc.title}
+                      </h5>
+                      <p className="text-xs text-muted-foreground line-clamp-1">
+                        {svc.short_description || "Turnkey interior execution across Bengaluru"}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 shrink-0 md:max-w-md w-full md:w-auto">
+                    <label className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-md border border-border bg-card px-3 py-1.5 text-xs font-medium text-foreground hover:bg-muted transition">
+                      <Upload className="h-3.5 w-3.5 text-accent" />
+                      <span>{isUploading ? "Uploading…" : "Change Image"}</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        disabled={isUploading}
+                        onChange={(e) => {
+                          handleServiceUpload(svc, e.target.files?.[0]);
+                          e.target.value = "";
+                        }}
+                      />
+                    </label>
+                    <input
+                      className="flex-1 md:w-48 rounded-md border border-border bg-background px-2.5 py-1 text-xs text-foreground placeholder:text-muted-foreground focus:border-accent focus:outline-none"
+                      placeholder="Paste image URL..."
+                      defaultValue={svc.image_url ?? ""}
+                      onBlur={(e) => {
+                        if (e.target.value !== svc.image_url) {
+                          handleServiceUrlUpdate(svc, e.target.value);
+                        }
+                      }}
+                    />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
       </Card>
 
       {/* 4. Why Choose Elite Nest */}
@@ -510,9 +644,9 @@ function HomepageContentTab() {
       </Card>
 
       {/* 5. Interior Categories Showcase */}
-      <Card title="5. Interior Categories & Lifestyle Spaces (Coverflow Showcase)">
+      <Card title="5. Interior Categories & Lifestyle Spaces (Coverflow Showcase - Images & Content)">
         <p className="text-xs text-muted-foreground mb-4">
-          The 3D coverflow showcase highlighting spaces like Bedroom, Modular Kitchen, Living, Dining, Wardrobe, and Foyer.
+          The 3D coverflow showcase highlighting spaces like Bedroom, Modular Kitchen, Living, Dining, Wardrobe, and Foyer. Edit headers and custom room space images below.
         </p>
         <Grid>
           <Field label="Eyebrow Badge">
@@ -525,6 +659,64 @@ function HomepageContentTab() {
             <textarea rows={2} className={inp} placeholder="Explore our curated interior solutions for every corner of your home." value={draft.categories_section_subtitle ?? ""} onChange={upd("categories_section_subtitle")} />
           </Field>
         </Grid>
+
+        {/* 6 Space Room Images */}
+        <div className="mt-6 border-t border-border pt-5">
+          <h4 className="font-serif text-base text-foreground mb-1">
+            Room Space Images (Coverflow Cards)
+          </h4>
+          <p className="text-xs text-muted-foreground mb-4">
+            Upload new photos or paste image URLs for each of the 6 rooms.
+          </p>
+
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {[
+              { key: "space_bedroom_img", label: "Bedroom Space" },
+              { key: "space_kitchen_img", label: "Modular Kitchen" },
+              { key: "space_living_img", label: "Living Room" },
+              { key: "space_dining_img", label: "Dining Space" },
+              { key: "space_wardrobe_img", label: "Wardrobe & Storage" },
+              { key: "space_foyer_img", label: "Entrance Foyer" },
+            ].map((sp) => {
+              const currentVal = (draft as any)[sp.key] || defaultSpaceImages[sp.key];
+              const isUploading = uploadingSpaceKey === sp.key;
+
+              return (
+                <div key={sp.key} className="rounded-lg border border-border/80 bg-background/50 p-3 flex flex-col justify-between">
+                  <div>
+                    <div className="relative aspect-video w-full rounded overflow-hidden border border-border bg-muted mb-2">
+                      <img src={currentVal} alt={sp.label} className="h-full w-full object-cover" />
+                    </div>
+                    <h5 className="font-serif text-xs font-semibold text-foreground">{sp.label}</h5>
+                  </div>
+
+                  <div className="mt-2.5 space-y-1.5">
+                    <label className="w-full inline-flex cursor-pointer items-center justify-center gap-1.5 rounded border border-border bg-card px-2.5 py-1 text-xs font-medium text-foreground hover:bg-muted transition">
+                      <Upload className="h-3 w-3 text-accent" />
+                      <span>{isUploading ? "Uploading…" : "Upload Image"}</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        disabled={isUploading}
+                        onChange={(e) => {
+                          handleSpaceUpload(sp.key as any, sp.label, e.target.files?.[0]);
+                          e.target.value = "";
+                        }}
+                      />
+                    </label>
+                    <input
+                      className="w-full rounded border border-border bg-background px-2 py-1 text-xs text-foreground placeholder:text-muted-foreground focus:border-accent focus:outline-none"
+                      placeholder="…or paste image URL"
+                      value={(draft as any)[sp.key] ?? ""}
+                      onChange={upd(sp.key as any)}
+                    />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
       </Card>
 
       {/* 6. Featured Service Listings */}
@@ -696,6 +888,7 @@ function HomepageContentTab() {
     </div>
   );
 }
+
 
 /* -------------------- ABOUT US PAGE CONTENT TAB -------------------- */
 function AboutPageContentTab() {

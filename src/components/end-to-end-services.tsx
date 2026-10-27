@@ -1,6 +1,8 @@
 import { useRef, useState, useEffect, useCallback } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { SERVICE_ORDER, SERVICE_SLUGS, SERVICE_IMAGES } from "@/lib/services.config";
+import { servicesQuery } from "@/lib/queries";
 
 type ServiceCard = {
   title: string;
@@ -8,19 +10,15 @@ type ServiceCard = {
   slug: string;
 };
 
-const CATEGORIES: ServiceCard[] = SERVICE_ORDER.map((name) => ({
+const DEFAULT_CATEGORIES: ServiceCard[] = SERVICE_ORDER.map((name) => ({
   title: name,
   slug: SERVICE_SLUGS[name],
   image: SERVICE_IMAGES[name],
 }));
 
-// Triple the cards so infinite loop never shows a gap
-const LOOP = [...CATEGORIES, ...CATEGORIES, ...CATEGORIES];
-
 const CARD_W = 190; // card width
 const GAP = 20;     // gap-5
 const STEP = CARD_W + GAP;
-const SINGLE_SET = CATEGORIES.length * STEP; // width of one full set
 
 export function EndToEndServices({
   eyebrow = "What we offer",
@@ -29,6 +27,19 @@ export function EndToEndServices({
   eyebrow?: string | null;
   title?: string | null;
 } = {}) {
+  const { data: dbServices = [] } = useQuery(servicesQuery({ onlyActive: true }));
+
+  const categoriesList: ServiceCard[] = dbServices && dbServices.length > 0
+    ? dbServices.map((s) => ({
+        title: s.title,
+        slug: s.slug,
+        image: s.image_url || SERVICE_IMAGES[s.title] || SERVICE_IMAGES[SERVICE_ORDER[0]],
+      }))
+    : DEFAULT_CATEGORIES;
+
+  const LOOP = [...categoriesList, ...categoriesList, ...categoriesList];
+  const SINGLE_SET = categoriesList.length * STEP;
+
   const trackRef = useRef<HTMLDivElement>(null);
   const animRef = useRef<number | null>(null);
   const pausedRef = useRef(false);
@@ -40,7 +51,6 @@ export function EndToEndServices({
     const el = trackRef.current;
     if (!el) return;
 
-    // Cancel any previous loop before starting a new one (prevents duplicate loops on re-render)
     if (animRef.current) {
       cancelAnimationFrame(animRef.current);
       animRef.current = null;
@@ -48,69 +58,48 @@ export function EndToEndServices({
 
     const tick = () => {
       if (!pausedRef.current && el) {
-        el.scrollLeft -= 0.8; // scroll to the RIGHT (cards move right)
+        el.scrollLeft -= 0.8;
 
-        // Seamless loop: when we go below the 1st set, jump forward to 2nd set
         if (el.scrollLeft <= SINGLE_SET) {
           el.scrollLeft += SINGLE_SET;
-        }
-        // Safety: never go above 2nd set
-        if (el.scrollLeft >= SINGLE_SET * 2) {
-          el.scrollLeft -= SINGLE_SET;
         }
       }
       animRef.current = requestAnimationFrame(tick);
     };
 
     animRef.current = requestAnimationFrame(tick);
+  }, [SINGLE_SET]);
+
+  const stopAutoScroll = useCallback(() => {
+    if (animRef.current) {
+      cancelAnimationFrame(animRef.current);
+      animRef.current = null;
+    }
   }, []);
+
+  const pause = () => { pausedRef.current = true; };
+  const resume = () => { pausedRef.current = false; };
+
+  // Manual scroll with buttons
+  const scroll = (direction: "prev" | "next") => {
+    const el = trackRef.current;
+    if (!el) return;
+    pause();
+    const distance = direction === "next" ? -STEP * 2 : STEP * 2;
+    el.scrollBy({ left: distance, behavior: "smooth" });
+    setTimeout(resume, 2500);
+  };
 
   useEffect(() => {
     const el = trackRef.current;
     if (!el) return;
 
-    // Start in the middle set so we can scroll both ways infinitely
-    el.scrollLeft = SINGLE_SET;
-
+    // Start around the 2nd set
+    el.scrollLeft = SINGLE_SET * 1.5;
     startAutoScroll();
 
-    // Pause animation when tab is not visible (saves CPU, prevents drift)
-    const handleVisibility = () => {
-      if (document.hidden) {
-        pausedRef.current = true;
-      } else {
-        pausedRef.current = false;
-      }
-    };
-    document.addEventListener("visibilitychange", handleVisibility);
-
-    return () => {
-      if (animRef.current) cancelAnimationFrame(animRef.current);
-      animRef.current = null;
-      document.removeEventListener("visibilitychange", handleVisibility);
-    };
-  }, [startAutoScroll]);
-
-  // ── Pause on hover / touch ───────────────────────────────────────
-  const pause = () => { pausedRef.current = true; };
-  const resume = () => { pausedRef.current = false; };
-
-  // ── Arrow buttons ────────────────────────────────────────────────
-  const scroll = (dir: "prev" | "next") => {
-    const el = trackRef.current;
-    if (!el) return;
-
-    pausedRef.current = true;
-    el.scrollBy({ left: dir === "next" ? STEP * 2 : -STEP * 2, behavior: "smooth" });
-
-    // Resume auto-scroll after manual scroll settles
-    setTimeout(() => {
-      // Re-clamp to middle set after manual scroll
-      if (el.scrollLeft >= SINGLE_SET * 2) el.scrollLeft -= SINGLE_SET;
-      if (el.scrollLeft < SINGLE_SET) el.scrollLeft += SINGLE_SET;
-      pausedRef.current = false;
-    }, 600);
-  };
+    return () => stopAutoScroll();
+  }, [startAutoScroll, stopAutoScroll, SINGLE_SET]);
 
   return (
     <section
@@ -135,7 +124,6 @@ export function EndToEndServices({
             style={{ color: "#221912", fontSize: "clamp(1.5rem, 3vw, 2.25rem)" }}
           >
             {title || "Our End-to-End Home Interior Design Services In Bangalore"}
-
           </h2>
         </div>
       </div>

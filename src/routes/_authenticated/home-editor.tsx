@@ -1,4 +1,4 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -11,9 +11,27 @@ import {
   Sparkles,
   Layers,
   ChevronRight,
+  ImageIcon,
 } from "lucide-react";
-import { updateSiteSettingsServerFn, uploadStorageFileServerFn } from "@/lib/server-functions";
-import { settingsQuery, type SiteSettings } from "@/lib/queries";
+import {
+  updateSiteSettingsServerFn,
+  uploadStorageFileServerFn,
+  saveServiceServerFn,
+} from "@/lib/server-functions";
+import {
+  settingsQuery,
+  servicesQuery,
+  type SiteSettings,
+  type Service,
+} from "@/lib/queries";
+import { SERVICE_IMAGES, SERVICE_ORDER } from "@/lib/services.config";
+
+import bedroomImg from "@/assets/cat-bedroom.jpg";
+import kitchenImg from "@/assets/cat-kitchen.jpg";
+import livingImg from "@/assets/cat-living.jpg";
+import diningImg from "@/assets/cat-dining.jpg";
+import wardrobeImg from "@/assets/cat-wardrobe.jpg";
+import foyerImg from "@/assets/cat-foyer.jpg";
 
 export const Route = createFileRoute("/_authenticated/home-editor")({
   head: () => ({ meta: [{ title: "Home Page Editor — Elite Nest Interiors" }] }),
@@ -23,9 +41,9 @@ export const Route = createFileRoute("/_authenticated/home-editor")({
 const SECTIONS = [
   { id: "sec-hero", num: "01", name: "Hero Section" },
   { id: "sec-e2e", num: "02", name: "End-to-End Carousel" },
-  { id: "sec-services-offer", num: "03", name: "Services We Offer" },
+  { id: "sec-services-offer", num: "03", name: "Services We Offer (Images & Content)" },
   { id: "sec-why-us", num: "04", name: "Why Choose Us" },
-  { id: "sec-spaces", num: "05", name: "Interior Spaces" },
+  { id: "sec-spaces", num: "05", name: "Interior Spaces (Images & Content)" },
   { id: "sec-featured", num: "06", name: "Featured Listings" },
   { id: "sec-cta", num: "07", name: "Consultation Banner" },
   { id: "sec-process", num: "08", name: "5-Step Process" },
@@ -33,6 +51,15 @@ const SECTIONS = [
   { id: "sec-videos", num: "10", name: "Video Reviews" },
   { id: "sec-accordion", num: "11", name: "Services Accordion" },
 ];
+
+const DEFAULT_SPACE_IMAGES: Record<string, string> = {
+  bedroom: bedroomImg,
+  kitchen: kitchenImg,
+  living: livingImg,
+  dining: diningImg,
+  wardrobe: wardrobeImg,
+  foyer: foyerImg,
+};
 
 const inp =
   "w-full rounded-lg border border-border/80 bg-background px-3.5 py-2.5 text-sm text-foreground placeholder:text-muted-foreground/60 focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent transition";
@@ -61,10 +88,14 @@ async function uploadToStorage(file: File, folder: string): Promise<string | nul
 function HomePageEditorPage() {
   const qc = useQueryClient();
   const { data, isLoading } = useQuery(settingsQuery);
+  const { data: services = [] } = useQuery(servicesQuery({ onlyActive: false }));
+
   const [draft, setDraft] = useState<SiteSettings | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [isDirty, setIsDirty] = useState(false);
   const [uploadingHero, setUploadingHero] = useState(false);
+  const [uploadingSvcId, setUploadingSvcId] = useState<string | null>(null);
+  const [uploadingSpaceKey, setUploadingSpaceKey] = useState<string | null>(null);
   const [activeSection, setActiveSection] = useState("sec-hero");
 
   useEffect(() => {
@@ -109,12 +140,66 @@ function HomePageEditorPage() {
       if (url) {
         setDraft({ ...draft, hero_image_url: url });
         setIsDirty(true);
-        toast.success("Hero image uploaded to storage.");
+        toast.success("Hero image uploaded.");
       }
     } catch (err: any) {
       toast.error("Upload failed: " + err.message);
     } finally {
       setUploadingHero(false);
+    }
+  }
+
+  async function handleServiceUpload(service: Service, file?: File) {
+    if (!file) return;
+    setUploadingSvcId(service.id);
+    try {
+      const url = await uploadToStorage(file, "services");
+      if (url) {
+        await saveServiceServerFn({
+          data: {
+            ...service,
+            image_url: url,
+          },
+        });
+        qc.invalidateQueries({ queryKey: ["services"] });
+        toast.success(`Image updated for "${service.title}"!`);
+      }
+    } catch (err: any) {
+      toast.error("Upload failed: " + err.message);
+    } finally {
+      setUploadingSvcId(null);
+    }
+  }
+
+  async function handleServiceUrlUpdate(service: Service, newUrl: string) {
+    try {
+      await saveServiceServerFn({
+        data: {
+          ...service,
+          image_url: newUrl.trim() || null,
+        },
+      });
+      qc.invalidateQueries({ queryKey: ["services"] });
+      toast.success(`Image URL updated for "${service.title}"!`);
+    } catch (err: any) {
+      toast.error("Failed to update image URL: " + err.message);
+    }
+  }
+
+  async function handleSpaceUpload(field: keyof SiteSettings, spaceLabel: string, file?: File) {
+    if (!file || !draft) return;
+    setUploadingSpaceKey(String(field));
+    try {
+      const url = await uploadToStorage(file, "spaces");
+      if (url) {
+        setDraft({ ...draft, [field]: url });
+        setIsDirty(true);
+        toast.success(`Image uploaded for ${spaceLabel}!`);
+      }
+    } catch (err: any) {
+      toast.error("Upload failed: " + err.message);
+    } finally {
+      setUploadingSpaceKey(null);
     }
   }
 
@@ -161,14 +246,14 @@ function HomePageEditorPage() {
             <div>
               <div className="flex items-center gap-2">
                 <h1 className="font-serif text-lg sm:text-xl font-bold text-[#2A1D13]">
-                  Home Page Editor
+                  Home Page Complete Editor
                 </h1>
                 <span className="rounded-full bg-[#EEDBBE] px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wider text-[#735128]">
-                  Complete Suite
+                  Full Suite
                 </span>
               </div>
               <p className="text-xs text-[#7A6B5D] hidden md:block">
-                Edit all 11 homepage sections in their exact visual display order
+                Edit text, headlines, and all images for all 11 homepage sections
               </p>
             </div>
           </div>
@@ -251,7 +336,6 @@ function HomePageEditorPage() {
                 value={draft.hero_eyebrow ?? ""}
                 onChange={upd("hero_eyebrow")}
               />
-              <p className="mt-1 text-[11px] text-muted-foreground">Appears above the main headline in golden uppercase</p>
             </div>
 
             <div>
@@ -264,7 +348,6 @@ function HomePageEditorPage() {
                 value={draft.hero_cta_label ?? ""}
                 onChange={upd("hero_cta_label")}
               />
-              <p className="mt-1 text-[11px] text-muted-foreground">Action button leading to the services showcase</p>
             </div>
 
             <div className="sm:col-span-2">
@@ -278,9 +361,6 @@ function HomePageEditorPage() {
                 value={draft.hero_title ?? ""}
                 onChange={upd("hero_title")}
               />
-              <p className="mt-1 text-[11px] text-muted-foreground">
-                Tip: The last line is automatically accented in elegant golden serif script.
-              </p>
             </div>
 
             <div className="sm:col-span-2">
@@ -302,7 +382,7 @@ function HomePageEditorPage() {
               </label>
               <div className="flex flex-wrap items-center gap-4">
                 {draft.hero_image_url && (
-                  <div className="relative h-20 w-36 rounded-lg overflow-hidden border border-[#DECDB3] shadow-xs">
+                  <div className="relative h-24 w-40 rounded-lg overflow-hidden border border-[#DECDB3] shadow-xs">
                     <img src={draft.hero_image_url} alt="Hero Preview" className="h-full w-full object-cover" />
                   </div>
                 )}
@@ -322,7 +402,7 @@ function HomePageEditorPage() {
               </div>
               <input
                 className={`${inp} mt-2.5`}
-                placeholder="…or paste direct image URL (leaving blank defaults to luxury showroom)"
+                placeholder="…or paste direct hero image URL"
                 value={draft.hero_image_url ?? ""}
                 onChange={upd("hero_image_url")}
               />
@@ -374,7 +454,7 @@ function HomePageEditorPage() {
           </div>
         </section>
 
-        {/* SECTION 3: SERVICES WE OFFER */}
+        {/* SECTION 3: SERVICES WE OFFER (WITH FULL IMAGE & CONTENT EDITING FOR ALL 9 SERVICES) */}
         <section id="sec-services-offer" className="rounded-2xl border border-[#E3D3BE] bg-white p-6 sm:p-8 shadow-xs">
           <div className="flex items-start justify-between gap-4 border-b border-[#F0E6D6] pb-4 mb-6">
             <div>
@@ -383,7 +463,7 @@ function HomePageEditorPage() {
                 Services We Offer (Interactive Split Showcase)
               </h2>
               <p className="text-xs sm:text-sm text-[#736353] mt-1">
-                The split interactive showcase featuring category pills on the left and full-width imagery with descriptions on the right.
+                Edit the section headline, plus the images and details for each of the 9 services displayed in this interactive split section.
               </p>
             </div>
             <span className="shrink-0 rounded-full bg-[#F3ECE0] px-3 py-1 text-xs font-medium text-[#735128]">
@@ -391,30 +471,115 @@ function HomePageEditorPage() {
             </span>
           </div>
 
-          <div className="space-y-4">
-            <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-[#5D4A36] mb-1.5">
-                Section Title
-              </label>
-              <input
-                className={inp}
-                placeholder="Services We Offer"
-                value={draft.services_offer_title ?? ""}
-                onChange={upd("services_offer_title")}
-              />
+          <div className="space-y-6">
+            <div className="grid gap-5 sm:grid-cols-2">
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wider text-[#5D4A36] mb-1.5">
+                  Section Title
+                </label>
+                <input
+                  className={inp}
+                  placeholder="Services We Offer"
+                  value={draft.services_offer_title ?? ""}
+                  onChange={upd("services_offer_title")}
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wider text-[#5D4A36] mb-1.5">
+                  Section Subtitle / Description
+                </label>
+                <textarea
+                  rows={2}
+                  className={inp}
+                  placeholder="From initial concept sketches to turnkey handover..."
+                  value={draft.services_offer_subtitle ?? ""}
+                  onChange={upd("services_offer_subtitle")}
+                />
+              </div>
             </div>
 
-            <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-[#5D4A36] mb-1.5">
-                Section Subtitle / Description (Optional)
-              </label>
-              <textarea
-                rows={2}
-                className={inp}
-                placeholder="From initial concept sketches to turnkey handover, we offer specialized architectural & interior design solutions..."
-                value={draft.services_offer_subtitle ?? ""}
-                onChange={upd("services_offer_subtitle")}
-              />
+            {/* Individual Service Images & Information */}
+            <div className="border-t border-[#F0E6D6] pt-6">
+              <div className="mb-4">
+                <h3 className="font-serif text-lg font-bold text-[#2A1D13]">
+                  Service Items & Display Images ({services.length > 0 ? services.length : SERVICE_ORDER.length} Services)
+                </h3>
+                <p className="text-xs text-[#7A6B5D]">
+                  Change the image shown on the right side of the split showcase when each service is active.
+                </p>
+              </div>
+
+              <div className="space-y-4">
+                {(services.length > 0 ? services : SERVICE_ORDER.map((name, idx) => ({
+                  id: `svc-${idx + 1}`,
+                  title: name,
+                  slug: name.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
+                  image_url: SERVICE_IMAGES[name],
+                  short_description: "",
+                  description: "",
+                  display_order: idx + 1,
+                  is_active: true,
+                }))).map((svc: any) => {
+                  const currentImg = svc.image_url || SERVICE_IMAGES[svc.title] || SERVICE_IMAGES[SERVICE_ORDER[0]];
+                  const isUploading = uploadingSvcId === svc.id;
+
+                  return (
+                    <div
+                      key={svc.id || svc.slug}
+                      className="rounded-xl border border-[#DECDB3] bg-[#FAF5EB] p-4 flex flex-col md:flex-row md:items-center gap-5 justify-between"
+                    >
+                      <div className="flex items-center gap-4">
+                        <div className="relative h-20 w-32 shrink-0 rounded-lg overflow-hidden border border-[#D5C2A5] bg-black/5 shadow-xs">
+                          <img
+                            src={currentImg}
+                            alt={svc.title}
+                            className="h-full w-full object-cover"
+                          />
+                        </div>
+                        <div>
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-[#8A7458]">
+                            /services/{svc.slug}
+                          </span>
+                          <h4 className="font-serif text-base font-bold text-[#2A1D13]">
+                            {svc.title}
+                          </h4>
+                          <p className="text-xs text-[#6F6052] mt-0.5 line-clamp-1">
+                            {svc.short_description || "Turnkey interior execution across Bengaluru"}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 shrink-0 md:max-w-md w-full md:w-auto">
+                        <label className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg border border-[#DECDB3] bg-white px-3.5 py-2 text-xs font-semibold text-[#4A3B2C] hover:bg-[#F2E8D8] transition shadow-xs">
+                          <Upload className="h-3.5 w-3.5 text-[#B8894D]" />
+                          <span>{isUploading ? "Uploading…" : "Change Image"}</span>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            disabled={isUploading}
+                            onChange={(e) => {
+                              handleServiceUpload(svc, e.target.files?.[0]);
+                              e.target.value = "";
+                            }}
+                          />
+                        </label>
+                        <input
+                          className="flex-1 md:w-56 rounded-lg border border-[#DECDB3] bg-white px-2.5 py-1.5 text-xs text-foreground placeholder:text-muted-foreground/60 focus:border-accent focus:outline-none"
+                          placeholder="Paste image URL..."
+                          defaultValue={svc.image_url ?? ""}
+                          onBlur={(e) => {
+                            if (e.target.value !== svc.image_url) {
+                              handleServiceUrlUpdate(svc, e.target.value);
+                            }
+                          }}
+                        />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           </div>
         </section>
@@ -497,7 +662,7 @@ function HomePageEditorPage() {
           </div>
         </section>
 
-        {/* SECTION 5: INTERIOR SPACES */}
+        {/* SECTION 5: INTERIOR SPACES (WITH FULL IMAGE EDITING FOR BEDROOM, KITCHEN, LIVING, DINING, WARDROBE, FOYER) */}
         <section id="sec-spaces" className="rounded-2xl border border-[#E3D3BE] bg-white p-6 sm:p-8 shadow-xs">
           <div className="flex items-start justify-between gap-4 border-b border-[#F0E6D6] pb-4 mb-6">
             <div>
@@ -506,7 +671,7 @@ function HomePageEditorPage() {
                 Interior Categories & Lifestyle Spaces (Coverflow Showcase)
               </h2>
               <p className="text-xs sm:text-sm text-[#736353] mt-1">
-                The 3D coverflow showcase highlighting spaces like Bedroom, Modular Kitchen, Living, Dining, Wardrobe, and Foyer.
+                Edit the section header, plus the 3D coverflow images for Bedroom, Kitchen, Living, Dining, Wardrobe, and Foyer.
               </p>
             </div>
             <span className="shrink-0 rounded-full bg-[#F3ECE0] px-3 py-1 text-xs font-medium text-[#735128]">
@@ -514,42 +679,104 @@ function HomePageEditorPage() {
             </span>
           </div>
 
-          <div className="grid gap-5 sm:grid-cols-2">
-            <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-[#5D4A36] mb-1.5">
-                Eyebrow Badge
-              </label>
-              <input
-                className={inp}
-                placeholder="Our Interior Expertise"
-                value={draft.categories_section_eyebrow ?? ""}
-                onChange={upd("categories_section_eyebrow")}
-              />
+          <div className="space-y-6">
+            <div className="grid gap-5 sm:grid-cols-2">
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wider text-[#5D4A36] mb-1.5">
+                  Eyebrow Badge
+                </label>
+                <input
+                  className={inp}
+                  placeholder="Our Interior Expertise"
+                  value={draft.categories_section_eyebrow ?? ""}
+                  onChange={upd("categories_section_eyebrow")}
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wider text-[#5D4A36] mb-1.5">
+                  Section Heading
+                </label>
+                <input
+                  className={inp}
+                  placeholder="Spaces Designed Around Your Lifestyle"
+                  value={draft.categories_section_title ?? ""}
+                  onChange={upd("categories_section_title")}
+                />
+              </div>
+
+              <div className="sm:col-span-2">
+                <label className="block text-xs font-semibold uppercase tracking-wider text-[#5D4A36] mb-1.5">
+                  Section Subtitle / Description
+                </label>
+                <textarea
+                  rows={2}
+                  className={inp}
+                  placeholder="Explore our curated interior solutions for every corner of your home."
+                  value={draft.categories_section_subtitle ?? ""}
+                  onChange={upd("categories_section_subtitle")}
+                />
+              </div>
             </div>
 
-            <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-[#5D4A36] mb-1.5">
-                Section Heading
-              </label>
-              <input
-                className={inp}
-                placeholder="Spaces Designed Around Your Lifestyle"
-                value={draft.categories_section_title ?? ""}
-                onChange={upd("categories_section_title")}
-              />
-            </div>
+            {/* Individual Room Space Images */}
+            <div className="border-t border-[#F0E6D6] pt-6">
+              <div className="mb-4">
+                <h3 className="font-serif text-lg font-bold text-[#2A1D13]">
+                  Room Space Images (6 Coverflow Spaces)
+                </h3>
+                <p className="text-xs text-[#7A6B5D]">
+                  Custom images for each room space in the coverflow. Leaving a field blank defaults to the curated showroom image.
+                </p>
+              </div>
 
-            <div className="sm:col-span-2">
-              <label className="block text-xs font-semibold uppercase tracking-wider text-[#5D4A36] mb-1.5">
-                Section Subtitle / Description
-              </label>
-              <textarea
-                rows={2}
-                className={inp}
-                placeholder="Explore our curated interior solutions for every corner of your home."
-                value={draft.categories_section_subtitle ?? ""}
-                onChange={upd("categories_section_subtitle")}
-              />
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {[
+                  { key: "space_bedroom_img", label: "Bedroom Space", defaultImg: DEFAULT_SPACE_IMAGES.bedroom },
+                  { key: "space_kitchen_img", label: "Modular Kitchen", defaultImg: DEFAULT_SPACE_IMAGES.kitchen },
+                  { key: "space_living_img", label: "Living Room", defaultImg: DEFAULT_SPACE_IMAGES.living },
+                  { key: "space_dining_img", label: "Dining Space", defaultImg: DEFAULT_SPACE_IMAGES.dining },
+                  { key: "space_wardrobe_img", label: "Wardrobe & Storage", defaultImg: DEFAULT_SPACE_IMAGES.wardrobe },
+                  { key: "space_foyer_img", label: "Entrance Foyer", defaultImg: DEFAULT_SPACE_IMAGES.foyer },
+                ].map((sp) => {
+                  const currentVal = (draft as any)[sp.key] || sp.defaultImg;
+                  const isUploading = uploadingSpaceKey === sp.key;
+
+                  return (
+                    <div key={sp.key} className="rounded-xl border border-[#DECDB3] bg-[#FAF5EB] p-4 flex flex-col justify-between">
+                      <div>
+                        <div className="relative aspect-video w-full rounded-lg overflow-hidden border border-[#D5C2A5] bg-black/5 mb-3">
+                          <img src={currentVal} alt={sp.label} className="h-full w-full object-cover" />
+                        </div>
+                        <h4 className="font-serif text-sm font-bold text-[#2A1D13]">{sp.label}</h4>
+                      </div>
+
+                      <div className="mt-3 space-y-2">
+                        <label className="w-full inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg border border-[#DECDB3] bg-white px-3 py-1.5 text-xs font-semibold text-[#4A3B2C] hover:bg-[#F2E8D8] transition shadow-xs">
+                          <Upload className="h-3 w-3 text-[#B8894D]" />
+                          <span>{isUploading ? "Uploading…" : "Upload New Image"}</span>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            disabled={isUploading}
+                            onChange={(e) => {
+                              handleSpaceUpload(sp.key as any, sp.label, e.target.files?.[0]);
+                              e.target.value = "";
+                            }}
+                          />
+                        </label>
+                        <input
+                          className="w-full rounded-lg border border-[#DECDB3] bg-white px-2.5 py-1 text-xs text-foreground placeholder:text-muted-foreground/60 focus:border-accent focus:outline-none"
+                          placeholder="…or paste image URL"
+                          value={(draft as any)[sp.key] ?? ""}
+                          onChange={upd(sp.key as any)}
+                        />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           </div>
         </section>
@@ -702,160 +929,43 @@ function HomePageEditorPage() {
 
             {/* 5 Steps Grid */}
             <div className="space-y-4 pt-2">
-              {/* Step 1 */}
-              <div className="rounded-xl border border-[#DECDB3] bg-[#FAF5EB] p-4.5">
-                <div className="flex items-center gap-2 mb-3">
-                  <span className="grid h-6 w-6 place-items-center rounded-full bg-[#2A1D13] text-white text-xs font-bold">
-                    1
-                  </span>
-                  <span className="text-xs font-bold uppercase tracking-wider text-[#735128]">Step 01</span>
-                </div>
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <div>
-                    <label className="block text-xs font-semibold text-[#4A3822] mb-1">Step 1 Title</label>
-                    <input
-                      className={inp}
-                      placeholder="Understand"
-                      value={draft.process_step1_title ?? ""}
-                      onChange={upd("process_step1_title")}
-                    />
+              {[
+                { num: 1, titleKey: "process_step1_title", descKey: "process_step1_desc", defaultTitle: "Understand", defaultDesc: "We understand your lifestyle, preferences, space requirements, and budget." },
+                { num: 2, titleKey: "process_step2_title", descKey: "process_step2_desc", defaultTitle: "Design", defaultDesc: "We create functional, elegant designs tailored to your vision." },
+                { num: 3, titleKey: "process_step3_title", descKey: "process_step3_desc", defaultTitle: "Plan", defaultDesc: "Detailed drawings, material selection, costing, and execution planning." },
+                { num: 4, titleKey: "process_step4_title", descKey: "process_step4_desc", defaultTitle: "Execute", defaultDesc: "Expert project management with strict quality and timeline control." },
+                { num: 5, titleKey: "process_step5_title", descKey: "process_step5_desc", defaultTitle: "Deliver", defaultDesc: "A beautifully finished space, delivered on time and ready to enjoy." },
+              ].map((st) => (
+                <div key={st.num} className="rounded-xl border border-[#DECDB3] bg-[#FAF5EB] p-4.5">
+                  <div className="flex items-center gap-2 mb-3">
+                    <span className="grid h-6 w-6 place-items-center rounded-full bg-[#2A1D13] text-white text-xs font-bold">
+                      {st.num}
+                    </span>
+                    <span className="text-xs font-bold uppercase tracking-wider text-[#735128]">Step 0{st.num}</span>
                   </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-[#4A3822] mb-1">Step 1 Description</label>
-                    <textarea
-                      rows={2}
-                      className={inp}
-                      placeholder="We understand your lifestyle, preferences, space requirements, and budget."
-                      value={draft.process_step1_desc ?? ""}
-                      onChange={upd("process_step1_desc")}
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Step 2 */}
-              <div className="rounded-xl border border-[#DECDB3] bg-[#FAF5EB] p-4.5">
-                <div className="flex items-center gap-2 mb-3">
-                  <span className="grid h-6 w-6 place-items-center rounded-full bg-[#2A1D13] text-white text-xs font-bold">
-                    2
-                  </span>
-                  <span className="text-xs font-bold uppercase tracking-wider text-[#735128]">Step 02</span>
-                </div>
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <div>
-                    <label className="block text-xs font-semibold text-[#4A3822] mb-1">Step 2 Title</label>
-                    <input
-                      className={inp}
-                      placeholder="Design"
-                      value={draft.process_step2_title ?? ""}
-                      onChange={upd("process_step2_title")}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-[#4A3822] mb-1">Step 2 Description</label>
-                    <textarea
-                      rows={2}
-                      className={inp}
-                      placeholder="We create functional, elegant designs tailored to your vision."
-                      value={draft.process_step2_desc ?? ""}
-                      onChange={upd("process_step2_desc")}
-                    />
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div>
+                      <label className="block text-xs font-semibold text-[#4A3822] mb-1">Step {st.num} Title</label>
+                      <input
+                        className={inp}
+                        placeholder={st.defaultTitle}
+                        value={(draft as any)[st.titleKey] ?? ""}
+                        onChange={upd(st.titleKey as any)}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-[#4A3822] mb-1">Step {st.num} Description</label>
+                      <textarea
+                        rows={2}
+                        className={inp}
+                        placeholder={st.defaultDesc}
+                        value={(draft as any)[st.descKey] ?? ""}
+                        onChange={upd(st.descKey as any)}
+                      />
+                    </div>
                   </div>
                 </div>
-              </div>
-
-              {/* Step 3 */}
-              <div className="rounded-xl border border-[#DECDB3] bg-[#FAF5EB] p-4.5">
-                <div className="flex items-center gap-2 mb-3">
-                  <span className="grid h-6 w-6 place-items-center rounded-full bg-[#2A1D13] text-white text-xs font-bold">
-                    3
-                  </span>
-                  <span className="text-xs font-bold uppercase tracking-wider text-[#735128]">Step 03</span>
-                </div>
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <div>
-                    <label className="block text-xs font-semibold text-[#4A3822] mb-1">Step 3 Title</label>
-                    <input
-                      className={inp}
-                      placeholder="Plan"
-                      value={draft.process_step3_title ?? ""}
-                      onChange={upd("process_step3_title")}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-[#4A3822] mb-1">Step 3 Description</label>
-                    <textarea
-                      rows={2}
-                      className={inp}
-                      placeholder="Detailed drawings, material selection, costing, and execution planning."
-                      value={draft.process_step3_desc ?? ""}
-                      onChange={upd("process_step3_desc")}
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Step 4 */}
-              <div className="rounded-xl border border-[#DECDB3] bg-[#FAF5EB] p-4.5">
-                <div className="flex items-center gap-2 mb-3">
-                  <span className="grid h-6 w-6 place-items-center rounded-full bg-[#2A1D13] text-white text-xs font-bold">
-                    4
-                  </span>
-                  <span className="text-xs font-bold uppercase tracking-wider text-[#735128]">Step 04</span>
-                </div>
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <div>
-                    <label className="block text-xs font-semibold text-[#4A3822] mb-1">Step 4 Title</label>
-                    <input
-                      className={inp}
-                      placeholder="Execute"
-                      value={draft.process_step4_title ?? ""}
-                      onChange={upd("process_step4_title")}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-[#4A3822] mb-1">Step 4 Description</label>
-                    <textarea
-                      rows={2}
-                      className={inp}
-                      placeholder="Expert project management with strict quality and timeline control."
-                      value={draft.process_step4_desc ?? ""}
-                      onChange={upd("process_step4_desc")}
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Step 5 */}
-              <div className="rounded-xl border border-[#DECDB3] bg-[#FAF5EB] p-4.5">
-                <div className="flex items-center gap-2 mb-3">
-                  <span className="grid h-6 w-6 place-items-center rounded-full bg-[#2A1D13] text-white text-xs font-bold">
-                    5
-                  </span>
-                  <span className="text-xs font-bold uppercase tracking-wider text-[#735128]">Step 05</span>
-                </div>
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <div>
-                    <label className="block text-xs font-semibold text-[#4A3822] mb-1">Step 5 Title</label>
-                    <input
-                      className={inp}
-                      placeholder="Deliver"
-                      value={draft.process_step5_title ?? ""}
-                      onChange={upd("process_step5_title")}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-[#4A3822] mb-1">Step 5 Description</label>
-                    <textarea
-                      rows={2}
-                      className={inp}
-                      placeholder="A beautifully finished space, delivered on time and ready to enjoy."
-                      value={draft.process_step5_desc ?? ""}
-                      onChange={upd("process_step5_desc")}
-                    />
-                  </div>
-                </div>
-              </div>
+              ))}
             </div>
           </div>
         </section>
