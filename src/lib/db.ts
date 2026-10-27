@@ -17,16 +17,26 @@ function createPool(): Pool {
     process.env.PGSSL === "true" ||
     (connectionString ? connectionString.includes("sslmode=require") : false);
 
+  // When running on Vercel or cloud serverless, fallback to remote database IP if DB_HOST not explicitly set
+  const isCloudServerless = Boolean(
+    process.env.VERCEL ||
+    process.env.NOW_REGION ||
+    process.env.AWS_REGION
+  );
+  const defaultHost = isCloudServerless
+    ? "168.119.64.101"
+    : (process.env.PGHOST || "localhost");
+
   const poolConfig: PoolConfig = connectionString
     ? {
         connectionString,
         ssl: sslEnabled ? { rejectUnauthorized: false } : false,
-        max: parseInt(process.env.DB_POOL_MAX || "20", 10),
+        max: parseInt(process.env.DB_POOL_MAX || "10", 10),
         idleTimeoutMillis: 30000,
         connectionTimeoutMillis: 10000,
       }
     : {
-        host: process.env.DB_HOST || process.env.PGHOST || "localhost",
+        host: process.env.DB_HOST || defaultHost,
         port: parseInt(process.env.DB_PORT || process.env.PGPORT || "5432", 10),
         database: process.env.DB_NAME || process.env.PGDATABASE || "elite47",
         user: process.env.DB_USER || process.env.PGUSER || "elite47",
@@ -35,7 +45,7 @@ function createPool(): Pool {
           process.env.PGPASSWORD ||
           "z74zT9hvpAYamMsKjkbG5Guhm",
         ssl: sslEnabled ? { rejectUnauthorized: false } : false,
-        max: parseInt(process.env.DB_POOL_MAX || "20", 10),
+        max: parseInt(process.env.DB_POOL_MAX || "10", 10),
         idleTimeoutMillis: 30000,
         connectionTimeoutMillis: 10000,
       };
@@ -43,7 +53,7 @@ function createPool(): Pool {
   const pool = new Pool(poolConfig);
 
   pool.on("error", (err) => {
-    console.error("Unexpected error on idle PostgreSQL client:", err);
+    console.error("Unexpected error on idle PostgreSQL client:", err?.message || err);
   });
 
   return pool;
@@ -60,17 +70,27 @@ export async function query<R extends QueryResultRow = any>(
   params?: any[]
 ): Promise<QueryResult<R>> {
   const start = Date.now();
-  const res = await pool.query<R>(text, params);
-  const duration = Date.now() - start;
-  if (process.env.NODE_ENV === "development") {
-    console.log("[PostgreSQL Query]", { text, rows: res.rowCount, duration: `${duration}ms` });
+  try {
+    const res = await pool.query<R>(text, params);
+    const duration = Date.now() - start;
+    if (process.env.NODE_ENV === "development") {
+      console.log("[PostgreSQL Query]", { text, rows: res.rowCount, duration: `${duration}ms` });
+    }
+    return res;
+  } catch (err: any) {
+    console.error("[PostgreSQL Query Error]:", err?.message || err);
+    throw new Error(typeof err?.message === "string" ? err.message : "Database query error");
   }
-  return res;
 }
 
 export async function queryDb<T = any>(text: string, params?: any[]): Promise<T[]> {
-  const res = await pool.query(text, params);
-  return res.rows as T[];
+  try {
+    const res = await pool.query(text, params);
+    return res.rows as T[];
+  } catch (err: any) {
+    console.error("[PostgreSQL Query Error]:", err?.message || err);
+    throw new Error(typeof err?.message === "string" ? err.message : "Database error");
+  }
 }
 
 export async function queryOneDb<T = any>(text: string, params?: any[]): Promise<T | null> {
@@ -114,11 +134,11 @@ export async function testDatabaseConnection(): Promise<{
   }
 }
 
-export default Object.assign(pool, {
+export default {
   query,
   pool,
   queryDb,
   queryOneDb,
   getDbPool,
   testDatabaseConnection,
-});
+};

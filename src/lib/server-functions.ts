@@ -10,39 +10,49 @@ const JWT_SECRET = process.env.JWT_SECRET || "elite_nest_secret_key_2026_pg_auth
 export const signInServerFn = createServerFn({ method: "POST" })
   .validator((data: { email: string; password: string }) => data)
   .handler(async ({ data }) => {
-    const email = data.email.trim().toLowerCase();
-    const user = await queryOneDb(
-      "SELECT id, email, password_hash FROM public.users WHERE email = $1",
-      [email]
-    );
+    try {
+      const email = data?.email ? data.email.trim().toLowerCase() : "";
+      if (!email || !data?.password) {
+        throw new Error("Invalid email or password");
+      }
 
-    if (!user) {
-      throw new Error("Invalid email or password");
+      const user = await queryOneDb(
+        "SELECT id, email, password_hash FROM public.users WHERE email = $1",
+        [email]
+      );
+
+      if (!user) {
+        throw new Error("Invalid email or password");
+      }
+
+      const isValid = await bcrypt.compare(data.password, user.password_hash);
+      if (!isValid) {
+        throw new Error("Invalid email or password");
+      }
+
+      // Check role
+      const roleRow = await queryOneDb(
+        "SELECT role FROM public.user_roles WHERE user_id = $1 AND role = 'admin'",
+        [user.id]
+      );
+
+      const isAdmin = !!roleRow;
+      const token = jwt.sign(
+        { userId: user.id, email: user.email, isAdmin },
+        JWT_SECRET,
+        { expiresIn: "7d" }
+      );
+
+      return {
+        user: { id: user.id, email: user.email },
+        isAdmin,
+        token,
+      };
+    } catch (err: any) {
+      console.error("[signInServerFn error]:", err?.message || err);
+      const msg = typeof err?.message === "string" ? err.message : "Authentication error";
+      throw new Error(msg);
     }
-
-    const isValid = await bcrypt.compare(data.password, user.password_hash);
-    if (!isValid) {
-      throw new Error("Invalid email or password");
-    }
-
-    // Check role
-    const roleRow = await queryOneDb(
-      "SELECT role FROM public.user_roles WHERE user_id = $1 AND role = 'admin'",
-      [user.id]
-    );
-
-    const isAdmin = !!roleRow;
-    const token = jwt.sign(
-      { userId: user.id, email: user.email, isAdmin },
-      JWT_SECRET,
-      { expiresIn: "7d" }
-    );
-
-    return {
-      user: { id: user.id, email: user.email },
-      isAdmin,
-      token,
-    };
   });
 
 export const signUpServerFn = createServerFn({ method: "POST" })
