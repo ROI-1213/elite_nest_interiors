@@ -2,7 +2,28 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { LogOut, Plus, Pencil, Trash2, ArrowUp, ArrowDown, Upload, Video } from "lucide-react";
+import {
+  LogOut,
+  Plus,
+  Pencil,
+  Trash2,
+  ArrowUp,
+  ArrowDown,
+  Upload,
+  Video,
+  MessageSquare,
+  Home,
+  Info,
+  PhoneCall,
+  FolderKanban,
+  Briefcase,
+  Images,
+  Star,
+  Settings,
+  ExternalLink,
+  Menu,
+  X,
+} from "lucide-react";
 import { resolveGalleryImageUrl } from "@/lib/gallery.config";
 import {
   saveGalleryItemServerFn,
@@ -57,10 +78,23 @@ const TABS = [
 ] as const;
 type Tab = (typeof TABS)[number];
 
+const TAB_ITEMS: { id: Tab; label: string; icon: any }[] = [
+  { id: "Enquiries", label: "Enquiries", icon: MessageSquare },
+  { id: "Homepage Content", label: "Homepage Content", icon: Home },
+  { id: "About Us Page", label: "About Us Page", icon: Info },
+  { id: "Contact Page", label: "Contact Page", icon: PhoneCall },
+  { id: "Categories", label: "Categories", icon: FolderKanban },
+  { id: "Services", label: "Services", icon: Briefcase },
+  { id: "Gallery", label: "Gallery", icon: Images },
+  { id: "Testimonials", label: "Testimonials", icon: Star },
+  { id: "Video Testimonials", label: "Video Testimonials", icon: Video },
+  { id: "Site Settings", label: "Site Settings", icon: Settings },
+];
+
 function AdminPage() {
   const ctx = Route.useRouteContext();
-  const navigate = useNavigate();
   const [tab, setTab] = useState<Tab>("Enquiries");
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
     if (!ctx.isAdmin) {
@@ -94,36 +128,151 @@ function AdminPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <TopBar email={ctx.user?.email ?? ""} onSignOut={signOut} />
-      <div className="container-prose py-8">
-        <div className="mb-6 flex flex-wrap gap-2 border-b border-border pb-2">
-          {TABS.map((t) => (
+    <div className="min-h-screen bg-[#FDFBF7] text-foreground flex flex-col md:flex-row">
+      {/* Mobile Top Bar */}
+      <div className="md:hidden flex items-center justify-between px-4 py-3 bg-white border-b border-[#E5D4BD] sticky top-0 z-30 shadow-sm">
+        <div className="flex items-center gap-2">
+          <span className="font-serif font-bold text-base text-[#221912]">Elite Nest Interior</span>
+          <span className="text-[10px] uppercase tracking-wider bg-[#B8894D]/15 text-[#9E6E34] px-2 py-0.5 rounded font-semibold">
+            Admin
+          </span>
+        </div>
+        <button
+          onClick={() => setSidebarOpen(!sidebarOpen)}
+          className="p-2 rounded-lg border border-[#E5D4BD] text-[#6F6257] hover:bg-[#FAF6F0]"
+          aria-label="Toggle navigation menu"
+        >
+          {sidebarOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+        </button>
+      </div>
+
+      {/* Backdrop for mobile drawer */}
+      {sidebarOpen && (
+        <div
+          onClick={() => setSidebarOpen(false)}
+          className="fixed inset-0 bg-black/40 z-30 md:hidden backdrop-blur-xs"
+        />
+      )}
+
+      {/* Left Sidebar */}
+      <aside
+        className={`fixed inset-y-0 left-0 z-40 w-72 bg-white border-r border-[#E5D4BD] flex flex-col transition-transform duration-200 ease-in-out md:sticky md:top-0 md:h-screen md:translate-x-0 ${
+          sidebarOpen ? "translate-x-0" : "-translate-x-full"
+        }`}
+      >
+        {/* Brand header */}
+        <div className="p-5 border-b border-[#F0E6D8] bg-[#FAF6F0]">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-[#9E6E34]">
+                Admin Control Panel
+              </p>
+              <h2 className="font-serif text-lg font-semibold text-[#221912] mt-0.5">
+                Elite Nest Interior
+              </h2>
+            </div>
             <button
-              key={t}
-              onClick={() => setTab(t)}
-              className={`rounded-t-md px-4 py-2 text-sm font-medium transition ${
-                tab === t
-                  ? "bg-card text-foreground border-b-2 border-accent"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
+              onClick={() => setSidebarOpen(false)}
+              className="md:hidden p-1.5 rounded text-[#8F8173] hover:text-[#221912]"
             >
-              {t}
+              <X className="h-5 w-5" />
             </button>
-          ))}
+          </div>
         </div>
 
-        {tab === "Enquiries" && <EnquiriesTab />}
-        {tab === "Homepage Content" && <HomepageContentTab />}
-        {tab === "About Us Page" && <AboutPageContentTab />}
-        {tab === "Contact Page" && <ContactPageContentTab />}
-        {tab === "Categories" && <CategoriesTab />}
-        {tab === "Services" && <ServicesTab />}
-        {tab === "Gallery" && <GalleryTab />}
-        {tab === "Testimonials" && <TestimonialsTab />}
-        {tab === "Video Testimonials" && <VideoTestimonialsTab />}
-        {tab === "Site Settings" && <SiteSettingsTab />}
-      </div>
+        {/* Sidebar Navigation */}
+        <nav className="flex-1 overflow-y-auto p-3.5 space-y-1">
+          <p className="px-3 pt-2 pb-1.5 text-[10px] font-bold uppercase tracking-[0.2em] text-[#A89C91]">
+            Content & Sections
+          </p>
+          {TAB_ITEMS.map((item) => {
+            const Icon = item.icon;
+            const active = tab === item.id;
+            return (
+              <button
+                key={item.id}
+                onClick={() => {
+                  setTab(item.id);
+                  setSidebarOpen(false);
+                }}
+                className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-medium transition text-left cursor-pointer ${
+                  active
+                    ? "bg-[#B8894D] text-white shadow-sm font-semibold"
+                    : "text-[#6F6257] hover:bg-[#FAF6F0] hover:text-[#221912]"
+                }`}
+              >
+                <Icon className={`h-4 w-4 flex-none ${active ? "text-white" : "text-[#B8894D]"}`} />
+                <span className="truncate">{item.label}</span>
+              </button>
+            );
+          })}
+        </nav>
+
+        {/* Bottom account info & links */}
+        <div className="p-4 border-t border-[#F0E6D8] bg-[#FAF6F0]/70 space-y-2.5">
+          <div className="px-1">
+            <p className="text-[10px] uppercase tracking-wider text-[#A89C91] font-semibold">Logged in as</p>
+            <p className="text-xs font-medium text-[#221912] truncate mt-0.5" title={ctx.user?.email ?? ""}>
+              {ctx.user?.email ?? ""}
+            </p>
+          </div>
+          <div className="flex gap-2 pt-1">
+            <a
+              href="/"
+              target="_blank"
+              rel="noreferrer"
+              className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg border border-[#E5D4BD] bg-white text-[11px] font-medium text-[#6F6257] hover:text-[#221912] transition shadow-xs"
+            >
+              <ExternalLink className="h-3.5 w-3.5" /> View Site
+            </a>
+            <button
+              onClick={signOut}
+              className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg border border-red-200 bg-red-50/70 text-[11px] font-medium text-red-700 hover:bg-red-100 transition cursor-pointer shadow-xs"
+            >
+              <LogOut className="h-3.5 w-3.5" /> Sign out
+            </button>
+          </div>
+        </div>
+      </aside>
+
+      {/* Main Content Area */}
+      <main className="flex-1 min-w-0 flex flex-col min-h-screen">
+        <header className="hidden md:flex items-center justify-between px-8 py-4 bg-white border-b border-[#E5D4BD] sticky top-0 z-20 shadow-[0_1px_2px_rgba(0,0,0,0.03)]">
+          <div>
+            <h1 className="font-serif text-2xl font-medium text-[#221912]">{tab}</h1>
+            <p className="text-xs text-[#8F8173] mt-0.5">Manage and customize your studio's {tab.toLowerCase()}</p>
+          </div>
+          <div className="flex items-center gap-3">
+            <a
+              href="/"
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-1.5 text-xs text-[#8F8173] hover:text-[#221912] font-medium px-3.5 py-1.5 rounded-lg border border-[#E5D4BD] bg-[#FAF6F0] hover:bg-[#F0E6D8] transition"
+            >
+              <ExternalLink className="h-3.5 w-3.5" /> View Website
+            </a>
+            <button
+              onClick={signOut}
+              className="inline-flex items-center gap-1.5 text-xs text-red-700 hover:text-red-800 font-medium px-3.5 py-1.5 rounded-lg border border-red-200 bg-red-50/70 hover:bg-red-100 transition cursor-pointer"
+            >
+              <LogOut className="h-3.5 w-3.5" /> Sign out
+            </button>
+          </div>
+        </header>
+
+        <div className="flex-1 p-4 md:p-8 max-w-6xl w-full mx-auto">
+          {tab === "Enquiries" && <EnquiriesTab />}
+          {tab === "Homepage Content" && <HomepageContentTab />}
+          {tab === "About Us Page" && <AboutPageContentTab />}
+          {tab === "Contact Page" && <ContactPageContentTab />}
+          {tab === "Categories" && <CategoriesTab />}
+          {tab === "Services" && <ServicesTab />}
+          {tab === "Gallery" && <GalleryTab />}
+          {tab === "Testimonials" && <TestimonialsTab />}
+          {tab === "Video Testimonials" && <VideoTestimonialsTab />}
+          {tab === "Site Settings" && <SiteSettingsTab />}
+        </div>
+      </main>
     </div>
   );
 }
