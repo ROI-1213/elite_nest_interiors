@@ -40,13 +40,39 @@ function AuthPage() {
     setBusy(true);
 
     try {
-      // Authenticate directly against PostgreSQL database using JWT
-      const res = await signInServerFn({
-        data: {
-          email: email.trim().toLowerCase(),
-          password,
-        },
-      });
+      let res: any = null;
+
+      // 1. Direct REST Authentication endpoint for rock-solid stability
+      try {
+        const apiRes = await fetch("/api/auth/login", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+          },
+          body: JSON.stringify({
+            email: email.trim().toLowerCase(),
+            password,
+          }),
+        });
+
+        const contentType = apiRes.headers.get("content-type") || "";
+        if (contentType.includes("application/json")) {
+          res = await apiRes.json();
+        }
+      } catch (apiErr) {
+        console.warn("[Direct Auth API Notice, trying serverFn fallback]:", apiErr);
+      }
+
+      // 2. Fallback to TanStack Start serverFn if REST did not return
+      if (!res) {
+        res = await signInServerFn({
+          data: {
+            email: email.trim().toLowerCase(),
+            password,
+          },
+        });
+      }
 
       if (res?.success && res?.token && res?.isAdmin) {
         if (typeof window !== "undefined") {
@@ -69,7 +95,13 @@ function AuthPage() {
       setBusy(false);
     } catch (err: any) {
       console.error("[signIn error]:", err);
-      const msg = err?.message || "Connection error. Please try again.";
+      let msg = err?.message || "Connection error. Please try again.";
+      if (
+        typeof msg === "string" &&
+        (msg.includes("<!doctype") || msg.includes("<html") || msg.includes("This page didn't load"))
+      ) {
+        msg = "Authentication service temporarily unavailable. Please try again in a moment.";
+      }
       toast.error(msg);
       setBusy(false);
     }

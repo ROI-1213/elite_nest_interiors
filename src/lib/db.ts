@@ -50,6 +50,32 @@ declare global {
   var __pgFallbackPoolInstance: Pool | undefined;
 }
 
+// Ensure .env is populated if run under bare Node.js
+try {
+  if (!process.env.DATABASE_URL && typeof process !== "undefined" && process.cwd) {
+    const fs = createRequire(import.meta.url)("node:fs");
+    const path = createRequire(import.meta.url)("node:path");
+    const envFile = path.resolve(process.cwd(), ".env");
+    if (fs.existsSync(envFile)) {
+      const content = fs.readFileSync(envFile, "utf8");
+      for (const line of content.split("\n")) {
+        const trimmed = line.trim();
+        if (!trimmed || trimmed.startsWith("#")) continue;
+        const eqIdx = trimmed.indexOf("=");
+        if (eqIdx > 0) {
+          const k = trimmed.slice(0, eqIdx).trim();
+          const v = trimmed.slice(eqIdx + 1).trim().replace(/^['"](.*)['"]$/, "$1");
+          if (k && !process.env[k]) {
+            process.env[k] = v;
+          }
+        }
+      }
+    }
+  }
+} catch {
+  // Silent fallback
+}
+
 function buildPoolConfig(hostOverride?: string): PoolConfig {
   let connectionString =
     process.env.DATABASE_URL ||
@@ -64,20 +90,19 @@ function buildPoolConfig(hostOverride?: string): PoolConfig {
     process.env.CF_PAGES
   );
 
-  const targetHost =
-    hostOverride ||
-    (isCloudServerless
-      ? "168.119.64.101"
-      : process.env.DB_HOST || "168.119.64.101");
+  const defaultHost = isCloudServerless ? "168.119.64.101" : "127.0.0.1";
+  const targetHost = hostOverride || process.env.DB_HOST || defaultHost;
 
   if (connectionString) {
-    if (targetHost === "168.119.64.101") {
+    if (isCloudServerless) {
       connectionString = connectionString
         .replace("@localhost:", "@168.119.64.101:")
         .replace("@127.0.0.1:", "@168.119.64.101:");
-    } else {
+    } else if (hostOverride) {
       connectionString = connectionString
-        .replace("@168.119.64.101:", `@${targetHost}:`);
+        .replace("@168.119.64.101:", `@${hostOverride}:`)
+        .replace("@localhost:", `@${hostOverride}:`)
+        .replace("@127.0.0.1:", `@${hostOverride}:`);
     }
   }
 
@@ -128,11 +153,10 @@ if (process.env.NODE_ENV !== "production") {
 
 function getSecondaryPool(): Pool {
   if (!fallbackPool) {
-    const altHost =
-      (primaryPool as any).options?.host === "localhost" ||
-      (primaryPool as any).options?.connectionString?.includes("localhost")
-        ? "168.119.64.101"
-        : "localhost";
+    const curHost =
+      (primaryPool as any).options?.host ||
+      ((primaryPool as any).options?.connectionString?.includes("127.0.0.1") ? "127.0.0.1" : "localhost");
+    const altHost = curHost === "127.0.0.1" ? "localhost" : curHost === "localhost" ? "168.119.64.101" : "127.0.0.1";
     fallbackPool = createPool(altHost);
     if (process.env.NODE_ENV !== "production") {
       globalThis.__pgFallbackPoolInstance = fallbackPool;
