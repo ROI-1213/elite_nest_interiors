@@ -286,8 +286,23 @@ export default {
 
     try {
       const handler = await getServerEntry();
-      let response = await handler.fetch(request, env, ctx);
-      response = await normalizeCatastrophicSsrResponse(response, request);
+
+      // Ensure all TanStack Start RPC and server functions are accepted without 406
+      const currentAccept = request.headers.get("accept") || "";
+      let safeRequest = request;
+      if (!currentAccept.includes("*/*") && !currentAccept.includes("text/html")) {
+        const h = new Headers(request.headers);
+        h.set("accept", currentAccept ? `${currentAccept}, */*` : "*/*");
+        safeRequest = new Request(request.url, {
+          method: request.method,
+          headers: h,
+          body: request.body,
+          duplex: "half",
+        } as any);
+      }
+
+      let response = await handler.fetch(safeRequest, env, ctx);
+      response = await normalizeCatastrophicSsrResponse(response, safeRequest);
 
       // Prevent CDN, proxy, and browser caching of dynamic SSR pages, server functions, and JSON APIs
       const contentType = response.headers.get("content-type") || "";
