@@ -87,99 +87,141 @@ export default {
     }
 
     // Direct Admin Authentication Endpoint: /api/auth/login
-    if (url.pathname === "/api/auth/login" && request.method === "POST") {
-      try {
-        const body = await request.json().catch(() => ({}));
-        const email = (body.email || "").trim().toLowerCase();
-        const password = (body.password || "").trim();
+    if (url.pathname === "/api/auth/login" || url.pathname === "/api/auth/login/") {
+      if (request.method === "OPTIONS") {
+        return new Response(null, {
+          status: 204,
+          headers: {
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Methods": "POST, OPTIONS",
+            "Access-Control-Allow-Headers": "Content-Type, Accept, Authorization",
+          },
+        });
+      }
 
-        if (!email || !password) {
-          return new Response(
-            JSON.stringify({ success: false, error: "Please enter both email and password." }),
-            { status: 400, headers: { "content-type": "application/json" } }
-          );
-        }
-
-        // Query user from PostgreSQL
-        let user: any = null;
+      if (request.method === "POST") {
         try {
-          user = await queryOneDb(
-            "SELECT id, email, password_hash FROM public.users WHERE LOWER(email) = LOWER($1)",
-            [email]
-          );
-        } catch (dbErr: any) {
-          console.error("[PostgreSQL User Lookup Notice]:", dbErr?.message || dbErr);
-        }
+          const body = await request.json().catch(() => ({}));
+          const email = (body.email || "").trim().toLowerCase();
+          const password = (body.password || "").trim();
 
-        if (!user) {
-          // If default administrator credentials are used, allow fallback verification
-          if (
-            email === "elitenestinteriors@gmail.com" &&
-            (password === "elitenest@2026" || password === "Admin@123456")
-          ) {
-            user = { id: "admin-master", email: "elitenestinteriors@gmail.com" };
-          } else {
+          if (!email || !password) {
             return new Response(
-              JSON.stringify({
-                success: false,
-                error: "Invalid email or password. Please verify your credentials and try again.",
-              }),
-              { status: 401, headers: { "content-type": "application/json" } }
+              JSON.stringify({ success: false, error: "Please enter both email and password." }),
+              {
+                status: 400,
+                headers: {
+                  "content-type": "application/json",
+                  "Access-Control-Allow-Origin": "*",
+                },
+              }
             );
           }
-        } else {
-          // Compare password using bcrypt
-          let isValid = false;
+
+          // Query user from PostgreSQL
+          let user: any = null;
           try {
-            const bcrypt = (await import("bcryptjs")).default;
-            isValid = await bcrypt.compare(password, user.password_hash);
-          } catch {}
-
-          if (!isValid && (password === "elitenest@2026" || password === "Admin@123456")) {
-            isValid = true;
-          }
-
-          if (!isValid) {
-            return new Response(
-              JSON.stringify({
-                success: false,
-                error: "Invalid password. Please check your password and try again.",
-              }),
-              { status: 401, headers: { "content-type": "application/json" } }
+            user = await queryOneDb(
+              "SELECT id, email, password_hash FROM public.users WHERE LOWER(email) = LOWER($1)",
+              [email]
             );
+          } catch (dbErr: any) {
+            console.error("[PostgreSQL User Lookup Notice]:", dbErr?.message || dbErr);
           }
+
+          if (!user) {
+            // Fallback for default master administrator account
+            if (
+              email === "elitenestinteriors@gmail.com" &&
+              (password === "elitenest@2026" || password === "Admin@123456")
+            ) {
+              user = { id: "admin-master", email: "elitenestinteriors@gmail.com" };
+            } else {
+              return new Response(
+                JSON.stringify({
+                  success: false,
+                  error: "Invalid email or password. Please verify your credentials and try again.",
+                }),
+                {
+                  status: 401,
+                  headers: {
+                    "content-type": "application/json",
+                    "Access-Control-Allow-Origin": "*",
+                  },
+                }
+              );
+            }
+          } else {
+            // Compare password using bcrypt
+            let isValid = false;
+            try {
+              const bcryptModule = await import("bcryptjs");
+              const bcrypt = (bcryptModule as any).default || bcryptModule;
+              isValid = await bcrypt.compare(password, user.password_hash);
+            } catch (cmpErr) {
+              console.warn("[Password compare notice]:", cmpErr);
+            }
+
+            if (!isValid && (password === "elitenest@2026" || password === "Admin@123456")) {
+              isValid = true;
+            }
+
+            if (!isValid) {
+              return new Response(
+                JSON.stringify({
+                  success: false,
+                  error: "Invalid password. Please check your password and try again.",
+                }),
+                {
+                  status: 401,
+                  headers: {
+                    "content-type": "application/json",
+                    "Access-Control-Allow-Origin": "*",
+                  },
+                }
+              );
+            }
+          }
+
+          // Sign 7-day JWT token
+          const jwtModule = await import("jsonwebtoken");
+          const jwt = (jwtModule as any).default || jwtModule;
+          const JWT_SECRET = process.env.JWT_SECRET || "elite_nest_secret_key_2026_pg_auth";
+          const token = jwt.sign(
+            { userId: user.id, email: user.email, isAdmin: true },
+            JWT_SECRET,
+            { expiresIn: "7d" }
+          );
+
+          return new Response(
+            JSON.stringify({
+              success: true,
+              isAdmin: true,
+              user: { id: user.id, email: user.email },
+              token,
+            }),
+            {
+              status: 200,
+              headers: {
+                "content-type": "application/json",
+                "Access-Control-Allow-Origin": "*",
+                "Set-Cookie": `elite_admin_token=${encodeURIComponent(token)}; path=/; max-age=604800; SameSite=Lax;`,
+              },
+            }
+          );
+        } catch (authErr: any) {
+          console.error("[Auth API Error]:", authErr);
+          return new Response(
+            JSON.stringify({ success: false, error: authErr?.message || "Authentication error" }),
+            {
+              status: 500,
+              headers: {
+                "content-type": "application/json",
+                "Access-Control-Allow-Origin": "*",
+              },
+            }
+          );
         }
-
-        // Sign 7-day JWT token
-        const jwt = (await import("jsonwebtoken")).default;
-        const JWT_SECRET = process.env.JWT_SECRET || "elite_nest_secret_key_2026_pg_auth";
-        const token = jwt.sign(
-          { userId: user.id, email: user.email, isAdmin: true },
-          JWT_SECRET,
-          { expiresIn: "7d" }
-        );
-
-        return new Response(
-          JSON.stringify({
-            success: true,
-            isAdmin: true,
-            user: { id: user.id, email: user.email },
-            token,
-          }),
-          {
-            status: 200,
-            headers: {
-              "content-type": "application/json",
-              "Set-Cookie": `elite_admin_token=${encodeURIComponent(token)}; path=/; max-age=604800; SameSite=Lax;`,
-            },
-          }
-        );
-      } catch (authErr: any) {
-        console.error("[Auth API Error]:", authErr);
-        return new Response(
-          JSON.stringify({ success: false, error: authErr?.message || "Authentication error" }),
-          { status: 500, headers: { "content-type": "application/json" } }
-        );
       }
     }
 
