@@ -3,7 +3,7 @@ import bcrypt from 'bcryptjs';
 
 const connectionString =
   process.env.DATABASE_URL ||
-  'postgresql://elite47:z74zT9hvpAYamMsKjkbG5Guhm@168.119.64.101:5432/elite47';
+  'postgresql://elite47:z74zT9hvpAYamMsKjkbG5Guhm@127.0.0.1:5432/elite47';
 
 async function setAdminUser() {
   const client = new pg.Client({

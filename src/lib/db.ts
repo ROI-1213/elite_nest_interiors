@@ -90,17 +90,8 @@ function buildPoolConfig(hostOverride?: string): PoolConfig {
     process.env.CF_PAGES
   );
 
-  const defaultHost = "168.119.64.101";
+  const defaultHost = "127.0.0.1";
   const targetHost = hostOverride || process.env.DB_HOST || defaultHost;
-
-  if (connectionString) {
-    if (hostOverride) {
-      connectionString = connectionString
-        .replace("@168.119.64.101:", `@${hostOverride}:`)
-        .replace("@localhost:", `@${hostOverride}:`)
-        .replace("@127.0.0.1:", `@${hostOverride}:`);
-    }
-  }
 
   const sslEnabled =
     process.env.DB_SSL === "true" ||
@@ -152,7 +143,7 @@ function getSecondaryPool(): Pool {
     const curHost =
       (primaryPool as any).options?.host ||
       ((primaryPool as any).options?.connectionString?.includes("127.0.0.1") ? "127.0.0.1" : "localhost");
-    const altHost = curHost === "127.0.0.1" ? "localhost" : curHost === "localhost" ? "168.119.64.101" : "127.0.0.1";
+    const altHost = curHost === "127.0.0.1" ? "localhost" : "127.0.0.1";
     fallbackPool = createPool(altHost);
     if (process.env.NODE_ENV !== "production") {
       globalThis.__pgFallbackPoolInstance = fallbackPool;
