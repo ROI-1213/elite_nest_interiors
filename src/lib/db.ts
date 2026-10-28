@@ -90,15 +90,11 @@ function buildPoolConfig(hostOverride?: string): PoolConfig {
     process.env.CF_PAGES
   );
 
-  const defaultHost = isCloudServerless ? "168.119.64.101" : "127.0.0.1";
+  const defaultHost = "168.119.64.101";
   const targetHost = hostOverride || process.env.DB_HOST || defaultHost;
 
   if (connectionString) {
-    if (isCloudServerless) {
-      connectionString = connectionString
-        .replace("@localhost:", "@168.119.64.101:")
-        .replace("@127.0.0.1:", "@168.119.64.101:");
-    } else if (hostOverride) {
+    if (hostOverride) {
       connectionString = connectionString
         .replace("@168.119.64.101:", `@${hostOverride}:`)
         .replace("@localhost:", `@${hostOverride}:`)
@@ -117,7 +113,7 @@ function buildPoolConfig(hostOverride?: string): PoolConfig {
         ssl: sslEnabled ? { rejectUnauthorized: false } : false,
         max: parseInt(process.env.DB_POOL_MAX || "10", 10),
         idleTimeoutMillis: 30000,
-        connectionTimeoutMillis: 7000,
+        connectionTimeoutMillis: 4000,
       }
     : {
         host: targetHost,
@@ -131,7 +127,7 @@ function buildPoolConfig(hostOverride?: string): PoolConfig {
         ssl: sslEnabled ? { rejectUnauthorized: false } : false,
         max: parseInt(process.env.DB_POOL_MAX || "10", 10),
         idleTimeoutMillis: 30000,
-        connectionTimeoutMillis: 7000,
+        connectionTimeoutMillis: 4000,
       };
 }
 
