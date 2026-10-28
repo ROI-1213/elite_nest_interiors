@@ -1,4 +1,46 @@
-import { Pool, type PoolConfig, type QueryResult, type QueryResultRow } from "pg";
+import type { Pool as PgPoolType, PoolConfig, QueryResult, QueryResultRow } from "pg";
+import { createRequire } from "node:module";
+
+// Resilient PostgreSQL module loader supporting CJS, ESM, Vite SSR, and fallback
+let PgPoolConstructor: any = null;
+
+try {
+  const require = createRequire(import.meta.url);
+  const pg = require("pg");
+  PgPoolConstructor = pg.Pool || pg.default?.Pool || pg;
+} catch {
+  try {
+    const pg = await import("pg");
+    PgPoolConstructor = (pg as any).Pool || (pg as any).default?.Pool || (pg as any).default;
+  } catch (e2) {
+    console.error("[PostgreSQL] 'pg' module resolution notice:", e2);
+  }
+}
+
+// Fallback dummy pool to prevent fatal server crash if 'pg' is temporarily uninstalled
+class SafeFallbackPool {
+  options: any = {};
+  constructor(public config: any) {
+    this.options = config || {};
+  }
+  on() {
+    return this;
+  }
+  async query() {
+    throw new Error(
+      "PostgreSQL client 'pg' could not be loaded. Please ensure dependencies are installed via npm install."
+    );
+  }
+  async connect() {
+    throw new Error(
+      "PostgreSQL client 'pg' could not be loaded. Please ensure dependencies are installed via npm install."
+    );
+  }
+  async end() {}
+}
+
+const PoolClass = PgPoolConstructor || SafeFallbackPool;
+export type Pool = PgPoolType;
 
 // Global declaration for singleton pool in development/server environments
 declare global {
@@ -70,8 +112,8 @@ function buildPoolConfig(hostOverride?: string): PoolConfig {
 
 function createPool(hostOverride?: string): Pool {
   const poolConfig = buildPoolConfig(hostOverride);
-  const p = new Pool(poolConfig);
-  p.on("error", (err) => {
+  const p = new PoolClass(poolConfig) as Pool;
+  p.on("error", (err: any) => {
     console.error("Unexpected PostgreSQL client error:", err?.message || err);
   });
   return p;
@@ -86,11 +128,11 @@ if (process.env.NODE_ENV !== "production") {
 
 function getSecondaryPool(): Pool {
   if (!fallbackPool) {
-    // If primary is 168.119.64.101, secondary is localhost. If primary is localhost, secondary is 168.119.64.101.
-    const altHost = (primaryPool as any).options?.host === "localhost" ||
+    const altHost =
+      (primaryPool as any).options?.host === "localhost" ||
       (primaryPool as any).options?.connectionString?.includes("localhost")
-      ? "168.119.64.101"
-      : "localhost";
+        ? "168.119.64.101"
+        : "localhost";
     fallbackPool = createPool(altHost);
     if (process.env.NODE_ENV !== "production") {
       globalThis.__pgFallbackPoolInstance = fallbackPool;
@@ -134,7 +176,6 @@ export async function query<R extends QueryResultRow = any>(
       try {
         const sec = getSecondaryPool();
         const res = await sec.query<R>(text, params);
-        // Switch primary to successful secondary
         primaryPool = sec;
         return res;
       } catch (secErr: any) {

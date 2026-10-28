@@ -6,8 +6,16 @@ export default defineConfig(({ mode }) => ({
   server: {
     host: "::",
     port: 8229,
+    hmr: {
+      overlay: false,
+    },
   },
-
+  ssr: {
+    external: ["pg", "pg-pool", "pg-types", "bcryptjs", "jsonwebtoken"],
+  },
+  optimizeDeps: {
+    exclude: ["pg"],
+  },
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
