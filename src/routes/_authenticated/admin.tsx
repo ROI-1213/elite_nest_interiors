@@ -2065,7 +2065,7 @@ function CategoriesTab() {
                         toast.success("Category image uploaded!");
                       }
                     } catch (err: any) {
-                      toast.error("Upload failed: " + err.message);
+                      toast.error(formatErrorMessage(err, "Upload failed"));
                     }
                   }}
                 />
@@ -2190,7 +2190,7 @@ function ServicesTab() {
                         toast.success("Service image uploaded!");
                       }
                     } catch (err: any) {
-                      toast.error("Upload failed: " + err.message);
+                      toast.error(formatErrorMessage(err, "Upload failed"));
                     }
                   }}
                 />
@@ -2357,7 +2357,7 @@ function TestimonialsTab() {
                         toast.success("Client photo uploaded!");
                       }
                     } catch (err: any) {
-                      toast.error("Upload failed: " + err.message);
+                      toast.error(formatErrorMessage(err, "Upload failed"));
                     }
                   }}
                 />
@@ -2389,7 +2389,7 @@ function TestimonialsTab() {
                         toast.success("Project photo uploaded!");
                       }
                     } catch (err: any) {
-                      toast.error("Upload failed: " + err.message);
+                      toast.error(formatErrorMessage(err, "Upload failed"));
                     }
                   }}
                 />
@@ -2584,7 +2584,7 @@ function GalleryTab() {
       }
     } catch (err: any) {
       console.error("Storage upload failed:", err);
-      toast.error(err?.message || "Failed to upload image.");
+      toast.error(formatErrorMessage(err, "Failed to upload image."));
     }
     return null;
   }
