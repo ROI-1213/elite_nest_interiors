@@ -104,7 +104,7 @@ function buildPoolConfig(hostOverride?: string): PoolConfig {
         ssl: sslEnabled ? { rejectUnauthorized: false } : false,
         max: parseInt(process.env.DB_POOL_MAX || "10", 10),
         idleTimeoutMillis: 30000,
-        connectionTimeoutMillis: 4000,
+        connectionTimeoutMillis: 10000,
       }
     : {
         host: targetHost,
@@ -118,7 +118,7 @@ function buildPoolConfig(hostOverride?: string): PoolConfig {
         ssl: sslEnabled ? { rejectUnauthorized: false } : false,
         max: parseInt(process.env.DB_POOL_MAX || "10", 10),
         idleTimeoutMillis: 30000,
-        connectionTimeoutMillis: 4000,
+        connectionTimeoutMillis: 10000,
       };
 }
 
