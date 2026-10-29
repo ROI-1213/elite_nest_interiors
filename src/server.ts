@@ -29,9 +29,15 @@ async function normalizeCatastrophicSsrResponse(
 
   const url = new URL(request.url);
   const isApiOrServerFn =
+    (request.method !== "GET" && request.method !== "HEAD") ||
     url.pathname.startsWith("/api/") ||
     url.pathname.startsWith("/_server") ||
+    url.search.includes("_serverFn") ||
     url.search.includes("_serverFnId") ||
+    request.headers.get("x-tanstack-start-server-fn") != null ||
+    request.headers.get("x-server-fn") != null ||
+    request.headers.get("x-action") != null ||
+    request.headers.get("content-type")?.includes("application/json") ||
     !request.headers.get("accept")?.includes("text/html");
 
   // NEVER replace API or server function JSON responses with HTML error pages
@@ -330,9 +336,15 @@ export default {
       console.error("[Server Error]:", error);
 
       const isApiOrServerFn =
+        (request.method !== "GET" && request.method !== "HEAD") ||
         url.pathname.startsWith("/api/") ||
         url.pathname.startsWith("/_server") ||
+        url.search.includes("_serverFn") ||
         url.search.includes("_serverFnId") ||
+        request.headers.get("x-tanstack-start-server-fn") != null ||
+        request.headers.get("x-server-fn") != null ||
+        request.headers.get("x-action") != null ||
+        request.headers.get("content-type")?.includes("application/json") ||
         !request.headers.get("accept")?.includes("text/html");
 
       if (isApiOrServerFn) {

@@ -320,6 +320,21 @@ function TopBar({ email, onSignOut }: { email: string; onSignOut: () => void }) 
   );
 }
 
+function formatErrorMessage(err: any, fallback = "An error occurred"): string {
+  if (!err) return fallback;
+  const msg = typeof err === "string" ? err : err?.message || String(err);
+  if (
+    msg.includes("<!doctype") ||
+    msg.includes("<!DOCTYPE") ||
+    msg.includes("<html") ||
+    msg.includes("This page didn't load") ||
+    msg.includes("Something went wrong on our end")
+  ) {
+    return "Server encountered an issue saving changes. Please try again.";
+  }
+  return msg || fallback;
+}
+
 /* -------------------- UPLOAD HELPER -------------------- */
 async function uploadToStorage(file: File, bucket = "general"): Promise<string | null> {
   const mimeType = file.type || "image/jpeg";
@@ -368,11 +383,15 @@ function HomepageContentTab() {
     if (!draft) return;
     const { id: _id, ...rest } = draft;
     try {
-      await updateSiteSettingsServerFn({ data: rest });
+      const res = await updateSiteSettingsServerFn({ data: rest });
+      if ((res as any)?.success === false) {
+        toast.error(formatErrorMessage((res as any)?.error, "Failed to save homepage content."));
+        return;
+      }
       toast.success("Homepage content saved successfully!");
       qc.invalidateQueries({ queryKey: ["site_settings"] });
     } catch (e: any) {
-      toast.error(e.message || "Failed to save homepage content.");
+      toast.error(formatErrorMessage(e, "Failed to save homepage content."));
     }
   }
 
@@ -386,7 +405,7 @@ function HomepageContentTab() {
         toast.success("Hero image uploaded to database.");
       }
     } catch (err: any) {
-      toast.error("Upload failed: " + err.message);
+      toast.error(formatErrorMessage(err, "Upload failed"));
     } finally {
       setUploadingHero(false);
     }
@@ -398,17 +417,21 @@ function HomepageContentTab() {
     try {
       const url = await uploadToStorage(file, "services");
       if (url) {
-        await saveServiceServerFn({
+        const res = await saveServiceServerFn({
           data: {
             ...service,
             image_url: url,
           },
         });
+        if ((res as any)?.success === false) {
+          toast.error(formatErrorMessage((res as any)?.error, "Failed to update image"));
+          return;
+        }
         qc.invalidateQueries({ queryKey: ["services"] });
         toast.success(`Image updated for "${service.title}"!`);
       }
     } catch (err: any) {
-      toast.error("Upload failed: " + err.message);
+      toast.error(formatErrorMessage(err, "Upload failed"));
     } finally {
       setUploadingSvcId(null);
     }
@@ -416,16 +439,20 @@ function HomepageContentTab() {
 
   async function handleServiceUrlUpdate(service: any, newUrl: string) {
     try {
-      await saveServiceServerFn({
+      const res = await saveServiceServerFn({
         data: {
           ...service,
           image_url: newUrl.trim() || null,
         },
       });
+      if ((res as any)?.success === false) {
+        toast.error(formatErrorMessage((res as any)?.error, "Failed to update image URL"));
+        return;
+      }
       qc.invalidateQueries({ queryKey: ["services"] });
       toast.success(`Image URL updated for "${service.title}"!`);
     } catch (err: any) {
-      toast.error("Failed to update image URL: " + err.message);
+      toast.error(formatErrorMessage(err, "Failed to update image URL"));
     }
   }
 
@@ -439,7 +466,7 @@ function HomepageContentTab() {
         toast.success(`Image uploaded for ${spaceLabel}!`);
       }
     } catch (err: any) {
-      toast.error("Upload failed: " + err.message);
+      toast.error(formatErrorMessage(err, "Upload failed"));
     } finally {
       setUploadingSpaceKey(null);
     }
@@ -458,7 +485,7 @@ function HomepageContentTab() {
         toast.success("Card image updated!");
       }
     } catch (err: any) {
-      toast.error("Upload failed: " + err.message);
+      toast.error(formatErrorMessage(err, "Upload failed"));
     } finally {
       setUploadingCardKey(null);
     }
@@ -1091,11 +1118,15 @@ function AboutPageContentTab() {
     if (!draft) return;
     const { id: _id, ...rest } = draft;
     try {
-      await updateSiteSettingsServerFn({ data: rest });
+      const res = await updateSiteSettingsServerFn({ data: rest });
+      if ((res as any)?.success === false) {
+        toast.error(formatErrorMessage((res as any)?.error, "Failed to save About Us settings."));
+        return;
+      }
       toast.success("About Us page settings saved successfully!");
       qc.invalidateQueries({ queryKey: ["site_settings"] });
     } catch (e: any) {
-      toast.error(e.message || "Failed to save About Us settings.");
+      toast.error(formatErrorMessage(e, "Failed to save About Us settings."));
     }
   }
 
@@ -1109,7 +1140,7 @@ function AboutPageContentTab() {
         toast.success("About Us hero image uploaded to database.");
       }
     } catch (err: any) {
-      toast.error("Upload failed: " + err.message);
+      toast.error(formatErrorMessage(err, "Upload failed"));
     } finally {
       setUploadingHero(false);
     }
@@ -1409,23 +1440,31 @@ function VideoTestimonialsTab() {
       is_active: v.is_active ?? true,
     };
     try {
-      await saveVideoTestimonialServerFn({ data: payload });
+      const res = await saveVideoTestimonialServerFn({ data: payload });
+      if ((res as any)?.success === false) {
+        toast.error(formatErrorMessage((res as any)?.error, "Failed to save video testimonial."));
+        return;
+      }
       toast.success("Video testimonial saved.");
       setEditing(null);
       qc.invalidateQueries({ queryKey: ["video_testimonials"] });
     } catch (e: any) {
-      toast.error(e.message || "Failed to save video testimonial.");
+      toast.error(formatErrorMessage(e, "Failed to save video testimonial."));
     }
   }
 
   async function remove(id: string) {
     if (!confirm("Delete video testimonial?")) return;
     try {
-      await deleteVideoTestimonialServerFn({ data: { id } });
+      const res = await deleteVideoTestimonialServerFn({ data: { id } });
+      if ((res as any)?.success === false) {
+        toast.error(formatErrorMessage((res as any)?.error, "Failed to delete video testimonial."));
+        return;
+      }
       toast.success("Deleted");
       qc.invalidateQueries({ queryKey: ["video_testimonials"] });
     } catch (e: any) {
-      toast.error(e.message || "Failed to delete video testimonial.");
+      toast.error(formatErrorMessage(e, "Failed to delete video testimonial."));
     }
   }
 
@@ -1439,7 +1478,7 @@ function VideoTestimonialsTab() {
         toast.success("Thumbnail uploaded.");
       }
     } catch (err: any) {
-      toast.error("Upload failed: " + err.message);
+      toast.error(formatErrorMessage(err, "Upload failed"));
     } finally {
       setUploadingThumb(false);
     }
@@ -1453,7 +1492,7 @@ function VideoTestimonialsTab() {
       ]);
       qc.invalidateQueries({ queryKey: ["video_testimonials"] });
     } catch (e: any) {
-      toast.error("Failed to reorder: " + e.message);
+      toast.error(formatErrorMessage(e, "Failed to reorder."));
     }
   }
 
@@ -1630,29 +1669,41 @@ function EnquiriesTab() {
 
   async function updateStatus(id: string, status: Enquiry["status"]) {
     try {
-      await updateEnquiryStatusServerFn({ data: { id, status } });
+      const res = await updateEnquiryStatusServerFn({ data: { id, status } });
+      if ((res as any)?.success === false) {
+        toast.error(formatErrorMessage((res as any)?.error, "Failed to update status"));
+        return;
+      }
       toast.success("Updated");
       qc.invalidateQueries({ queryKey: ["enquiries"] });
     } catch (e: any) {
-      toast.error(e.message || "Failed to update status");
+      toast.error(formatErrorMessage(e, "Failed to update status"));
     }
   }
   async function updateNotes(id: string, admin_notes: string) {
     try {
-      await updateEnquiryNotesServerFn({ data: { id, admin_notes } });
+      const res = await updateEnquiryNotesServerFn({ data: { id, admin_notes } });
+      if ((res as any)?.success === false) {
+        toast.error(formatErrorMessage((res as any)?.error, "Failed to update notes"));
+        return;
+      }
       qc.invalidateQueries({ queryKey: ["enquiries"] });
     } catch (e: any) {
-      toast.error(e.message || "Failed to update notes");
+      toast.error(formatErrorMessage(e, "Failed to update notes"));
     }
   }
   async function remove(id: string) {
     if (!confirm("Delete enquiry?")) return;
     try {
-      await deleteEnquiryServerFn({ data: { id } });
+      const res = await deleteEnquiryServerFn({ data: { id } });
+      if ((res as any)?.success === false) {
+        toast.error(formatErrorMessage((res as any)?.error, "Failed to delete enquiry"));
+        return;
+      }
       toast.success("Deleted");
       qc.invalidateQueries({ queryKey: ["enquiries"] });
     } catch (e: any) {
-      toast.error(e.message || "Failed to delete enquiry");
+      toast.error(formatErrorMessage(e, "Failed to delete enquiry"));
     }
   }
 
@@ -1734,11 +1785,15 @@ function ContactPageContentTab() {
     if (!draft) return;
     const { id: _id, ...rest } = draft;
     try {
-      await updateSiteSettingsServerFn({ data: rest });
+      const res = await updateSiteSettingsServerFn({ data: rest });
+      if ((res as any)?.success === false) {
+        toast.error(formatErrorMessage((res as any)?.error, "Failed to save Contact Page settings."));
+        return;
+      }
       toast.success("Contact Page settings saved successfully!");
       qc.invalidateQueries({ queryKey: ["site_settings"] });
     } catch (e: any) {
-      toast.error(e.message || "Failed to save Contact Page settings.");
+      toast.error(formatErrorMessage(e, "Failed to save Contact Page settings."));
     }
   }
 
@@ -1752,7 +1807,7 @@ function ContactPageContentTab() {
         toast.success("Contact hero image uploaded.");
       }
     } catch (err: any) {
-      toast.error("Upload failed: " + err.message);
+      toast.error(formatErrorMessage(err, "Upload failed"));
     } finally {
       setUploadingHero(false);
     }
@@ -1933,22 +1988,30 @@ function CategoriesTab() {
       is_active: c.is_active ?? true,
     };
     try {
-      await saveCategoryServerFn({ data: payload });
+      const res = await saveCategoryServerFn({ data: payload });
+      if ((res as any)?.success === false) {
+        toast.error(formatErrorMessage((res as any)?.error, "Failed to save category"));
+        return;
+      }
       toast.success("Saved");
       setEditing(null);
       qc.invalidateQueries({ queryKey: ["service_categories"] });
     } catch (e: any) {
-      toast.error(e.message || "Failed to save category");
+      toast.error(formatErrorMessage(e, "Failed to save category"));
     }
   }
   async function remove(id: string) {
     if (!confirm("Delete category?")) return;
     try {
-      await deleteCategoryServerFn({ data: { id } });
+      const res = await deleteCategoryServerFn({ data: { id } });
+      if ((res as any)?.success === false) {
+        toast.error(formatErrorMessage((res as any)?.error, "Failed to delete category"));
+        return;
+      }
       toast.success("Deleted");
       qc.invalidateQueries({ queryKey: ["service_categories"] });
     } catch (e: any) {
-      toast.error(e.message || "Failed to delete category");
+      toast.error(formatErrorMessage(e, "Failed to delete category"));
     }
   }
 
@@ -2043,22 +2106,30 @@ function ServicesTab() {
       is_active: s.is_active ?? true,
     };
     try {
-      await saveServiceServerFn({ data: payload });
+      const res = await saveServiceServerFn({ data: payload });
+      if ((res as any)?.success === false) {
+        toast.error(formatErrorMessage((res as any)?.error, "Failed to save service"));
+        return;
+      }
       toast.success("Saved");
       setEditing(null);
       qc.invalidateQueries({ queryKey: ["services"] });
     } catch (e: any) {
-      toast.error(e.message || "Failed to save service");
+      toast.error(formatErrorMessage(e, "Failed to save service"));
     }
   }
   async function remove(id: string) {
     if (!confirm("Delete service?")) return;
     try {
-      await deleteServiceServerFn({ data: { id } });
+      const res = await deleteServiceServerFn({ data: { id } });
+      if ((res as any)?.success === false) {
+        toast.error(formatErrorMessage((res as any)?.error, "Failed to delete service"));
+        return;
+      }
       toast.success("Deleted");
       qc.invalidateQueries({ queryKey: ["services"] });
     } catch (e: any) {
-      toast.error(e.message || "Failed to delete service");
+      toast.error(formatErrorMessage(e, "Failed to delete service"));
     }
   }
 
@@ -2169,23 +2240,31 @@ function TestimonialsTab() {
       is_active: t.is_active ?? true,
     };
     try {
-      await saveTestimonialServerFn({ data: payload });
+      const res = await saveTestimonialServerFn({ data: payload });
+      if ((res as any)?.success === false) {
+        toast.error(formatErrorMessage((res as any)?.error, "Failed to save testimonial."));
+        return;
+      }
       toast.success("Saved");
       setEditing(null);
       qc.invalidateQueries({ queryKey: ["testimonials"] });
     } catch (e: any) {
-      toast.error(e.message || "Failed to save testimonial.");
+      toast.error(formatErrorMessage(e, "Failed to save testimonial."));
     }
   }
 
   async function remove(id: string) {
     if (!confirm("Delete testimonial?")) return;
     try {
-      await deleteTestimonialServerFn({ data: { id } });
+      const res = await deleteTestimonialServerFn({ data: { id } });
+      if ((res as any)?.success === false) {
+        toast.error(formatErrorMessage((res as any)?.error, "Failed to delete testimonial."));
+        return;
+      }
       toast.success("Deleted");
       qc.invalidateQueries({ queryKey: ["testimonials"] });
     } catch (e: any) {
-      toast.error(e.message || "Failed to delete testimonial.");
+      toast.error(formatErrorMessage(e, "Failed to delete testimonial."));
     }
   }
 
@@ -2355,11 +2434,15 @@ function SiteSettingsTab() {
     if (!draft) return;
     const { id: _id, ...rest } = draft;
     try {
-      await updateSiteSettingsServerFn({ data: rest });
+      const res = await updateSiteSettingsServerFn({ data: rest });
+      if ((res as any)?.success === false) {
+        toast.error(formatErrorMessage((res as any)?.error, "Failed to save settings."));
+        return;
+      }
       toast.success("Settings saved");
       qc.invalidateQueries({ queryKey: ["site_settings"] });
     } catch (e: any) {
-      toast.error(e.message || "Failed to save settings.");
+      toast.error(formatErrorMessage(e, "Failed to save settings."));
     }
   }
 
@@ -2464,11 +2547,15 @@ function GalleryTab() {
     if (!pageSettings) return;
     const { id: _id, ...rest } = pageSettings;
     try {
-      await updateSiteSettingsServerFn({ data: rest });
+      const res = await updateSiteSettingsServerFn({ data: rest });
+      if ((res as any)?.success === false) {
+        toast.error(formatErrorMessage((res as any)?.error, "Failed to save gallery page settings."));
+        return;
+      }
       toast.success("Gallery page settings saved successfully!");
       qc.invalidateQueries({ queryKey: ["site_settings"] });
     } catch (e: any) {
-      toast.error(e.message || "Failed to save gallery page settings.");
+      toast.error(formatErrorMessage(e, "Failed to save gallery page settings."));
     }
   }
 
@@ -2482,7 +2569,7 @@ function GalleryTab() {
         toast.success("Gallery hero image uploaded.");
       }
     } catch (err: any) {
-      toast.error("Upload failed: " + err.message);
+      toast.error(formatErrorMessage(err, "Upload failed"));
     } finally {
       setUploadingHero(false);
     }
@@ -2526,11 +2613,15 @@ function GalleryTab() {
       is_active: true,
     };
     try {
-      await saveGalleryItemServerFn({ data: item });
+      const res = await saveGalleryItemServerFn({ data: item });
+      if ((res as any)?.success === false) {
+        toast.error(formatErrorMessage((res as any)?.error, "Failed to upload image."));
+        return;
+      }
       toast.success("Uploaded and saved to gallery!");
       invalidate();
     } catch (e: any) {
-      toast.error(e.message || "Failed to upload image.");
+      toast.error(formatErrorMessage(e, "Failed to upload image."));
     }
   }
 
@@ -2548,23 +2639,31 @@ function GalleryTab() {
       is_active: g.is_active ?? true,
     };
     try {
-      await saveGalleryItemServerFn({ data: payload });
+      const res = await saveGalleryItemServerFn({ data: payload });
+      if ((res as any)?.success === false) {
+        toast.error(formatErrorMessage((res as any)?.error, "Failed to save gallery item."));
+        return;
+      }
       toast.success("Saved gallery item");
       setEditing(null);
       invalidate();
     } catch (e: any) {
-      toast.error(e.message || "Failed to save gallery item.");
+      toast.error(formatErrorMessage(e, "Failed to save gallery item."));
     }
   }
 
   async function remove(id: string) {
     if (!confirm("Delete gallery item?")) return;
     try {
-      await deleteGalleryItemServerFn({ data: { id } });
+      const res = await deleteGalleryItemServerFn({ data: { id } });
+      if ((res as any)?.success === false) {
+        toast.error(formatErrorMessage((res as any)?.error, "Failed to delete gallery item."));
+        return;
+      }
       toast.success("Deleted");
       invalidate();
     } catch (e: any) {
-      toast.error(e.message || "Failed to delete gallery item.");
+      toast.error(formatErrorMessage(e, "Failed to delete gallery item."));
     }
   }
 
@@ -2576,7 +2675,7 @@ function GalleryTab() {
       ]);
       invalidate();
     } catch (e: any) {
-      toast.error(e.message || "Failed to reorder.");
+      toast.error(formatErrorMessage(e, "Failed to reorder."));
     }
   }
 
