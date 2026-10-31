@@ -20,7 +20,9 @@ try {
 // Fallback dummy pool to prevent fatal server crash if 'pg' is temporarily uninstalled
 class SafeFallbackPool {
   options: any = {};
-  constructor(public config: any) {
+  config: any;
+  constructor(config: any) {
+    this.config = config;
     this.options = config || {};
   }
   on() {

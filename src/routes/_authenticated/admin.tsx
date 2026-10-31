@@ -33,22 +33,22 @@ import {
   type CardOverride,
 } from "@/lib/featured-listings.config";
 import {
-  saveGalleryItemServerFn,
-  deleteGalleryItemServerFn,
-  saveTestimonialServerFn,
-  deleteTestimonialServerFn,
-  saveVideoTestimonialServerFn,
-  deleteVideoTestimonialServerFn,
-  uploadStorageFileServerFn,
-  updateSiteSettingsServerFn,
-  saveServiceServerFn,
-  deleteServiceServerFn,
-  saveCategoryServerFn,
-  deleteCategoryServerFn,
-  updateEnquiryStatusServerFn,
-  updateEnquiryNotesServerFn,
-  deleteEnquiryServerFn,
-} from "@/lib/server-functions";
+  adminSaveSiteSettings,
+  adminSaveService,
+  adminDeleteService,
+  adminSaveCategory,
+  adminDeleteCategory,
+  adminSaveGalleryItem,
+  adminDeleteGalleryItem,
+  adminSaveTestimonial,
+  adminDeleteTestimonial,
+  adminSaveVideoTestimonial,
+  adminDeleteVideoTestimonial,
+  adminUpdateEnquiryStatus,
+  adminUpdateEnquiryNotes,
+  adminDeleteEnquiry,
+  adminUploadFile,
+} from "@/lib/admin-api";
 import {
   categoriesQuery,
   enquiriesQuery,
@@ -337,29 +337,12 @@ function formatErrorMessage(err: any, fallback = "An error occurred"): string {
 
 /* -------------------- UPLOAD HELPER -------------------- */
 async function uploadToStorage(file: File, bucket = "general"): Promise<string | null> {
-  const mimeType = file.type || "image/jpeg";
-
-  const base64Data = await new Promise<string>((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => {
-      const res = reader.result as string;
-      const base64 = res.split(",")[1] || "";
-      resolve(base64);
-    };
-    reader.onerror = () => reject(new Error("Failed to read image file"));
-    reader.readAsDataURL(file);
-  });
-
-  const res = await uploadStorageFileServerFn({
-    data: {
-      bucket,
-      filename: file.name,
-      mimeType,
-      base64Data,
-    },
-  });
-
-  return res?.publicUrl ?? null;
+  try {
+    return await adminUploadFile(file, bucket);
+  } catch (err: any) {
+    toast.error(formatErrorMessage(err, "Upload failed"));
+    return null;
+  }
 }
 
 /* -------------------- HOMEPAGE CONTENT TAB -------------------- */
@@ -383,12 +366,9 @@ function HomepageContentTab() {
     if (!draft) return;
     const { id: _id, ...rest } = draft;
     try {
-      const res = await updateSiteSettingsServerFn({ data: rest });
-      if ((res as any)?.success === false) {
-        toast.error(formatErrorMessage((res as any)?.error, "Failed to save homepage content."));
-        return;
-      }
+      await adminSaveSiteSettings(rest);
       toast.success("Homepage content saved successfully!");
+      setDraft({ ...draft, ...rest });
       qc.invalidateQueries({ queryKey: ["site_settings"] });
     } catch (e: any) {
       toast.error(formatErrorMessage(e, "Failed to save homepage content."));
@@ -417,16 +397,10 @@ function HomepageContentTab() {
     try {
       const url = await uploadToStorage(file, "services");
       if (url) {
-        const res = await saveServiceServerFn({
-          data: {
-            ...service,
-            image_url: url,
-          },
+        await adminSaveService({
+          ...service,
+          image_url: url,
         });
-        if ((res as any)?.success === false) {
-          toast.error(formatErrorMessage((res as any)?.error, "Failed to update image"));
-          return;
-        }
         qc.invalidateQueries({ queryKey: ["services"] });
         toast.success(`Image updated for "${service.title}"!`);
       }
@@ -439,16 +413,10 @@ function HomepageContentTab() {
 
   async function handleServiceUrlUpdate(service: any, newUrl: string) {
     try {
-      const res = await saveServiceServerFn({
-        data: {
-          ...service,
-          image_url: newUrl.trim() || null,
-        },
+      await adminSaveService({
+        ...service,
+        image_url: newUrl.trim() || null,
       });
-      if ((res as any)?.success === false) {
-        toast.error(formatErrorMessage((res as any)?.error, "Failed to update image URL"));
-        return;
-      }
       qc.invalidateQueries({ queryKey: ["services"] });
       toast.success(`Image URL updated for "${service.title}"!`);
     } catch (err: any) {
@@ -1118,12 +1086,9 @@ function AboutPageContentTab() {
     if (!draft) return;
     const { id: _id, ...rest } = draft;
     try {
-      const res = await updateSiteSettingsServerFn({ data: rest });
-      if ((res as any)?.success === false) {
-        toast.error(formatErrorMessage((res as any)?.error, "Failed to save About Us settings."));
-        return;
-      }
+      await adminSaveSiteSettings(rest);
       toast.success("About Us page settings saved successfully!");
+      setDraft({ ...draft, ...rest });
       qc.invalidateQueries({ queryKey: ["site_settings"] });
     } catch (e: any) {
       toast.error(formatErrorMessage(e, "Failed to save About Us settings."));
@@ -1440,11 +1405,7 @@ function VideoTestimonialsTab() {
       is_active: v.is_active ?? true,
     };
     try {
-      const res = await saveVideoTestimonialServerFn({ data: payload });
-      if ((res as any)?.success === false) {
-        toast.error(formatErrorMessage((res as any)?.error, "Failed to save video testimonial."));
-        return;
-      }
+      await adminSaveVideoTestimonial(payload);
       toast.success("Video testimonial saved.");
       setEditing(null);
       qc.invalidateQueries({ queryKey: ["video_testimonials"] });
@@ -1456,11 +1417,7 @@ function VideoTestimonialsTab() {
   async function remove(id: string) {
     if (!confirm("Delete video testimonial?")) return;
     try {
-      const res = await deleteVideoTestimonialServerFn({ data: { id } });
-      if ((res as any)?.success === false) {
-        toast.error(formatErrorMessage((res as any)?.error, "Failed to delete video testimonial."));
-        return;
-      }
+      await adminDeleteVideoTestimonial(id);
       toast.success("Deleted");
       qc.invalidateQueries({ queryKey: ["video_testimonials"] });
     } catch (e: any) {
@@ -1487,8 +1444,8 @@ function VideoTestimonialsTab() {
   async function swap(a: VideoTestimonial, b: VideoTestimonial) {
     try {
       await Promise.all([
-        saveVideoTestimonialServerFn({ data: { ...a, display_order: b.display_order } }),
-        saveVideoTestimonialServerFn({ data: { ...b, display_order: a.display_order } }),
+        adminSaveVideoTestimonial({ ...a, display_order: b.display_order }),
+        adminSaveVideoTestimonial({ ...b, display_order: a.display_order }),
       ]);
       qc.invalidateQueries({ queryKey: ["video_testimonials"] });
     } catch (e: any) {
@@ -1669,11 +1626,7 @@ function EnquiriesTab() {
 
   async function updateStatus(id: string, status: Enquiry["status"]) {
     try {
-      const res = await updateEnquiryStatusServerFn({ data: { id, status } });
-      if ((res as any)?.success === false) {
-        toast.error(formatErrorMessage((res as any)?.error, "Failed to update status"));
-        return;
-      }
+      await adminUpdateEnquiryStatus(id, status);
       toast.success("Updated");
       qc.invalidateQueries({ queryKey: ["enquiries"] });
     } catch (e: any) {
@@ -1682,11 +1635,7 @@ function EnquiriesTab() {
   }
   async function updateNotes(id: string, admin_notes: string) {
     try {
-      const res = await updateEnquiryNotesServerFn({ data: { id, admin_notes } });
-      if ((res as any)?.success === false) {
-        toast.error(formatErrorMessage((res as any)?.error, "Failed to update notes"));
-        return;
-      }
+      await adminUpdateEnquiryNotes(id, admin_notes);
       qc.invalidateQueries({ queryKey: ["enquiries"] });
     } catch (e: any) {
       toast.error(formatErrorMessage(e, "Failed to update notes"));
@@ -1695,11 +1644,7 @@ function EnquiriesTab() {
   async function remove(id: string) {
     if (!confirm("Delete enquiry?")) return;
     try {
-      const res = await deleteEnquiryServerFn({ data: { id } });
-      if ((res as any)?.success === false) {
-        toast.error(formatErrorMessage((res as any)?.error, "Failed to delete enquiry"));
-        return;
-      }
+      await adminDeleteEnquiry(id);
       toast.success("Deleted");
       qc.invalidateQueries({ queryKey: ["enquiries"] });
     } catch (e: any) {
@@ -1785,12 +1730,9 @@ function ContactPageContentTab() {
     if (!draft) return;
     const { id: _id, ...rest } = draft;
     try {
-      const res = await updateSiteSettingsServerFn({ data: rest });
-      if ((res as any)?.success === false) {
-        toast.error(formatErrorMessage((res as any)?.error, "Failed to save Contact Page settings."));
-        return;
-      }
+      await adminSaveSiteSettings(rest);
       toast.success("Contact Page settings saved successfully!");
+      setDraft({ ...draft, ...rest });
       qc.invalidateQueries({ queryKey: ["site_settings"] });
     } catch (e: any) {
       toast.error(formatErrorMessage(e, "Failed to save Contact Page settings."));
@@ -1988,11 +1930,7 @@ function CategoriesTab() {
       is_active: c.is_active ?? true,
     };
     try {
-      const res = await saveCategoryServerFn({ data: payload });
-      if ((res as any)?.success === false) {
-        toast.error(formatErrorMessage((res as any)?.error, "Failed to save category"));
-        return;
-      }
+      await adminSaveCategory(payload);
       toast.success("Saved");
       setEditing(null);
       qc.invalidateQueries({ queryKey: ["service_categories"] });
@@ -2003,11 +1941,7 @@ function CategoriesTab() {
   async function remove(id: string) {
     if (!confirm("Delete category?")) return;
     try {
-      const res = await deleteCategoryServerFn({ data: { id } });
-      if ((res as any)?.success === false) {
-        toast.error(formatErrorMessage((res as any)?.error, "Failed to delete category"));
-        return;
-      }
+      await adminDeleteCategory(id);
       toast.success("Deleted");
       qc.invalidateQueries({ queryKey: ["service_categories"] });
     } catch (e: any) {
@@ -2106,11 +2040,7 @@ function ServicesTab() {
       is_active: s.is_active ?? true,
     };
     try {
-      const res = await saveServiceServerFn({ data: payload });
-      if ((res as any)?.success === false) {
-        toast.error(formatErrorMessage((res as any)?.error, "Failed to save service"));
-        return;
-      }
+      await adminSaveService(payload);
       toast.success("Saved");
       setEditing(null);
       qc.invalidateQueries({ queryKey: ["services"] });
@@ -2121,11 +2051,7 @@ function ServicesTab() {
   async function remove(id: string) {
     if (!confirm("Delete service?")) return;
     try {
-      const res = await deleteServiceServerFn({ data: { id } });
-      if ((res as any)?.success === false) {
-        toast.error(formatErrorMessage((res as any)?.error, "Failed to delete service"));
-        return;
-      }
+      await adminDeleteService(id);
       toast.success("Deleted");
       qc.invalidateQueries({ queryKey: ["services"] });
     } catch (e: any) {
@@ -2240,11 +2166,7 @@ function TestimonialsTab() {
       is_active: t.is_active ?? true,
     };
     try {
-      const res = await saveTestimonialServerFn({ data: payload });
-      if ((res as any)?.success === false) {
-        toast.error(formatErrorMessage((res as any)?.error, "Failed to save testimonial."));
-        return;
-      }
+      await adminSaveTestimonial(payload);
       toast.success("Saved");
       setEditing(null);
       qc.invalidateQueries({ queryKey: ["testimonials"] });
@@ -2256,11 +2178,7 @@ function TestimonialsTab() {
   async function remove(id: string) {
     if (!confirm("Delete testimonial?")) return;
     try {
-      const res = await deleteTestimonialServerFn({ data: { id } });
-      if ((res as any)?.success === false) {
-        toast.error(formatErrorMessage((res as any)?.error, "Failed to delete testimonial."));
-        return;
-      }
+      await adminDeleteTestimonial(id);
       toast.success("Deleted");
       qc.invalidateQueries({ queryKey: ["testimonials"] });
     } catch (e: any) {
@@ -2434,12 +2352,9 @@ function SiteSettingsTab() {
     if (!draft) return;
     const { id: _id, ...rest } = draft;
     try {
-      const res = await updateSiteSettingsServerFn({ data: rest });
-      if ((res as any)?.success === false) {
-        toast.error(formatErrorMessage((res as any)?.error, "Failed to save settings."));
-        return;
-      }
+      await adminSaveSiteSettings(rest);
       toast.success("Settings saved");
+      setDraft({ ...draft, ...rest });
       qc.invalidateQueries({ queryKey: ["site_settings"] });
     } catch (e: any) {
       toast.error(formatErrorMessage(e, "Failed to save settings."));
@@ -2547,12 +2462,9 @@ function GalleryTab() {
     if (!pageSettings) return;
     const { id: _id, ...rest } = pageSettings;
     try {
-      const res = await updateSiteSettingsServerFn({ data: rest });
-      if ((res as any)?.success === false) {
-        toast.error(formatErrorMessage((res as any)?.error, "Failed to save gallery page settings."));
-        return;
-      }
+      await adminSaveSiteSettings(rest);
       toast.success("Gallery page settings saved successfully!");
+      setPageSettings({ ...pageSettings, ...rest });
       qc.invalidateQueries({ queryKey: ["site_settings"] });
     } catch (e: any) {
       toast.error(formatErrorMessage(e, "Failed to save gallery page settings."));
@@ -2613,11 +2525,7 @@ function GalleryTab() {
       is_active: true,
     };
     try {
-      const res = await saveGalleryItemServerFn({ data: item });
-      if ((res as any)?.success === false) {
-        toast.error(formatErrorMessage((res as any)?.error, "Failed to upload image."));
-        return;
-      }
+      await adminSaveGalleryItem(item);
       toast.success("Uploaded and saved to gallery!");
       invalidate();
     } catch (e: any) {
@@ -2639,11 +2547,7 @@ function GalleryTab() {
       is_active: g.is_active ?? true,
     };
     try {
-      const res = await saveGalleryItemServerFn({ data: payload });
-      if ((res as any)?.success === false) {
-        toast.error(formatErrorMessage((res as any)?.error, "Failed to save gallery item."));
-        return;
-      }
+      await adminSaveGalleryItem(payload);
       toast.success("Saved gallery item");
       setEditing(null);
       invalidate();
@@ -2655,11 +2559,7 @@ function GalleryTab() {
   async function remove(id: string) {
     if (!confirm("Delete gallery item?")) return;
     try {
-      const res = await deleteGalleryItemServerFn({ data: { id } });
-      if ((res as any)?.success === false) {
-        toast.error(formatErrorMessage((res as any)?.error, "Failed to delete gallery item."));
-        return;
-      }
+      await adminDeleteGalleryItem(id);
       toast.success("Deleted");
       invalidate();
     } catch (e: any) {
@@ -2670,8 +2570,8 @@ function GalleryTab() {
   async function swap(a: GalleryItem, b: GalleryItem) {
     try {
       await Promise.all([
-        saveGalleryItemServerFn({ data: { ...a, display_order: b.display_order } }),
-        saveGalleryItemServerFn({ data: { ...b, display_order: a.display_order } }),
+        adminSaveGalleryItem({ ...a, display_order: b.display_order }),
+        adminSaveGalleryItem({ ...b, display_order: a.display_order }),
       ]);
       invalidate();
     } catch (e: any) {

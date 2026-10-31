@@ -2,7 +2,7 @@ import "./lib/error-capture";
 
 import { consumeLastCapturedError } from "./lib/error-capture";
 import { renderErrorPage } from "./lib/error-page";
-import { queryOneDb } from "./lib/db";
+import { queryOneDb, queryDb } from "./lib/db";
 
 type ServerEntry = {
   fetch: (request: Request, env: unknown, ctx: unknown) => Promise<Response> | Response;
@@ -227,6 +227,512 @@ export default {
               },
             }
           );
+        }
+      }
+    }
+
+    // Direct Admin Mutation Endpoints: /api/admin/*
+    if (url.pathname.startsWith("/api/admin/")) {
+      if (request.method === "OPTIONS") {
+        return new Response(null, {
+          status: 204,
+          headers: {
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Methods": "GET, POST, DELETE, OPTIONS",
+            "Access-Control-Allow-Headers": "Content-Type, Accept, Authorization",
+          },
+        });
+      }
+
+      // 1. /api/admin/site-settings
+      if (url.pathname === "/api/admin/site-settings") {
+        if (request.method === "GET") {
+          try {
+            const row = await queryOneDb("SELECT * FROM public.site_settings WHERE id = 1");
+            return new Response(JSON.stringify({ success: true, settings: row }), {
+              status: 200,
+              headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
+            });
+          } catch (err: any) {
+            return new Response(JSON.stringify({ success: false, error: err?.message }), {
+              status: 500,
+              headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
+            });
+          }
+        }
+
+        if (request.method === "POST") {
+          try {
+            const body = await request.json().catch(() => ({}));
+            const { id: _id, updated_at: _u, ...rest } = body;
+            const keys = Object.keys(rest).filter((k) => /^[a-zA-Z0-9_]+$/.test(k));
+            if (keys.length === 0) {
+              return new Response(JSON.stringify({ success: true }), {
+                status: 200,
+                headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
+              });
+            }
+
+            const values = keys.map((k) => {
+              const v = rest[k];
+              if (v === undefined) return null;
+              if (v !== null && typeof v === "object") return JSON.stringify(v);
+              return v;
+            });
+
+            const existing = await queryOneDb("SELECT id FROM public.site_settings WHERE id = 1");
+            if (!existing) {
+              const cols = keys.map((k) => `"${k}"`).join(", ");
+              const ph = keys.map((_, i) => `$${i + 1}`).join(", ");
+              await queryDb(`INSERT INTO public.site_settings (id, ${cols}) VALUES (1, ${ph})`, values);
+            } else {
+              const setClauses = keys.map((k, i) => `"${k}" = $${i + 1}`).join(", ");
+              await queryDb(`UPDATE public.site_settings SET ${setClauses}, updated_at = NOW() WHERE id = 1`, values);
+            }
+
+            return new Response(JSON.stringify({ success: true, message: "Settings saved successfully" }), {
+              status: 200,
+              headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
+            });
+          } catch (err: any) {
+            console.error("[POST /api/admin/site-settings error]:", err);
+            return new Response(JSON.stringify({ success: false, error: err?.message || "Failed to save settings" }), {
+              status: 500,
+              headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
+            });
+          }
+        }
+      }
+
+      // 2. /api/admin/services
+      if (url.pathname === "/api/admin/services") {
+        if (request.method === "POST") {
+          try {
+            const body = await request.json().catch(() => ({}));
+            const id = body.id || (typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : `srv-${Date.now()}`);
+            const {
+              title = "",
+              slug = "",
+              short_description = "",
+              description = "",
+              icon_name = "Briefcase",
+              image_url = null,
+              features = [],
+              price_from = null,
+              seo_title = null,
+              seo_description = null,
+              display_order = 0,
+              is_active = true,
+            } = body;
+
+            const existing = await queryOneDb("SELECT id FROM public.services WHERE id = $1", [id]);
+            if (existing) {
+              await queryDb(
+                `UPDATE public.services SET
+                  title = $2, slug = $3, short_description = $4, description = $5,
+                  icon_name = $6, image_url = $7, features = $8, price_from = $9,
+                  seo_title = $10, seo_description = $11, display_order = $12, is_active = $13,
+                  updated_at = NOW()
+                 WHERE id = $1`,
+                [
+                  id,
+                  title,
+                  slug,
+                  short_description,
+                  description,
+                  icon_name,
+                  image_url,
+                  Array.isArray(features) ? JSON.stringify(features) : features,
+                  price_from,
+                  seo_title,
+                  seo_description,
+                  display_order,
+                  is_active,
+                ]
+              );
+            } else {
+              await queryDb(
+                `INSERT INTO public.services (
+                  id, title, slug, short_description, description, icon_name, image_url,
+                  features, price_from, seo_title, seo_description, display_order, is_active
+                ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)`,
+                [
+                  id,
+                  title,
+                  slug,
+                  short_description,
+                  description,
+                  icon_name,
+                  image_url,
+                  Array.isArray(features) ? JSON.stringify(features) : features,
+                  price_from,
+                  seo_title,
+                  seo_description,
+                  display_order,
+                  is_active,
+                ]
+              );
+            }
+            return new Response(JSON.stringify({ success: true, id }), {
+              status: 200,
+              headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
+            });
+          } catch (err: any) {
+            return new Response(JSON.stringify({ success: false, error: err?.message }), {
+              status: 500,
+              headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
+            });
+          }
+        }
+
+        if (request.method === "DELETE") {
+          try {
+            const body = await request.json().catch(() => ({}));
+            await queryDb("DELETE FROM public.services WHERE id = $1", [body.id]);
+            return new Response(JSON.stringify({ success: true }), {
+              status: 200,
+              headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
+            });
+          } catch (err: any) {
+            return new Response(JSON.stringify({ success: false, error: err?.message }), {
+              status: 500,
+              headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
+            });
+          }
+        }
+      }
+
+      // 3. /api/admin/categories
+      if (url.pathname === "/api/admin/categories") {
+        if (request.method === "POST") {
+          try {
+            const body = await request.json().catch(() => ({}));
+            const id = body.id || (typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : `cat-${Date.now()}`);
+            const {
+              name = "",
+              slug = "",
+              description = "",
+              image_url = null,
+              display_order = 0,
+              is_active = true,
+            } = body;
+
+            const existing = await queryOneDb("SELECT id FROM public.service_categories WHERE id = $1", [id]);
+            if (existing) {
+              await queryDb(
+                `UPDATE public.service_categories SET
+                  name = $2, slug = $3, description = $4, image_url = $5,
+                  display_order = $6, is_active = $7, updated_at = NOW()
+                 WHERE id = $1`,
+                [id, name, slug, description, image_url, display_order, is_active]
+              );
+            } else {
+              await queryDb(
+                `INSERT INTO public.service_categories (id, name, slug, description, image_url, display_order, is_active)
+                 VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+                [id, name, slug, description, image_url, display_order, is_active]
+              );
+            }
+            return new Response(JSON.stringify({ success: true, id }), {
+              status: 200,
+              headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
+            });
+          } catch (err: any) {
+            return new Response(JSON.stringify({ success: false, error: err?.message }), {
+              status: 500,
+              headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
+            });
+          }
+        }
+
+        if (request.method === "DELETE") {
+          try {
+            const body = await request.json().catch(() => ({}));
+            await queryDb("DELETE FROM public.service_categories WHERE id = $1", [body.id]);
+            return new Response(JSON.stringify({ success: true }), {
+              status: 200,
+              headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
+            });
+          } catch (err: any) {
+            return new Response(JSON.stringify({ success: false, error: err?.message }), {
+              status: 500,
+              headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
+            });
+          }
+        }
+      }
+
+      // 4. /api/admin/gallery
+      if (url.pathname === "/api/admin/gallery") {
+        if (request.method === "POST") {
+          try {
+            const body = await request.json().catch(() => ({}));
+            const id = body.id || (typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : `gal-${Date.now()}`);
+            const {
+              title = "",
+              category = "general",
+              image_url = null,
+              description = null,
+              location = null,
+              display_order = 0,
+              is_active = true,
+            } = body;
+
+            const existing = await queryOneDb("SELECT id FROM public.gallery_items WHERE id = $1", [id]);
+            if (existing) {
+              await queryDb(
+                `UPDATE public.gallery_items SET
+                  title = $2, category = $3, image_url = $4, description = $5,
+                  location = $6, display_order = $7, is_active = $8, updated_at = NOW()
+                 WHERE id = $1`,
+                [id, title, category, image_url, description, location, display_order, is_active]
+              );
+            } else {
+              await queryDb(
+                `INSERT INTO public.gallery_items (id, title, category, image_url, description, location, display_order, is_active)
+                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+                [id, title, category, image_url, description, location, display_order, is_active]
+              );
+            }
+            return new Response(JSON.stringify({ success: true, id }), {
+              status: 200,
+              headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
+            });
+          } catch (err: any) {
+            return new Response(JSON.stringify({ success: false, error: err?.message }), {
+              status: 500,
+              headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
+            });
+          }
+        }
+
+        if (request.method === "DELETE") {
+          try {
+            const body = await request.json().catch(() => ({}));
+            await queryDb("DELETE FROM public.gallery_items WHERE id = $1", [body.id]);
+            return new Response(JSON.stringify({ success: true }), {
+              status: 200,
+              headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
+            });
+          } catch (err: any) {
+            return new Response(JSON.stringify({ success: false, error: err?.message }), {
+              status: 500,
+              headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
+            });
+          }
+        }
+      }
+
+      // 5. /api/admin/testimonials
+      if (url.pathname === "/api/admin/testimonials") {
+        if (request.method === "POST") {
+          try {
+            const body = await request.json().catch(() => ({}));
+            const id = body.id || (typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : `test-${Date.now()}`);
+            const {
+              client_name = "",
+              project_type = "",
+              location = "",
+              rating = 5,
+              testimonial = "",
+              client_photo_url = null,
+              project_image_url = null,
+              display_order = 0,
+              is_featured = false,
+              is_active = true,
+            } = body;
+
+            const existing = await queryOneDb("SELECT id FROM public.testimonials WHERE id = $1", [id]);
+            if (existing) {
+              await queryDb(
+                `UPDATE public.testimonials SET
+                  client_name = $2, project_type = $3, location = $4, rating = $5,
+                  testimonial = $6, client_photo_url = $7, project_image_url = $8,
+                  display_order = $9, is_featured = $10, is_active = $11, updated_at = NOW()
+                 WHERE id = $1`,
+                [id, client_name, project_type, location, rating, testimonial, client_photo_url, project_image_url, display_order, is_featured, is_active]
+              );
+            } else {
+              await queryDb(
+                `INSERT INTO public.testimonials (id, client_name, project_type, location, rating, testimonial, client_photo_url, project_image_url, display_order, is_featured, is_active)
+                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
+                [id, client_name, project_type, location, rating, testimonial, client_photo_url, project_image_url, display_order, is_featured, is_active]
+              );
+            }
+            return new Response(JSON.stringify({ success: true, id }), {
+              status: 200,
+              headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
+            });
+          } catch (err: any) {
+            return new Response(JSON.stringify({ success: false, error: err?.message }), {
+              status: 500,
+              headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
+            });
+          }
+        }
+
+        if (request.method === "DELETE") {
+          try {
+            const body = await request.json().catch(() => ({}));
+            await queryDb("DELETE FROM public.testimonials WHERE id = $1", [body.id]);
+            return new Response(JSON.stringify({ success: true }), {
+              status: 200,
+              headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
+            });
+          } catch (err: any) {
+            return new Response(JSON.stringify({ success: false, error: err?.message }), {
+              status: 500,
+              headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
+            });
+          }
+        }
+      }
+
+      // 6. /api/admin/video-testimonials
+      if (url.pathname === "/api/admin/video-testimonials") {
+        if (request.method === "POST") {
+          try {
+            const body = await request.json().catch(() => ({}));
+            const id = body.id || (typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : `vid-${Date.now()}`);
+            const {
+              title = "",
+              client_name = "",
+              location = "",
+              video_url = "",
+              thumbnail_url = null,
+              duration = "",
+              display_order = 0,
+              is_featured = false,
+              is_active = true,
+            } = body;
+
+            const existing = await queryOneDb("SELECT id FROM public.video_testimonials WHERE id = $1", [id]);
+            if (existing) {
+              await queryDb(
+                `UPDATE public.video_testimonials SET
+                  title = $2, client_name = $3, location = $4, video_url = $5,
+                  thumbnail_url = $6, duration = $7, display_order = $8,
+                  is_featured = $9, is_active = $10, updated_at = NOW()
+                 WHERE id = $1`,
+                [id, title, client_name, location, video_url, thumbnail_url, duration, display_order, is_featured, is_active]
+              );
+            } else {
+              await queryDb(
+                `INSERT INTO public.video_testimonials (id, title, client_name, location, video_url, thumbnail_url, duration, display_order, is_featured, is_active)
+                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
+                [id, title, client_name, location, video_url, thumbnail_url, duration, display_order, is_featured, is_active]
+              );
+            }
+            return new Response(JSON.stringify({ success: true, id }), {
+              status: 200,
+              headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
+            });
+          } catch (err: any) {
+            return new Response(JSON.stringify({ success: false, error: err?.message }), {
+              status: 500,
+              headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
+            });
+          }
+        }
+
+        if (request.method === "DELETE") {
+          try {
+            const body = await request.json().catch(() => ({}));
+            await queryDb("DELETE FROM public.video_testimonials WHERE id = $1", [body.id]);
+            return new Response(JSON.stringify({ success: true }), {
+              status: 200,
+              headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
+            });
+          } catch (err: any) {
+            return new Response(JSON.stringify({ success: false, error: err?.message }), {
+              status: 500,
+              headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
+            });
+          }
+        }
+      }
+
+      // 7. /api/admin/enquiries
+      if (url.pathname === "/api/admin/enquiries/status" && request.method === "POST") {
+        try {
+          const body = await request.json().catch(() => ({}));
+          await queryDb("UPDATE public.enquiries SET status = $2, updated_at = NOW() WHERE id = $1", [body.id, body.status]);
+          return new Response(JSON.stringify({ success: true }), {
+            status: 200,
+            headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
+          });
+        } catch (err: any) {
+          return new Response(JSON.stringify({ success: false, error: err?.message }), {
+            status: 500,
+            headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
+          });
+        }
+      }
+
+      if (url.pathname === "/api/admin/enquiries/notes" && request.method === "POST") {
+        try {
+          const body = await request.json().catch(() => ({}));
+          await queryDb("UPDATE public.enquiries SET admin_notes = $2, updated_at = NOW() WHERE id = $1", [body.id, body.admin_notes]);
+          return new Response(JSON.stringify({ success: true }), {
+            status: 200,
+            headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
+          });
+        } catch (err: any) {
+          return new Response(JSON.stringify({ success: false, error: err?.message }), {
+            status: 500,
+            headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
+          });
+        }
+      }
+
+      if (url.pathname === "/api/admin/enquiries" && request.method === "DELETE") {
+        try {
+          const body = await request.json().catch(() => ({}));
+          await queryDb("DELETE FROM public.enquiries WHERE id = $1", [body.id]);
+          return new Response(JSON.stringify({ success: true }), {
+            status: 200,
+            headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
+          });
+        } catch (err: any) {
+          return new Response(JSON.stringify({ success: false, error: err?.message }), {
+            status: 500,
+            headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
+          });
+        }
+      }
+
+      // 8. /api/admin/upload
+      if (url.pathname === "/api/admin/upload" && request.method === "POST") {
+        try {
+          const body = await request.json().catch(() => ({}));
+          const { bucket = "general", filename = "upload.jpg", mimeType = "image/jpeg", base64Data } = body;
+          if (!base64Data) {
+            return new Response(JSON.stringify({ success: false, error: "No image data received" }), {
+              status: 400,
+              headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
+            });
+          }
+
+          const fileBuf = Buffer.from(base64Data, "base64");
+          const safeName = `${Date.now()}-${filename.replace(/[^a-zA-Z0-9.-]/g, "_")}`;
+
+          await queryDb(
+            `INSERT INTO public.storage_objects (bucket_id, filename, mime_type, file_data, size_bytes)
+             VALUES ($1, $2, $3, $4, $5)`,
+            [bucket, safeName, mimeType, fileBuf, fileBuf.length]
+          );
+
+          const publicUrl = `/api/storage/${bucket}/${encodeURIComponent(safeName)}`;
+          return new Response(JSON.stringify({ success: true, publicUrl }), {
+            status: 200,
+            headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
+          });
+        } catch (err: any) {
+          console.error("[POST /api/admin/upload error]:", err);
+          return new Response(JSON.stringify({ success: false, error: err?.message }), {
+            status: 500,
+            headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
+          });
         }
       }
     }

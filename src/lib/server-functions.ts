@@ -169,6 +169,22 @@ export const getSiteSettingsServerFn = createServerFn({ method: "POST" })
     return settings;
   });
 
+let cachedSiteSettingsCols: Set<string> | null = null;
+async function getSiteSettingsCols(): Promise<Set<string>> {
+  if (cachedSiteSettingsCols && cachedSiteSettingsCols.size > 0) {
+    return cachedSiteSettingsCols;
+  }
+  try {
+    const colsRes = await queryDb<{ column_name: string }>(
+      "SELECT column_name FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'site_settings'"
+    );
+    cachedSiteSettingsCols = new Set(colsRes.map((r) => r.column_name.toLowerCase()));
+  } catch {
+    cachedSiteSettingsCols = new Set();
+  }
+  return cachedSiteSettingsCols;
+}
+
 export const updateSiteSettingsServerFn = createServerFn({ method: "POST" })
   .validator((data: Record<string, any>) => data)
   .handler(async ({ data }) => {
@@ -180,16 +196,7 @@ export const updateSiteSettingsServerFn = createServerFn({ method: "POST" })
       const rawFields = Object.keys(data).filter((k) => k !== "id" && k !== "updated_at");
       if (rawFields.length === 0) return { success: true };
 
-      // Query existing columns in site_settings
-      let existingCols: Set<string>;
-      try {
-        const colsRes = await queryDb<{ column_name: string }>(
-          "SELECT column_name FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'site_settings'"
-        );
-        existingCols = new Set(colsRes.map((r) => r.column_name.toLowerCase()));
-      } catch {
-        existingCols = new Set();
-      }
+      const existingCols = await getSiteSettingsCols();
 
       // Auto-create any missing columns safely
       for (const f of rawFields) {

@@ -491,17 +491,24 @@ export const settingsQuery = queryOptions({
   placeholderData: DEFAULT_SITE_SETTINGS,
   queryFn: async (): Promise<SiteSettings> => {
     try {
-      const data = await getSiteSettingsServerFn();
-      if (!data) return DEFAULT_SITE_SETTINGS;
-
-      const merged = { ...DEFAULT_SITE_SETTINGS };
-      for (const k of Object.keys(DEFAULT_SITE_SETTINGS) as Array<keyof SiteSettings>) {
-        if (data[k] !== null && data[k] !== undefined && data[k] !== "") {
-          (merged as any)[k] = data[k];
+      if (typeof window !== "undefined") {
+        try {
+          const res = await fetch("/api/admin/site-settings", { cache: "no-store" });
+          if (res.ok) {
+            const json = await res.json();
+            if (json.settings) {
+              return { ...DEFAULT_SITE_SETTINGS, ...json.settings };
+            }
+          }
+        } catch {
+          // fall through to serverFn
         }
       }
-      return merged;
+      const data = await getSiteSettingsServerFn();
+      if (!data) return DEFAULT_SITE_SETTINGS;
+      return { ...DEFAULT_SITE_SETTINGS, ...data };
     } catch (err) {
+      console.warn("[settingsQuery error]:", err);
       return DEFAULT_SITE_SETTINGS;
     }
   },

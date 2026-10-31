@@ -14,10 +14,10 @@ import {
   ImageIcon,
 } from "lucide-react";
 import {
-  updateSiteSettingsServerFn,
-  uploadStorageFileServerFn,
-  saveServiceServerFn,
-} from "@/lib/server-functions";
+  adminSaveSiteSettings,
+  adminSaveService,
+  adminUploadFile,
+} from "@/lib/admin-api";
 import {
   settingsQuery,
   servicesQuery,
@@ -56,26 +56,12 @@ const inp =
   "w-full rounded-lg border border-border/80 bg-background px-3.5 py-2.5 text-sm text-foreground placeholder:text-muted-foreground/60 focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent transition";
 
 async function uploadToStorage(file: File, folder: string): Promise<string | null> {
-  const mimeType = file.type || "image/jpeg";
-
-  const reader = new FileReader();
-  const base64Promise = new Promise<string>((resolve, reject) => {
-    reader.onload = () => resolve((reader.result as string).split(",")[1]);
-    reader.onerror = reject;
-  });
-  reader.readAsDataURL(file);
-  const base64Data = await base64Promise;
-
-  const res = await uploadStorageFileServerFn({
-    data: {
-      bucket: folder || "site-assets",
-      filename: file.name,
-      mimeType,
-      base64Data,
-    },
-  });
-
-  return res?.publicUrl ?? null;
+  try {
+    return await adminUploadFile(file, folder || "site-assets");
+  } catch (err: any) {
+    toast.error("Upload failed: " + (err?.message || "Failed to upload image"));
+    return null;
+  }
 }
 
 function HomePageEditorPage() {
@@ -135,12 +121,13 @@ function HomePageEditorPage() {
     setIsSaving(true);
     const { id: _id, ...rest } = draft;
     try {
-      await updateSiteSettingsServerFn({ data: rest });
+      await adminSaveSiteSettings(rest);
       toast.success("Home page content successfully saved and published!");
+      setDraft({ ...draft, ...rest });
       setIsDirty(false);
       qc.invalidateQueries({ queryKey: ["site_settings"] });
     } catch (e: any) {
-      toast.error(e.message || "Failed to save homepage changes.");
+      toast.error(e?.message || "Failed to save homepage changes.");
     } finally {
       setIsSaving(false);
     }
@@ -169,11 +156,9 @@ function HomePageEditorPage() {
     try {
       const url = await uploadToStorage(file, "services");
       if (url) {
-        await saveServiceServerFn({
-          data: {
-            ...service,
-            image_url: url,
-          },
+        await adminSaveService({
+          ...service,
+          image_url: url,
         });
         qc.invalidateQueries({ queryKey: ["services"] });
         toast.success(`Image updated for "${service.title}"!`);
@@ -187,11 +172,9 @@ function HomePageEditorPage() {
 
   async function handleServiceUrlUpdate(service: Service, newUrl: string) {
     try {
-      await saveServiceServerFn({
-        data: {
-          ...service,
-          image_url: newUrl.trim() || null,
-        },
+      await adminSaveService({
+        ...service,
+        image_url: newUrl.trim() || null,
       });
       qc.invalidateQueries({ queryKey: ["services"] });
       toast.success(`Image URL updated for "${service.title}"!`);
