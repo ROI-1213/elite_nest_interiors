@@ -60,10 +60,10 @@ async function normalizeCatastrophicSsrResponse(
   });
 }
 
-export default {
-  async fetch(request: Request, env: unknown, ctx: unknown) {
-    const url = new URL(request.url);
+export async function handleAdminApi(request: Request): Promise<Response | null> {
+  const url = new URL(request.url);
 
+  try {
     // Direct PostgreSQL Storage Endpoint: /api/storage/:bucket/:filename
     if (url.pathname.startsWith("/api/storage/")) {
       const match = url.pathname.match(/^\/api\/storage\/([^/]+)\/(.+)$/);
@@ -795,6 +795,23 @@ export default {
         console.error("Error serving /assets/ file:", assetErr);
       }
     }
+
+    return null;
+  } catch (err: any) {
+    console.error("[handleAdminApi error]:", err);
+    return new Response(JSON.stringify({ success: false, error: err?.message || "API Error" }), {
+      status: 500,
+      headers: { "content-type": "application/json" },
+    });
+  }
+}
+
+export default {
+  async fetch(request: Request, env: unknown, ctx: unknown) {
+    const url = new URL(request.url);
+
+    const apiRes = await handleAdminApi(request);
+    if (apiRes) return apiRes;
 
     try {
       const handler = await getServerEntry();

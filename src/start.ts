@@ -1,6 +1,24 @@
 import { createStart, createMiddleware } from "@tanstack/react-start";
 
 import { renderErrorPage } from "./lib/error-page";
+import { handleAdminApi } from "./server";
+
+const apiMiddleware = createMiddleware().server(async ({ next, request }: any) => {
+  try {
+    const rawUrl = request?.url || "";
+    if (
+      rawUrl.includes("/api/admin/") ||
+      rawUrl.includes("/api/auth/") ||
+      rawUrl.includes("/api/storage/")
+    ) {
+      const apiRes = await handleAdminApi(request);
+      if (apiRes) return apiRes;
+    }
+  } catch (err: any) {
+    console.error("[TanStack Start API Error]:", err?.message || err);
+  }
+  return await next();
+});
 
 const errorMiddleware = createMiddleware().server(async ({ next, request }: any) => {
   try {
@@ -35,5 +53,5 @@ const errorMiddleware = createMiddleware().server(async ({ next, request }: any)
 });
 
 export const startInstance = createStart(() => ({
-  requestMiddleware: [errorMiddleware],
+  requestMiddleware: [apiMiddleware, errorMiddleware],
 }));
