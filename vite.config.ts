@@ -2,8 +2,14 @@
 import { defineConfig } from "@lovable.dev/vite-tanstack-config";
 import path from "path";
 
-// Ensure Nitro builds standard Node.js server for cPanel / PM2 / Passenger
-process.env.NITRO_PRESET = process.env.NITRO_PRESET || "node-server";
+// Dynamically configure Nitro preset:
+// - Defaults to "vercel" on Vercel deployment environments
+// - Defaults to "node-server" for standard Node.js hosting (cPanel / PM2 / Passenger)
+if (process.env.VERCEL || process.env.NOW_BUILDER) {
+  process.env.NITRO_PRESET = "vercel";
+} else {
+  process.env.NITRO_PRESET = process.env.NITRO_PRESET || "node-server";
+}
 
 function authApiDevPlugin() {
   return {
