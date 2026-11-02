@@ -11,76 +11,57 @@ if (process.env.VERCEL || process.env.NOW_BUILDER) {
   process.env.NITRO_PRESET = process.env.NITRO_PRESET || "node-server";
 }
 
-function authApiDevPlugin() {
+function adminApiDevPlugin() {
   return {
-    name: "auth-api-dev-plugin",
+    name: "admin-api-dev-plugin",
     configureServer(server: any) {
       server.middlewares.use(async (req: any, res: any, next: any) => {
         const rawUrl = req.url || "";
-        if (rawUrl.startsWith("/api/auth/login")) {
-          if (req.method === "OPTIONS") {
-            res.statusCode = 204;
-            res.setHeader("Access-Control-Allow-Origin", "*");
-            res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
-            res.setHeader("Access-Control-Allow-Headers", "Content-Type, Accept");
-            return res.end();
-          }
+        if (
+          rawUrl.startsWith("/api/admin/") ||
+          rawUrl.startsWith("/api/auth/") ||
+          rawUrl.startsWith("/api/storage/") ||
+          rawUrl.startsWith("/storage/")
+        ) {
+          try {
+            const { handleAdminApi } = await server.ssrLoadModule("/src/server.ts");
+            const protocol = req.headers["x-forwarded-proto"] || "http";
+            const host = req.headers.host || "localhost";
+            const fullUrl = `${protocol}://${host}${req.url}`;
 
-          if (req.method === "POST") {
-            const chunks: any[] = [];
-            for await (const chunk of req) {
-              chunks.push(chunk);
-            }
-            const bodyStr = Buffer.concat(chunks).toString("utf8");
-            let body: any = {};
-            try {
-              body = JSON.parse(bodyStr);
-            } catch {}
-
-            const email = (body.email || "").trim().toLowerCase();
-            const password = (body.password || "").trim();
-
-            if (
-              email === "elitenestinteriors@gmail.com" &&
-              (password === "elitenest@2026" || password === "Admin@123456")
-            ) {
-              const header = Buffer.from(JSON.stringify({ alg: "HS256", typ: "JWT" })).toString("base64url");
-              const payload = Buffer.from(
-                JSON.stringify({
-                  userId: "0cc02126-62a0-4362-ac88-e7ff69fe2baa",
-                  email: "elitenestinteriors@gmail.com",
-                  isAdmin: true,
-                  exp: Math.floor(Date.now() / 1000) + 7 * 86400,
-                })
-              ).toString("base64url");
-              const signature = "elite_master_sig";
-              const token = `${header}.${payload}.${signature}`;
-
-              res.statusCode = 200;
-              res.setHeader("Content-Type", "application/json");
-              res.setHeader("Access-Control-Allow-Origin", "*");
-              res.setHeader(
-                "Set-Cookie",
-                `elite_admin_token=${encodeURIComponent(token)}; path=/; max-age=604800; SameSite=Lax;`
-              );
-              return res.end(
-                JSON.stringify({
-                  success: true,
-                  isAdmin: true,
-                  user: { id: "0cc02126-62a0-4362-ac88-e7ff69fe2baa", email: "elitenestinteriors@gmail.com" },
-                  token,
-                })
-              );
+            const headers = new Headers();
+            for (const [k, v] of Object.entries(req.headers)) {
+              if (v) headers.set(k, Array.isArray(v) ? v.join(", ") : String(v));
             }
 
-            res.statusCode = 401;
+            let body: any = null;
+            if (req.method !== "GET" && req.method !== "HEAD") {
+              const chunks: any[] = [];
+              for await (const chunk of req) chunks.push(chunk);
+              body = Buffer.concat(chunks);
+            }
+
+            const webReq = new Request(fullUrl, {
+              method: req.method,
+              headers,
+              body: body && body.length > 0 ? body : undefined,
+              duplex: "half",
+            } as any);
+
+            const apiRes = await handleAdminApi(webReq);
+            if (apiRes) {
+              res.statusCode = apiRes.status;
+              for (const [k, v] of apiRes.headers.entries()) {
+                res.setHeader(k, v);
+              }
+              const ab = await apiRes.arrayBuffer();
+              return res.end(Buffer.from(ab));
+            }
+          } catch (e: any) {
+            console.error("[Vite Dev API Error]:", e);
+            res.statusCode = 500;
             res.setHeader("Content-Type", "application/json");
-            return res.end(
-              JSON.stringify({
-                success: false,
-                error: "Invalid email or password. Please verify your credentials.",
-              })
-            );
+            return res.end(JSON.stringify({ success: false, error: e?.message || "Internal Dev API error" }));
           }
         }
         next();
@@ -90,7 +71,7 @@ function authApiDevPlugin() {
 }
 
 export default defineConfig(({ mode }) => ({
-  plugins: [authApiDevPlugin()],
+  plugins: [adminApiDevPlugin()],
   server: {
     host: "::",
     port: 8229,
