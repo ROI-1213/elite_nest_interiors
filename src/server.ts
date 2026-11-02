@@ -717,9 +717,9 @@ export async function handleAdminApi(request: Request): Promise<Response | null>
           const safeName = `${Date.now()}-${filename.replace(/[^a-zA-Z0-9.-]/g, "_")}`;
 
           await queryDb(
-            `INSERT INTO public.storage_objects (bucket_id, filename, mime_type, file_data, size_bytes)
-             VALUES ($1, $2, $3, $4, $5)`,
-            [bucket, safeName, mimeType, fileBuf, fileBuf.length]
+            `INSERT INTO public.storage_objects (bucket_id, filename, mime_type, file_data)
+             VALUES ($1, $2, $3, $4)`,
+            [bucket, safeName, mimeType, fileBuf]
           );
 
           const publicUrl = `/api/storage/${bucket}/${encodeURIComponent(safeName)}`;
