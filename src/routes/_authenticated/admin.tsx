@@ -77,8 +77,6 @@ const TABS = [
   "Homepage Content",
   "About Us Page",
   "Contact Page",
-  "Services",
-  "Service Categories",
   "Gallery",
   "Testimonials",
   "Video Testimonials",
@@ -91,8 +89,6 @@ const TAB_ITEMS: { id: Tab; label: string; icon: any }[] = [
   { id: "Homepage Content", label: "Home Page Editor", icon: Home },
   { id: "About Us Page", label: "About Us Page", icon: Info },
   { id: "Contact Page", label: "Contact Page", icon: PhoneCall },
-  { id: "Services", label: "Services", icon: Briefcase },
-  { id: "Service Categories", label: "Service Categories", icon: Layers },
   { id: "Gallery", label: "Gallery", icon: Images },
   { id: "Testimonials", label: "Testimonials", icon: Star },
   { id: "Video Testimonials", label: "Video Testimonials", icon: Video },
@@ -286,8 +282,6 @@ function AdminPage() {
           {tab === "Homepage Content" && <HomepageContentTab />}
           {tab === "About Us Page" && <AboutPageContentTab />}
           {tab === "Contact Page" && <ContactPageContentTab />}
-          {tab === "Services" && <ServicesTab />}
-          {tab === "Service Categories" && <CategoriesTab />}
           {tab === "Gallery" && <GalleryTab />}
           {tab === "Testimonials" && <TestimonialsTab />}
           {tab === "Video Testimonials" && <VideoTestimonialsTab />}
