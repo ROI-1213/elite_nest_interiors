@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { Mail, Lock, Eye, EyeOff, Loader2, ShieldCheck, ArrowLeft } from "lucide-react";
+import { Mail, Lock, Loader2, ShieldCheck, ArrowLeft } from "lucide-react";
 import { signInServerFn } from "@/lib/server-functions";
 import { getStoredAuth } from "./_authenticated/route";
 import logo from "@/assets/logo.png";
@@ -14,7 +14,6 @@ export const Route = createFileRoute("/auth")({
 function AuthPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
   const [busy, setBusy] = useState(false);
   const [checkingSession, setCheckingSession] = useState(true);
 
@@ -232,24 +231,15 @@ function AuthPage() {
                 <Lock className="h-4 w-4" />
               </div>
               <input
-                type={showPassword ? "text" : "password"}
+                type="password"
                 required
                 autoComplete="current-password"
                 minLength={6}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
-                className="w-full rounded-xl border border-[#E5D4BD] bg-[#FDFBF7] pl-10 pr-11 py-3 text-sm text-[#221912] outline-none focus:border-[#B8894D] focus:ring-2 focus:ring-[#B8894D]/25 transition placeholder:text-[#A89C91]"
+                className="w-full rounded-xl border border-[#E5D4BD] bg-[#FDFBF7] pl-10 pr-4 py-3 text-sm text-[#221912] outline-none focus:border-[#B8894D] focus:ring-2 focus:ring-[#B8894D]/25 transition placeholder:text-[#A89C91]"
               />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                tabIndex={-1}
-                className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-[#8F8173] hover:text-[#221912] transition"
-                aria-label={showPassword ? "Hide password" : "Show password"}
-              >
-                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-              </button>
             </div>
           </div>
 
