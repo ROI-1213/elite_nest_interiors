@@ -26,10 +26,19 @@ try {
 
 process.env.NODE_ENV = process.env.NODE_ENV || "production";
 
+// Strictly manage port & proxy port from .env
+const resolvedPort = process.env.PORT || process.env.PROXY_PORT || "3000";
+process.env.PORT = String(resolvedPort);
+process.env.NITRO_PORT = String(resolvedPort);
+
+const resolvedHost = process.env.HOST || "0.0.0.0";
+process.env.HOST = resolvedHost;
+process.env.NITRO_HOST = resolvedHost;
+
 // Start the production Nitro node-server
 import("./.output/server/index.mjs")
   .then(() => {
-    console.log("[Elite Nest] Production server initialized successfully.");
+    console.log(`[Elite Nest] Production server initialized successfully on ${resolvedHost}:${resolvedPort}`);
   })
   .catch((err) => {
     console.error("[Startup error]: Failed to launch server:", err);

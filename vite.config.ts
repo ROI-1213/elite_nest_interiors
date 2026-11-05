@@ -1,6 +1,29 @@
 // @lovable.dev/vite-tanstack-config already includes the following — do NOT add them manually
 import { defineConfig } from "@lovable.dev/vite-tanstack-config";
 import path from "path";
+import fs from "node:fs";
+
+// Load .env automatically so port, allowed_hosts, and database variables are immediately available
+try {
+  const envPath = path.resolve(process.cwd(), ".env");
+  if (fs.existsSync(envPath)) {
+    const envContent = fs.readFileSync(envPath, "utf8");
+    for (const line of envContent.split("\n")) {
+      const trimmed = line.trim();
+      if (!trimmed || trimmed.startsWith("#")) continue;
+      const eqIdx = trimmed.indexOf("=");
+      if (eqIdx > 0) {
+        const key = trimmed.slice(0, eqIdx).trim();
+        const val = trimmed.slice(eqIdx + 1).trim().replace(/^['"](.*)['"]$/, "$1");
+        if (key && !process.env[key]) {
+          process.env[key] = val;
+        }
+      }
+    }
+  }
+} catch {
+  // Silent fallback
+}
 
 // Dynamically configure Nitro preset:
 // - Defaults to "vercel" on Vercel deployment environments
@@ -9,6 +32,19 @@ if (process.env.VERCEL || process.env.NOW_BUILDER) {
   process.env.NITRO_PRESET = "vercel";
 } else {
   process.env.NITRO_PRESET = process.env.NITRO_PRESET || "node-server";
+}
+
+function resolveAllowedHosts(): boolean | string[] {
+  const raw = process.env.ALLOWED_HOSTS?.trim();
+  if (!raw || raw.toLowerCase() === "all" || raw === "*" || raw.toLowerCase() === "true") {
+    return true; // Allow all incoming hosts & proxies without host-blocking error
+  }
+  return raw.split(",").map((h) => h.trim()).filter(Boolean);
+}
+
+function getActivePort(defaultPort: number): number {
+  const envPort = process.env.PORT || process.env.PROXY_PORT;
+  return envPort ? Number(envPort) : defaultPort;
 }
 
 function adminApiDevPlugin() {
@@ -70,24 +106,37 @@ function adminApiDevPlugin() {
   };
 }
 
-export default defineConfig(({ mode }) => ({
-  plugins: [adminApiDevPlugin()],
-  server: {
-    host: "::",
-    port: 8229,
-    hmr: {
-      overlay: false,
+export default defineConfig(({ mode }) => {
+  const allowedHosts = resolveAllowedHosts();
+  const serverPort = getActivePort(8229);
+  const previewPort = getActivePort(3000);
+  const host = process.env.HOST || "0.0.0.0";
+
+  return {
+    plugins: [adminApiDevPlugin()],
+    server: {
+      host,
+      port: serverPort,
+      allowedHosts,
+      hmr: {
+        overlay: false,
+      },
     },
-  },
-  ssr: {
-    external: ["pg", "pg-pool", "pg-types", "bcryptjs", "jsonwebtoken"],
-  },
-  optimizeDeps: {
-    exclude: ["pg"],
-  },
-  resolve: {
-    alias: {
-      "@": path.resolve(__dirname, "./src"),
+    preview: {
+      host,
+      port: previewPort,
+      allowedHosts,
     },
-  },
-}));
+    ssr: {
+      external: ["pg", "pg-pool", "pg-types", "bcryptjs", "jsonwebtoken"],
+    },
+    optimizeDeps: {
+      exclude: ["pg"],
+    },
+    resolve: {
+      alias: {
+        "@": path.resolve(import.meta.dirname || ".", "./src"),
+      },
+    },
+  };
+});
