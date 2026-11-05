@@ -189,15 +189,27 @@ export async function handleAdminApi(request: Request): Promise<Response | null>
             }
           }
 
-          // Sign 7-day JWT token
-          const jwtModule = await import("jsonwebtoken");
-          const jwt = (jwtModule as any).default || jwtModule;
+          // Sign 7-day JWT token with zero-dependency node:crypto fallback
           const JWT_SECRET = process.env.JWT_SECRET || "elite_nest_secret_key_2026_pg_auth";
-          const token = jwt.sign(
-            { userId: user.id, email: user.email, isAdmin: true },
-            JWT_SECRET,
-            { expiresIn: "7d" }
-          );
+          let token = "";
+          try {
+            const jwtModule = await import("jsonwebtoken");
+            const jwt = (jwtModule as any).default || jwtModule;
+            token = jwt.sign(
+              { userId: user.id, email: user.email, isAdmin: true },
+              JWT_SECRET,
+              { expiresIn: "7d" }
+            );
+          } catch {
+            const crypto = await import("node:crypto");
+            const header = Buffer.from(JSON.stringify({ alg: "HS256", typ: "JWT" })).toString("base64url");
+            const exp = Math.floor(Date.now() / 1000) + 7 * 24 * 3600;
+            const body = Buffer.from(
+              JSON.stringify({ userId: user.id, email: user.email, isAdmin: true, exp })
+            ).toString("base64url");
+            const signature = crypto.createHmac("sha256", JWT_SECRET).update(`${header}.${body}`).digest("base64url");
+            token = `${header}.${body}.${signature}`;
+          }
 
           return new Response(
             JSON.stringify({
